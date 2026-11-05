@@ -286,6 +286,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [section, ...rest] = pathname.split("/").filter(Boolean);
   /** /forms/new, /forms/abc... go back to /forms. Top-level screens have nowhere to go back to. */
   const backHref = section && rest.length > 0 ? `/${section}` : null;
+  // The bar only leaves on phones (the large-screen rail is always there), so only there is it also made inert.
+  const barHidden = usePhoneLayout() && backHref !== null;
 
   return (
     <div className="relative min-h-dvh lg:grid lg:grid-cols-[6.5rem_1fr]">
@@ -313,8 +315,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 
       <aside
-        aria-hidden={backHref ? true : undefined}
-        {...(backHref ? ({ inert: "" } as Record<string, string>) : {})}
+        aria-hidden={barHidden ? true : undefined}
+        {...(barHidden ? ({ inert: "" } as Record<string, string>) : {})}
         className={`fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md transition-[transform,opacity] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
           backHref ? "max-lg:pointer-events-none max-lg:translate-y-[calc(100%+2rem)] max-lg:opacity-0" : "max-lg:translate-y-0 max-lg:opacity-100"
         } lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4`}>
