@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Models\FormSubmission;
+use App\Models\Template;
+use App\Support\EmailTemplateRenderer;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -12,6 +14,9 @@ use Illuminate\Mail\Mailables\Envelope;
 
 class FormSubmissionMail extends Mailable
 {
+    /** @var array{subject: string, html: string}|null */
+    private ?array $rendered = null;
+
     public function __construct(
         public readonly FormSubmission $submission,
         public readonly string $fromAddress,
@@ -22,41 +27,24 @@ class FormSubmissionMail extends Mailable
     {
         return new Envelope(
             from: new Address($this->fromAddress, $this->fromName),
-            subject: 'New submission: '.$this->submission->form_name,
+            subject: $this->rendered()['subject'],
         );
     }
 
     public function content(): Content
     {
-        return new Content(htmlString: $this->renderRows());
+        return new Content(htmlString: $this->rendered()['html']);
     }
 
-    private function renderRows(): string
+    /**
+     * The form's template, or the default one when it has none (or the form was deleted).
+     *
+     * @return array{subject: string, html: string}
+     */
+    private function rendered(): array
     {
-        $rows = '';
+        $template = $this->submission->form?->template ?? Template::defaultTemplate();
 
-        foreach ($this->submission->fields as $field) {
-            if (! array_key_exists($field['name'], $this->submission->data)) {
-                continue;
-            }
-
-            $rows .= $this->row((string) $field['label'], $this->display($field['type'], $this->submission->data[$field['name']]));
-        }
-
-        return '<h2>'.e($this->submission->form_name).'</h2><table cellpadding="6" cellspacing="0">'.$rows.'</table>';
-    }
-
-    private function row(string $label, string $value): string
-    {
-        return '<tr><td><strong>'.e($label).'</strong></td><td>'.nl2br(e($value)).'</td></tr>';
-    }
-
-    private function display(string $type, mixed $value): string
-    {
-        if ($type === 'checkbox') {
-            return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'Yes' : 'No';
-        }
-
-        return is_scalar($value) ? (string) $value : (string) json_encode($value);
+        return $this->rendered ??= app(EmailTemplateRenderer::class)->renderSubmission($template, $this->submission);
     }
 }

@@ -6,6 +6,7 @@ namespace App\Http\Requests;
 
 use Dedoc\Scramble\Attributes\SchemaName;
 use App\Enums\FormFieldType;
+use App\Models\Template;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,6 +38,23 @@ class StoreFormRequest extends FormRequest
                 $domains,
             ), SORT_REGULAR)),
         ]);
+    }
+
+    /**
+     * The panel talks about templates by code; the form stores the id.
+     *
+     * @return array<string, mixed>
+     */
+    public function validatedForForm(): array
+    {
+        $data = $this->validated();
+
+        if (array_key_exists('template', $data)) {
+            $data['template_id'] = $data['template'] === null ? null : Template::where('code', $data['template'])->value('id');
+            unset($data['template']);
+        }
+
+        return $data;
     }
 
     /**
@@ -117,6 +135,12 @@ class StoreFormRequest extends FormRequest
              * @example company.com
              */
             'allowed_domains.*' => ['string', 'max:253', 'regex:'.self::DOMAIN, 'distinct'],
+            /**
+             * Code of the template used for the email. Leave empty (null) to use the default template.
+             *
+             * @example 7k2mx9q4vb8d1ncz5wte
+             */
+            'template' => ['nullable', 'string', 'exists:templates,code'],
         ];
 
         // A partial update (PATCH) validates only the attributes that were sent.

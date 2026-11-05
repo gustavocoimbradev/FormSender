@@ -5,6 +5,14 @@ declare(strict_types=1);
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
+// Tests never touch the real Redis, whatever the environment says (inside Docker it points at Redis):
+// each test gets a fresh in-memory cache, queue and session. Set before the app boots.
+foreach (['CACHE_STORE' => 'array', 'QUEUE_CONNECTION' => 'sync', 'SESSION_DRIVER' => 'array'] as $key => $value) {
+    putenv("{$key}={$value}");
+    $_ENV[$key] = $value;
+    $_SERVER[$key] = $value;
+}
+
 /*
 |--------------------------------------------------------------------------
 | Test Case

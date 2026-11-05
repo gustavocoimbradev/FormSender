@@ -24,7 +24,7 @@ class FormController extends Controller
     #[Endpoint(operationId: 'listForms')]
     public function index(): AnonymousResourceCollection
     {
-        return FormResource::collection(Form::latest('id')->paginate());
+        return FormResource::collection(Form::with('template')->latest('id')->paginate());
     }
 
     /**
@@ -37,7 +37,7 @@ class FormController extends Controller
     #[Endpoint(operationId: 'createForm')]
     public function store(StoreFormRequest $request): FormResource
     {
-        return new FormResource(Form::create($request->validated()));
+        return new FormResource(Form::create($request->validatedForForm())->load('template'));
     }
 
     /**
@@ -48,7 +48,7 @@ class FormController extends Controller
     #[Endpoint(operationId: 'getForm')]
     public function show(Form $form): FormResource
     {
-        return new FormResource($form);
+        return new FormResource($form->load('template'));
     }
 
     /**
@@ -59,9 +59,9 @@ class FormController extends Controller
     #[Endpoint(operationId: 'updateForm')]
     public function update(UpdateFormRequest $request, Form $form): FormResource
     {
-        $form->update($request->validated());
+        $form->update($request->validatedForForm());
 
-        return new FormResource($form);
+        return new FormResource($form->load('template'));
     }
 
     /**

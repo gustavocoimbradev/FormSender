@@ -16,7 +16,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FormResource extends JsonResource
 {
     /**
-     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, code: string, created_at: string|null, updated_at: string|null}
+     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, template: string|null, code: string, created_at: string|null, updated_at: string|null}
      */
     public function toArray(Request $request): array
     {
@@ -29,6 +29,8 @@ class FormResource extends JsonResource
             'destinations' => $this->destinations,
             /** Websites allowed to send the form. Empty means any website. */
             'allowed_domains' => $this->allowed_domains,
+            /** Code of the template used for the email, or null when the form uses the default template. */
+            'template' => $this->template?->code,
             /** The form's unique code: it identifies the form in every address, here and on the websites that send it. */
             'code' => $this->code,
             /** When the form was created. */

@@ -9,6 +9,8 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SubmitFormController;
+use App\Http\Controllers\TemplateController;
+use App\Http\Controllers\TemplatePreviewController;
 use App\Http\Controllers\TestFormController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureAllowedDomain;
@@ -30,6 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('forms', FormController::class);
     Route::post('forms/{form}/test', TestFormController::class);
     Route::apiResource('forms.submissions', FormSubmissionController::class)->only(['index', 'show'])->scoped();
+
+    Route::post('templates/preview', TemplatePreviewController::class);
+    Route::apiResource('templates', TemplateController::class)->parameters(['templates' => 'template:code']);
 
     Route::apiResource('users', UserController::class);
 

@@ -101,7 +101,7 @@ function resolveSchema(array $schema): array
 
 describe('friendly documentation', function (): void {
     it('groups operations under readable names', function (): void {
-        $allowed = ['Getting started', 'Authentication', 'Password reset', 'Forms', 'Submitting a form', 'Submissions', 'Users', 'Settings'];
+        $allowed = ['Getting started', 'Authentication', 'Password reset', 'Forms', 'Templates', 'Submitting a form', 'Submissions', 'Users', 'Settings'];
 
         foreach (openApi()['paths'] as $path => $operations) {
             foreach ($operations as $method => $operation) {
@@ -114,7 +114,7 @@ describe('friendly documentation', function (): void {
     it('describes each group', function (): void {
         $tags = collect(openApi()['tags'] ?? [])->keyBy('name');
 
-        foreach (['Getting started', 'Authentication', 'Password reset', 'Forms', 'Submitting a form', 'Submissions', 'Users', 'Settings'] as $group) {
+        foreach (['Getting started', 'Authentication', 'Password reset', 'Forms', 'Templates', 'Submitting a form', 'Submissions', 'Users', 'Settings'] as $group) {
             expect($tags[$group]['description'] ?? '')->not->toBe('', "group {$group} has no description");
         }
     });
@@ -130,7 +130,7 @@ describe('friendly documentation', function (): void {
         }
 
         expect($ids)->toBe(array_values(array_unique($ids)))
-            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'sendTestMessage', 'logIn', 'saveSettings', 'listSubmissions');
+            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'sendTestMessage', 'logIn', 'saveSettings', 'listSubmissions', 'listTemplates', 'previewTemplate');
     });
 
     it('names schemas after business concepts', function (): void {

@@ -78,7 +78,29 @@ it('sends from the configured smtp address and names the form in the subject', f
 
     (new SendFormSubmission(makeSubmission()))->handle();
 
-    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasFrom('no-reply@example.com') && $mail->hasSubject('New submission: Contact'));
+    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasFrom('no-reply@example.com') && $mail->hasSubject('Nova mensagem: Contact'));
+});
+
+it('delivers the email with the template chosen for the form', function (): void {
+    Mail::fake();
+    $template = App\Models\Template::factory()->create(['subject' => 'Contato: {{field.name}}', 'html' => '<b>{{form_name}}</b> {{field.email}}']);
+    $form = contactForm(['template_id' => $template->id]);
+    $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'email' => 'jane@example.com']);
+
+    (new SendFormSubmission($submission))->handle();
+
+    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('Contato: Jane') && str_contains($mail->render(), '<b>Contact</b> jane@example.com'));
+});
+
+it('falls back to the default template when the form has none, or was deleted', function (): void {
+    Mail::fake();
+    $submission = makeSubmission();
+
+    (new SendFormSubmission($submission))->handle();
+    $submission->form->delete();
+    (new SendFormSubmission($submission->fresh()))->handle();
+
+    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('Nova mensagem: Contact') && str_contains($mail->render(), 'Form Sender'));
 });
 
 it('lists the submitted values by field label, in the form order, and escapes html', function (): void {

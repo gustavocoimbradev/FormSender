@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\FormFieldType;
+use App\Models\Concerns\HasPublicCode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
@@ -18,30 +19,15 @@ use Illuminate\Validation\Rule;
  */
 class Form extends Model
 {
-    use HasFactory;
+    use HasFactory, HasPublicCode;
 
-    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains'];
+    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'template_id'];
 
     protected $attributes = [
         'fields' => '[]',
         'destinations' => '[]',
         'allowed_domains' => '[]',
     ];
-
-    protected static function booted(): void
-    {
-        static::creating(function (Form $form): void {
-            $form->code ??= static::newCode();
-        });
-    }
-
-    /**
-     * Forms are addressed by their code everywhere, never by the numeric id.
-     */
-    public function getRouteKeyName(): string
-    {
-        return 'code';
-    }
 
     /**
      * @return array<string, string>
@@ -56,24 +42,19 @@ class Form extends Model
     }
 
     /**
+     * @return BelongsTo<Template, $this>
+     */
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(Template::class);
+    }
+
+    /**
      * @return HasMany<FormSubmission, $this>
      */
     public function submissions(): HasMany
     {
         return $this->hasMany(FormSubmission::class);
-    }
-
-    /**
-     * The public code websites send the form to. Random and not tied to the id,
-     * so nobody can walk through the forms by counting.
-     */
-    public static function newCode(): string
-    {
-        do {
-            $code = strtolower(Str::random(20));
-        } while (static::where('code', $code)->exists());
-
-        return $code;
     }
 
     /**
