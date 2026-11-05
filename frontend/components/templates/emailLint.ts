@@ -5,14 +5,14 @@ type Rule = { pattern: RegExp; severity: Diagnostic["severity"]; message: string
 
 /** What email clients do not understand. Most of the web's CSS is ignored by Outlook and Gmail. */
 const RULES: Rule[] = [
-  { pattern: /<\s*script\b/gi, severity: "error", message: "Scripts não são permitidos em e-mails." },
-  { pattern: /display\s*:\s*(?:inline-)?(?:flex|grid)/gi, severity: "warning", message: "Flex e grid não funcionam em e-mails. Use tabelas." },
-  { pattern: /position\s*:\s*(?:absolute|fixed|sticky)/gi, severity: "warning", message: "Posicionamento não funciona em e-mails. Use tabelas." },
-  { pattern: /var\(\s*--/gi, severity: "warning", message: "Variáveis CSS não funcionam em e-mails. Use a cor direta, como #8b6bff." },
-  { pattern: /<\s*link\b[^>]*stylesheet/gi, severity: "warning", message: "Folhas de estilo externas são ignoradas. Escreva o estilo direto no elemento (style=\"...\")." },
-  { pattern: /<\s*style\b/gi, severity: "info", message: "Vários clientes ignoram <style>. Prefira estilos direto no elemento (style=\"...\")." },
-  { pattern: /<\s*(?:form|input|button|video|iframe|object|embed)\b/gi, severity: "warning", message: "Esse elemento não funciona na maioria dos clientes de e-mail." },
-  { pattern: /(?:box-shadow|transform|animation|transition)\s*:/gi, severity: "info", message: "Esse efeito é ignorado por muitos clientes de e-mail." },
+  { pattern: /<\s*script\b/gi, severity: "error", message: "Scripts are not allowed in emails." },
+  { pattern: /display\s*:\s*(?:inline-)?(?:flex|grid)/gi, severity: "warning", message: "Flex and grid do not work in emails. Use tables." },
+  { pattern: /position\s*:\s*(?:absolute|fixed|sticky)/gi, severity: "warning", message: "Positioning does not work in emails. Use tables." },
+  { pattern: /var\(\s*--/gi, severity: "warning", message: "CSS variables do not work in emails. Use the color directly, like #8b6bff." },
+  { pattern: /<\s*link\b[^>]*stylesheet/gi, severity: "warning", message: "External stylesheets are ignored. Write the style on the element itself (style=\"...\")." },
+  { pattern: /<\s*style\b/gi, severity: "info", message: "Many clients ignore <style>. Prefer styles on the element itself (style=\"...\")." },
+  { pattern: /<\s*(?:form|input|button|video|iframe|object|embed)\b/gi, severity: "warning", message: "This element does not work in most email clients." },
+  { pattern: /(?:box-shadow|transform|animation|transition)\s*:/gi, severity: "info", message: "Many email clients ignore this effect." },
 ];
 
 const VARIABLE = /\{\{\s*([^{}]*?)\s*\}\}/g;
@@ -32,7 +32,7 @@ export function lintEmail(view: EditorView): Diagnostic[] {
   for (const match of text.matchAll(VARIABLE)) {
     if (KNOWN.test(match[1])) continue;
     const from = match.index ?? 0;
-    found.push({ from, to: from + match[0].length, severity: "warning", message: "Variável desconhecida: ela será enviada como está." });
+    found.push({ from, to: from + match[0].length, severity: "warning", message: "Unknown variable: it will be sent as written." });
   }
 
   return found;

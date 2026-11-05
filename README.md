@@ -74,14 +74,14 @@ make up
 It checks Docker, picks **free ports on its own** (so it never collides with anything you already run), starts everything, seeds the database and prints:
 
 ```
-✔ Form Sender no ar!
+✔ Form Sender is up!
 
-  Painel     http://localhost:3000
+  Dashboard  http://localhost:3000
   API        http://localhost:8000
   Mailpit    http://localhost:8025
 ```
 
-Open the **Painel**, create the first admin (a two-step setup: administrator, then SMTP, already filled with Mailpit), and build your first form. **Ctrl+C** stops everything.
+Open the **Dashboard**, create the first admin (a two-step setup: administrator, then SMTP, already filled with Mailpit), and build your first form. **Ctrl+C** stops everything.
 
 | Command | |
 |---|---|

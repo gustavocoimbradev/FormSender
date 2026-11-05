@@ -22,15 +22,15 @@ import { TestPanel } from "./TestPanel";
 type Tab = "config" | "integration" | "messages" | "test";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "config", label: "Configuração" },
-  { id: "integration", label: "Integração" },
-  { id: "messages", label: "Mensagens" },
-  { id: "test", label: "Testar formulário" },
+  { id: "config", label: "Settings" },
+  { id: "integration", label: "Integration" },
+  { id: "messages", label: "Messages" },
+  { id: "test", label: "Test form" },
 ];
 
 export const BackLink = () => (
   <Link href="/forms" className="mb-2 inline-flex min-h-11 items-center gap-1 text-base text-muted transition-colors duration-300 hover:text-text">
-    <ChevronIcon className="size-5 rotate-180" /> Formulários
+    <ChevronIcon className="size-5 rotate-180" /> Forms
   </Link>
 );
 
@@ -50,10 +50,10 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
     setDeleting(true);
     try {
       await deleteForm(current.code);
-      toast("Formulário excluído.");
+      toast("Form deleted.");
       router.push("/forms");
     } catch {
-      toast("Não foi possível excluir.", "error");
+      toast("Could not delete.", "error");
       setDeleting(false);
     }
   }
@@ -64,7 +64,7 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
       <>
         <BackLink />
         <Card className="p-8">
-          {missing ? <EmptyState icon={<FormsIcon />} title="Formulário não encontrado" text="Ele pode ter sido excluído." /> : <CardUnreachable onRetry={reload} />}
+          {missing ? <EmptyState icon={<FormsIcon />} title="Form not found" text="It may have been deleted." /> : <CardUnreachable onRetry={reload} />}
         </Card>
       </>
     );
@@ -88,7 +88,7 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
       <PageHeader title={current.name} back={<BackLink />} />
 
       <div className="mb-6">
-        <Pills label="Seções do formulário" value={tab} options={TABS} onChange={setTab} />
+        <Pills label="Form sections" value={tab} options={TABS} onChange={setTab} />
       </div>
 
       <div key={tab}>
@@ -100,9 +100,9 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
 
       <ConfirmDialog
         open={confirming}
-        title="Excluir formulário?"
-        message="O formulário deixa de funcionar e o token é descartado. As mensagens já recebidas continuam guardadas para consulta."
-        confirmLabel="Excluir formulário"
+        title="Delete form?"
+        message="The form stops working and its code is discarded. Messages already received are kept for reference."
+        confirmLabel="Delete form"
         onConfirm={() => void remove()}
         onClose={() => setConfirming(false)}
         busy={deleting}

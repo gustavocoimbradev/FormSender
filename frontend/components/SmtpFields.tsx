@@ -7,7 +7,7 @@ import { PasswordField } from "./PasswordField";
 import { Segmented } from "./Segmented";
 
 const SECURITY_OPTIONS: { value: Security; label: string }[] = [
-  { value: "none", label: "Nenhuma" },
+  { value: "none", label: "None" },
   { value: "ssl", label: "SSL" },
   { value: "tls", label: "TLS" },
 ];
@@ -29,7 +29,7 @@ export function SmtpFields({ draft, onChange, errors = {}, disabled, autoFocus }
       <div className="grid gap-x-4 sm:grid-cols-[1fr_9rem]">
         <Field
           id="smtp-host"
-          label="Servidor"
+          label="Server"
           value={draft.host}
           onChange={(event) => patch({ host: event.target.value })}
           error={errors.host}
@@ -38,11 +38,11 @@ export function SmtpFields({ draft, onChange, errors = {}, disabled, autoFocus }
           autoCapitalize="none"
           spellCheck={false}
           autoFocus={autoFocus}
-          placeholder="smtp.empresa.com"
+          placeholder="smtp.company.com"
         />
         <Field
           id="smtp-port"
-          label="Porta"
+          label="Port"
           value={draft.port}
           onChange={(event) => onChange(withPort(draft, event.target.value))}
           error={errors.port}
@@ -53,35 +53,35 @@ export function SmtpFields({ draft, onChange, errors = {}, disabled, autoFocus }
         />
       </div>
 
-      <Segmented label="Segurança" value={draft.security} options={SECURITY_OPTIONS} onChange={(security) => patch({ security, securityChosen: true })} disabled={disabled} />
+      <Segmented label="Security" value={draft.security} options={SECURITY_OPTIONS} onChange={(security) => patch({ security, securityChosen: true })} disabled={disabled} />
 
       <div className="grid gap-x-4 sm:grid-cols-2">
         <Field
           id="smtp-user"
-          label="Usuário"
+          label="Username"
           value={draft.username}
           onChange={(event) => onChange(withUsername(draft, event.target.value))}
           disabled={disabled}
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="Opcional"
+          placeholder="Optional"
         />
         <PasswordField
           id="smtp-password"
-          label="Senha do servidor"
+          label="Server password"
           value={draft.password}
           onChange={(password) => patch({ password })}
           disabled={disabled}
           showStrength={false}
-          placeholder="Opcional"
+          placeholder="Optional"
         />
       </div>
 
       <div className="grid gap-x-4 sm:grid-cols-2">
         <Field
           id="smtp-from"
-          label="Enviar como"
+          label="Send as"
           type="email"
           value={draft.fromAddress}
           onChange={(event) => patch({ fromAddress: event.target.value, fromTouched: true })}
@@ -91,16 +91,16 @@ export function SmtpFields({ draft, onChange, errors = {}, disabled, autoFocus }
           inputMode="email"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="nao-responda@empresa.com"
+          placeholder="no-reply@company.com"
         />
         <Field
           id="smtp-from-name"
-          label="Nome do remetente"
+          label="Sender name"
           value={draft.fromName}
           onChange={(event) => patch({ fromName: event.target.value })}
           disabled={disabled}
           autoComplete="off"
-          placeholder="Minha Empresa"
+          placeholder="My Company"
         />
       </div>
     </>

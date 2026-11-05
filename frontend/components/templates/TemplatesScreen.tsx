@@ -16,18 +16,18 @@ import { PageHeader } from "../ui/PageHeader";
 const COLUMNS: Column<Template>[] = [
   {
     id: "name",
-    header: "Nome",
+    header: "Name",
     primary: true,
     cell: (template) => (
       <span className="flex flex-wrap items-center gap-3">
         <span className="font-medium">{template.name}</span>
-        {template.is_default && template.name !== "Padrão" && <Badge tone="accent">Padrão</Badge>}
+        {template.is_default && template.name !== "Default" && <Badge tone="accent">Default</Badge>}
       </span>
     ),
   },
-  { id: "subject", header: "Assunto", cell: (template) => <span className="text-muted">{template.subject}</span> },
-  { id: "forms", header: "Em uso por", cell: (template) => (template.is_default ? <span className="text-muted">Formulários sem escolha</span> : plural(template.forms_count, "formulário", "formulários")), className: "whitespace-nowrap" },
-  { id: "updated", header: "Alterado em", cell: (template) => <span className="text-muted">{formatDate(template.updated_at)}</span>, className: "whitespace-nowrap" },
+  { id: "subject", header: "Subject", cell: (template) => <span className="text-muted">{template.subject}</span> },
+  { id: "forms", header: "Used by", cell: (template) => (template.is_default ? <span className="text-muted">Forms with no choice</span> : plural(template.forms_count, "form", "forms")), className: "whitespace-nowrap" },
+  { id: "updated", header: "Updated", cell: (template) => <span className="text-muted">{formatDate(template.updated_at)}</span>, className: "whitespace-nowrap" },
 ];
 
 export function TemplatesScreen() {
@@ -36,7 +36,7 @@ export function TemplatesScreen() {
 
   const newTemplate = (
     <ActionLink href="/templates/new">
-      <PlusIcon /> Novo template
+      <PlusIcon /> New template
     </ActionLink>
   );
 
@@ -56,7 +56,7 @@ export function TemplatesScreen() {
             getKey={(template) => template.code}
             onRowClick={(template) => router.push(`/templates/${template.code}`)}
             loading={loading && !data}
-            empty={<EmptyState icon={<TemplateIcon />} title="Nenhum template ainda" text="Crie um e escolha em qual formulário usar." action={newTemplate} />}
+            empty={<EmptyState icon={<TemplateIcon />} title="No templates yet" text="Create one and choose which form uses it." action={newTemplate} />}
           />
         )}
       </Card>

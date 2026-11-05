@@ -32,7 +32,7 @@ it('sends a test message through the form, saved and queued like a real one', fu
 
     expect($submission->form_id)->toBe($form->id)
         ->and($submission->data)->toBe(['name' => 'Jane', 'email' => 'jane@example.com', 'message' => 'Hello'])
-        ->and($submission->origin)->toBe('painel')
+        ->and($submission->origin)->toBe('dashboard')
         ->and($submission->deliveries)->toHaveCount(2);
 
     Queue::assertPushed(SendFormSubmission::class, fn ($job) => $job->submission->is($submission));

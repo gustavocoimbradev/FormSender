@@ -24,13 +24,13 @@ class StoreTemplateRequest extends FormRequest
             /**
              * Name of the template, shown to your team.
              *
-             * @example Promocional
+             * @example Promotional
              */
             'name' => ['required', 'string', 'max:100'],
             /**
              * Subject of the email, in plain text. Variables such as `{{form_name}}` are filled in.
              *
-             * @example Nova mensagem: {{form_name}}
+             * @example New message: {{form_name}}
              */
             'subject' => ['required', 'string', 'max:200'],
             /**

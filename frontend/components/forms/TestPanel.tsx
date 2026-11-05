@@ -29,9 +29,9 @@ function validate(fields: FormField[], values: Values): Errors {
     const value = values[field.name];
     const empty = value === "" || value === undefined;
 
-    if (field.required && field.type !== "checkbox" && empty) errors[field.name] = "Preencha este campo.";
-    else if (!empty && field.type === "email" && !isValidEmail(String(value))) errors[field.name] = "Informe um e-mail válido.";
-    else if (!empty && field.type === "number" && Number.isNaN(Number(value))) errors[field.name] = "Informe um número.";
+    if (field.required && field.type !== "checkbox" && empty) errors[field.name] = "Fill in this field.";
+    else if (!empty && field.type === "email" && !isValidEmail(String(value))) errors[field.name] = "Enter a valid email.";
+    else if (!empty && field.type === "number" && Number.isNaN(Number(value))) errors[field.name] = "Enter a number.";
   }
 
   return errors;
@@ -84,14 +84,14 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
       setSent(true);
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
-        const fromServer: Errors = Object.fromEntries(Object.keys(error.fieldErrors).map((name) => [name, "Valor inválido."]));
+        const fromServer: Errors = Object.fromEntries(Object.keys(error.fieldErrors).map((name) => [name, "Invalid value."]));
 
         if (Object.keys(fromServer).length > 0) setErrors(fromServer);
-        else setFormError("Adicione ao menos um destino na aba Configuração para receber as mensagens.");
+        else setFormError("Add at least one destination in the Settings tab to receive messages.");
       } else if (error instanceof ApiError && error.status === 503) {
-        setFormError("O envio de e-mail ainda não está configurado. Peça a um administrador para ajustar o SMTP.");
+        setFormError("Email sending is not set up yet. Ask an administrator to configure SMTP.");
       } else {
-        toast("Não foi possível enviar o teste. Tente de novo.", "error");
+        toast("Could not send the test. Please try again.", "error");
       }
     } finally {
       setSending(false);
@@ -103,11 +103,11 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
       <Card className="animate-fade-up">
         <EmptyState
           icon={<FormsIcon />}
-          title="Este formulário ainda não tem campos"
-          text="Adicione os campos na aba Configuração para poder testá-lo."
+          title="This form has no fields yet"
+          text="Add fields in the Settings tab to test it."
           action={
             <ActionButton type="button" onClick={onOpenConfig}>
-              Ir para Configuração
+              Go to Settings
             </ActionButton>
           }
         />
@@ -120,8 +120,8 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
       <Card className="animate-fade-up">
         <div className="flex flex-col items-center px-6 py-12 text-center">
           <SuccessCheck />
-          <h2 className="mt-6 animate-fade-up text-2xl font-semibold tracking-tight">Teste enviado!</h2>
-          <p className="mt-2 max-w-sm text-base leading-relaxed text-muted">A mensagem foi para a fila e chega aos destinos em instantes.</p>
+          <h2 className="mt-6 animate-fade-up text-2xl font-semibold tracking-tight">Test sent!</h2>
+          <p className="mt-2 max-w-sm text-base leading-relaxed text-muted">The message is on its way and reaches the destinations in a moment.</p>
           <div className="mt-7 grid w-full max-w-sm gap-3 sm:grid-cols-2">
             <ActionButton
               type="button"
@@ -131,10 +131,10 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
                 setSent(false);
               }}
             >
-              Enviar outro
+              Send another
             </ActionButton>
             <ActionButton type="button" onClick={onOpenMessages}>
-              Ver mensagens
+              View messages
             </ActionButton>
           </div>
         </div>
@@ -144,7 +144,7 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
 
   return (
     <Card className="animate-fade-up">
-      <CardHeader title="Testar formulário" />
+      <CardHeader title="Test form" />
 
       <form onSubmit={submit} noValidate className="px-5 pb-6 sm:px-6">
         {form.fields.map((field, index) => {
@@ -161,7 +161,7 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
                   id={id}
                   label={label}
                   value={String(value)}
-                  options={[{ value: "", label: "Selecione" }, ...(field.options ?? []).map((option) => ({ value: option, label: option }))]}
+                  options={[{ value: "", label: "Select" }, ...(field.options ?? []).map((option) => ({ value: option, label: option }))]}
                   onChange={(next) => set(field.name, next)}
                   disabled={sending}
                 />
@@ -201,8 +201,8 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
           </p>
         )}
 
-        <Button type="submit" loading={sending} loadingLabel="Enviando…">
-          Enviar teste
+        <Button type="submit" loading={sending} loadingLabel="Sending…">
+          Send test
         </Button>
       </form>
     </Card>

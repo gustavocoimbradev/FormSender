@@ -158,7 +158,7 @@
     </a>
 
     @if (config('app.frontend_url'))
-        <a class="fs-panel" href="{{ config('app.frontend_url') }}">Abrir painel</a>
+        <a class="fs-panel" href="{{ config('app.frontend_url') }}">Open dashboard</a>
     @endif
 </header>
 

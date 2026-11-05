@@ -12,13 +12,13 @@ import { useEffect, useRef, type MutableRefObject } from "react";
 import { lintEmail } from "./emailLint";
 
 export const VARIABLES = [
-  { label: "{{form_name}}", detail: "Nome do formulário" },
-  { label: "{{date}}", detail: "Data e hora do envio" },
-  { label: "{{origin}}", detail: "Site de onde veio" },
-  { label: "{{ip}}", detail: "IP de quem enviou" },
-  { label: "{{fields}}", detail: "Todas as respostas, em tabela" },
-  { label: "{{field.NOME}}", detail: "Resposta de um campo" },
-  { label: "{{label.NOME}}", detail: "Rótulo de um campo" },
+  { label: "{{form_name}}", detail: "Form name" },
+  { label: "{{date}}", detail: "Date and time sent" },
+  { label: "{{origin}}", detail: "Site it came from" },
+  { label: "{{ip}}", detail: "Sender IP" },
+  { label: "{{fields}}", detail: "All answers, as a table" },
+  { label: "{{field.NAME}}", detail: "Answer of one field" },
+  { label: "{{label.NAME}}", detail: "Label of one field" },
 ];
 
 function variableCompletions(context: CompletionContext) {

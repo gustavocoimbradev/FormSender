@@ -21,14 +21,14 @@ class TestFormController extends Controller
      * Sends a message through the form the way a visitor would, but from the dashboard: it does not
      * depend on the allowed domains, because it is an action of a logged in user. It is validated,
      * saved and delivered to the destinations like any other message, and shows up in the form's
-     * messages with the origin `painel`.
+     * messages with the origin `dashboard`.
      */
     #[Endpoint(operationId: 'sendTestMessage')]
     public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission): JsonResponse
     {
         $submission = $receiveSubmission->execute($form, $request->validate($form->submissionRules()), [
             'ip' => $request->ip(),
-            'origin' => 'painel',
+            'origin' => 'dashboard',
             'user_agent' => Str::limit((string) $request->userAgent(), 255, ''),
         ]);
 

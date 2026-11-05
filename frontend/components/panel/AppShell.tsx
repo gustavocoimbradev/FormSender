@@ -13,9 +13,9 @@ import { useSession } from "./PanelFrame";
 type NavItem = { href: string; label: string; icon: ReactNode; adminOnly?: boolean };
 
 const NAV: NavItem[] = [
-  { href: "/forms", label: "Formulários", icon: <FormsIcon /> },
+  { href: "/forms", label: "Forms", icon: <FormsIcon /> },
   { href: "/templates", label: "Templates", icon: <TemplateIcon /> },
-  { href: "/users", label: "Usuários", icon: <UsersIcon />, adminOnly: true },
+  { href: "/users", label: "Users", icon: <UsersIcon />, adminOnly: true },
   { href: "/smtp", label: "SMTP", icon: <ServerIcon />, adminOnly: true },
 ];
 
@@ -74,7 +74,7 @@ function UserMenu() {
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        aria-label="Menu do usuário"
+        aria-label="User menu"
         aria-haspopup="menu"
         aria-expanded={open}
         className="grid size-12 place-items-center rounded-full ring-2 ring-surface/10 transition duration-300 hover:ring-accent/60"
@@ -97,7 +97,7 @@ function UserMenu() {
 
           <div className="mt-3 border-t border-surface/10 pt-2">
             <a href={docsUrl} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_LINK}>
-              <BookIcon /> Documentação <ExternalIcon className="ml-auto size-4 text-muted" />
+              <BookIcon /> Documentation <ExternalIcon className="ml-auto size-4 text-muted" />
             </a>
             {/* The local inbox, for developers: it shows every email the system sends, so only administrators get it. */}
             {mailpitUrl && isAdmin(user) && (
@@ -114,7 +114,7 @@ function UserMenu() {
             className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-surface/10 text-base font-medium text-text transition-colors duration-300 hover:bg-surface/[0.16]"
           >
             <LogoutIcon />
-            Sair
+            Sign out
           </button>
         </div>
       )}
@@ -229,14 +229,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <AmbientBackground />
 
       <header className="flex items-center px-4 py-3 lg:hidden">
-        <Link href="/" aria-label="FormSender, início">
+        <Link href="/" aria-label="FormSender, home">
           <Logo size="sm" />
         </Link>
       </header>
 
       <aside className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4">
         <div className="flex items-center gap-2 rounded-full border border-surface/10 bg-[#0c0c18]/90 p-2 shadow-[0_20px_60px_-20px_rgb(0_0_0/1)] backdrop-blur-xl lg:h-full lg:flex-col lg:rounded-[2rem] lg:bg-surface/[0.04] lg:px-0 lg:py-5">
-          <Link href="/" aria-label="FormSender, início" className="hidden rounded-full p-2 transition-opacity duration-300 hover:opacity-80 lg:mb-4 lg:mt-1 lg:block">
+          <Link href="/" aria-label="FormSender, home" className="hidden rounded-full p-2 transition-opacity duration-300 hover:opacity-80 lg:mb-4 lg:mt-1 lg:block">
             <LogoMark className="size-8" />
           </Link>
 

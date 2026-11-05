@@ -9,7 +9,7 @@ export function CodeBlock({ language, code, id = "snippet", flush = false }: { l
     <figure className={`${flush ? "" : "mt-5"} overflow-hidden rounded-control border border-surface/10 bg-bg/60`}>
       <figcaption className="flex items-center justify-between border-b border-surface/10 bg-surface/[0.03] pl-4 pr-1">
         <span className="text-sm font-medium tracking-wide text-muted">{language}</span>
-        <CopyButton value={code} variant="icon" label={`Copiar ${language}`} />
+        <CopyButton value={code} variant="icon" label={`Copy ${language}`} />
       </figcaption>
 
       <pre data-testid={id} className="max-h-[28rem] overflow-auto p-4 text-base leading-relaxed text-text/90">
@@ -27,7 +27,7 @@ export function CopyBox({ value, id, prefix }: { value: string; id: string; pref
       <code data-testid={id} className="min-w-0 flex-1 break-all py-3 text-base">
         {value}
       </code>
-      <CopyButton value={value} variant="icon" label="Copiar endereço" />
+      <CopyButton value={value} variant="icon" label="Copy address" />
     </div>
   );
 }

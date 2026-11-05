@@ -11,13 +11,13 @@ namespace App\Support;
  */
 final class DefaultEmailTemplate
 {
-    public const NAME = 'Padrão';
+    public const NAME = 'Default';
 
-    public const SUBJECT = 'Nova mensagem: {{form_name}}';
+    public const SUBJECT = 'New message: {{form_name}}';
 
     public const HTML = <<<'HTML'
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -41,27 +41,27 @@ final class DefaultEmailTemplate
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td style="padding:28px 28px 8px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-                    <span style="display:inline-block;padding:4px 12px;border-radius:999px;background-color:#1d1740;color:#b7a3ff;font-size:14px;font-weight:600;">Nova mensagem</span>
+                    <span style="display:inline-block;padding:4px 12px;border-radius:999px;background-color:#1d1740;color:#b7a3ff;font-size:14px;font-weight:600;">New message</span>
                   </td>
                 </tr>
                 <tr>
                   <td style="padding:8px 28px 4px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:26px;line-height:1.25;font-weight:600;color:#f4f4fb;">{{form_name}}</td>
                 </tr>
                 <tr>
-                  <td style="padding:0 28px 20px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;color:#a3a3ba;">Recebida em {{date}}</td>
+                  <td style="padding:0 28px 20px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;color:#a3a3ba;">Received on {{date}}</td>
                 </tr>
                 <tr>
                   <td style="padding:0 28px;">{{fields}}</td>
                 </tr>
                 <tr>
-                  <td style="padding:20px 28px 28px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#7e7e96;">Enviada de {{origin}} &middot; IP {{ip}}</td>
+                  <td style="padding:20px 28px 28px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#7e7e96;">Sent from {{origin}} &middot; IP {{ip}}</td>
                 </tr>
               </table>
             </td>
           </tr>
 
           <tr>
-            <td align="center" style="padding:20px 0 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#7e7e96;">Enviado por Form Sender</td>
+            <td align="center" style="padding:20px 0 0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#7e7e96;">Sent by Form Sender</td>
           </tr>
         </table>
 

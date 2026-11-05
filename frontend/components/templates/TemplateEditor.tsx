@@ -31,12 +31,12 @@ export function TemplateEditor({ template, initial, onSaved, onDelete }: Templat
 
   async function save() {
     const found: Errors = {};
-    if (!name.trim()) found.name = "Dê um nome ao template.";
-    if (!subject.trim()) found.subject = "Informe o assunto do e-mail.";
-    if (!html.trim()) found.html = "O e-mail não pode ficar vazio.";
+    if (!name.trim()) found.name = "Give the template a name.";
+    if (!subject.trim()) found.subject = "Enter the email subject.";
+    if (!html.trim()) found.html = "The email cannot be empty.";
     setErrors(found);
     if (Object.keys(found).length > 0) {
-      toast("Confira os campos destacados.", "error");
+      toast("Check the highlighted fields.", "error");
       return;
     }
 
@@ -44,18 +44,18 @@ export function TemplateEditor({ template, initial, onSaved, onDelete }: Templat
     try {
       const input = { name: name.trim(), subject: subject.trim(), html };
       const saved = template ? await updateTemplate(template.code, input) : await createTemplate(input);
-      toast(template ? "Template salvo." : "Template criado.");
+      toast(template ? "Template saved." : "Template created.");
       onSaved(saved);
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         setErrors({
-          name: error.fieldErrors.name ? "Confira o nome do template." : undefined,
-          subject: error.fieldErrors.subject ? "Confira o assunto (até 200 caracteres)." : undefined,
-          html: error.fieldErrors.html ? "Confira o e-mail: scripts não são permitidos e o limite é 100 mil caracteres." : undefined,
+          name: error.fieldErrors.name ? "Check the template name." : undefined,
+          subject: error.fieldErrors.subject ? "Check the subject (up to 200 characters)." : undefined,
+          html: error.fieldErrors.html ? "Check the email: scripts are not allowed and the limit is 100,000 characters." : undefined,
         });
-        toast("Confira os campos destacados.", "error");
+        toast("Check the highlighted fields.", "error");
       } else {
-        toast("Não foi possível salvar. Tente de novo.", "error");
+        toast("Could not save. Please try again.", "error");
       }
     } finally {
       setSaving(false);
@@ -72,18 +72,18 @@ export function TemplateEditor({ template, initial, onSaved, onDelete }: Templat
       className="space-y-6"
     >
       <Card className="animate-fade-up">
-        <CardHeader title="Geral" />
+        <CardHeader title="General" />
         <div className="grid gap-x-4 px-5 pb-2 sm:grid-cols-2 sm:px-6">
-          <Field id="template-name" label="Nome do template" value={name} onChange={(event) => setName(event.target.value)} error={errors.name} disabled={saving} placeholder="Promocional" autoComplete="off" autoFocus={!template} />
-          <Field id="template-subject" label="Assunto do e-mail" value={subject} onChange={(event) => setSubject(event.target.value)} error={errors.subject} disabled={saving} placeholder="Nova mensagem: {{form_name}}" autoComplete="off" spellCheck={false} />
+          <Field id="template-name" label="Template name" value={name} onChange={(event) => setName(event.target.value)} error={errors.name} disabled={saving} placeholder="Promotional" autoComplete="off" autoFocus={!template} />
+          <Field id="template-subject" label="Email subject" value={subject} onChange={(event) => setSubject(event.target.value)} error={errors.subject} disabled={saving} placeholder="New message: {{form_name}}" autoComplete="off" spellCheck={false} />
         </div>
       </Card>
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
         <Card className="min-w-0 animate-fade-up">
-          <CardHeader title="E-mail" />
+          <CardHeader title="Email" />
           <div className="px-5 pb-6 sm:px-6">
-            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Inserir variável">
+            <div className="mb-3 flex flex-wrap gap-2" role="group" aria-label="Insert variable">
               {VARIABLES.map((variable) => (
                 <button
                   key={variable.label}
@@ -97,7 +97,7 @@ export function TemplateEditor({ template, initial, onSaved, onDelete }: Templat
               ))}
             </div>
 
-            <CodeEditor value={html} onChange={setHtml} insertRef={insert} label="HTML do e-mail" />
+            <CodeEditor value={html} onChange={setHtml} insertRef={insert} label="Email HTML" />
 
             <p aria-live="polite" className="mt-2 text-base text-danger">
               {errors.html}
@@ -106,7 +106,7 @@ export function TemplateEditor({ template, initial, onSaved, onDelete }: Templat
         </Card>
 
         <Card className="min-w-0 animate-fade-up">
-          <CardHeader title="Prévia" />
+          <CardHeader title="Preview" />
           <div className="px-5 pb-6 sm:px-6">
             <TemplatePreview subject={subject} html={html} />
           </div>
@@ -118,14 +118,14 @@ export function TemplateEditor({ template, initial, onSaved, onDelete }: Templat
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         {onDelete ? (
           <ActionButton type="button" variant="danger" onClick={onDelete} disabled={saving} className="h-14 px-6">
-            <TrashIcon /> Excluir
+            <TrashIcon /> Delete
           </ActionButton>
         ) : (
           <span aria-hidden="true" />
         )}
 
         <ActionButton type="submit" loading={saving} className="h-14 w-full px-8 sm:w-auto">
-          {template ? "Salvar alterações" : "Criar template"}
+          {template ? "Save changes" : "Create template"}
         </ActionButton>
       </div>
     </form>

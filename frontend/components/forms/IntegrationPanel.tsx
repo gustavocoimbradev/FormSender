@@ -41,16 +41,16 @@ export function IntegrationPanel({ form }: { form: Form }) {
 
   return (
     <Card className="animate-fade-up">
-      <CardHeader title="Como usar" />
+      <CardHeader title="How to use" />
 
       <div className="px-5 pb-6 sm:px-6">
         <CopyBox id="endpoint" prefix="POST" value={endpoint} />
 
-        <span className="mb-2 mt-6 block text-base font-medium">Corpo da requisição</span>
+        <span className="mb-2 mt-6 block text-base font-medium">Request body</span>
         <CodeBlock id="request-body" language="JSON" code={JSON.stringify(sample(form), null, 2)} flush />
 
         <div className="mt-6">
-          <Select id="snippet-language" label="Linguagem" value={targetId} options={TARGETS.map(({ id, label }) => ({ value: id, label, icon: <BrandIcon id={id} /> }))} onChange={choose} />
+          <Select id="snippet-language" label="Language" value={targetId} options={TARGETS.map(({ id, label }) => ({ value: id, label, icon: <BrandIcon id={id} /> }))} onChange={choose} />
         </div>
 
         <CodeBlock key={target.id} language={target.label} code={target.code(form, endpoint)} />

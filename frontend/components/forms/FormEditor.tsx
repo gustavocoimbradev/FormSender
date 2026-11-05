@@ -46,7 +46,7 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
   const [saving, setSaving] = useState(false);
   const templates = useResource(listTemplates, []);
   const templateOptions = [
-    { value: "", label: "Padrão" },
+    { value: "", label: "Default" },
     ...(templates.data ?? []).filter((template) => !template.is_default).map((template) => ({ value: template.code, label: template.name })),
   ];
 
@@ -79,21 +79,21 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
     const found = validateDraft(draft);
     setErrors(found);
     if (hasErrors(found)) {
-      toast("Confira os campos destacados.", "error");
+      toast("Check the highlighted fields.", "error");
       return;
     }
 
     setSaving(true);
     try {
       const saved = form ? await updateForm(form.code, inputFromDraft(draft)) : await createForm(inputFromDraft(draft));
-      toast(form ? "Formulário salvo." : "Formulário criado.");
+      toast(form ? "Form saved." : "Form created.");
       onSaved(saved);
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         setErrors(errorsFromApi(error, draft));
-        toast("Confira os campos destacados.", "error");
+        toast("Check the highlighted fields.", "error");
       } else {
-        toast("Não foi possível salvar. Tente de novo.", "error");
+        toast("Could not save. Please try again.", "error");
       }
     } finally {
       setSaving(false);
@@ -110,32 +110,32 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       className="space-y-6"
     >
       <Card className="animate-fade-up">
-        <CardHeader title="Geral" />
+        <CardHeader title="General" />
         <div className="px-5 pb-2 sm:px-6">
           <Field
             id="form-name"
-            label="Nome do formulário"
+            label="Form name"
             value={draft.name}
             onChange={(event) => patch({ name: event.target.value })}
             error={errors.name}
             disabled={saving}
-            placeholder="Contato do site"
+            placeholder="Website contact"
             autoFocus={!form}
             autoComplete="off"
           />
-          <Select id="form-template" label="Template do e-mail" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
+          <Select id="form-template" label="Email template" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
         </div>
       </Card>
 
       <Card className="animate-fade-up">
-        <CardHeader title="Campos">
+        <CardHeader title="Fields">
           <ActionButton type="button" variant="ghost" onClick={() => patch({ fields: [...draft.fields, emptyField()] })} disabled={saving}>
-            <PlusIcon /> Adicionar campo
+            <PlusIcon /> Add field
           </ActionButton>
         </CardHeader>
 
         <div className="space-y-4 px-5 pb-6 sm:px-6">
-          {draft.fields.length === 0 && <p className="text-base leading-relaxed text-muted">Nenhum campo ainda. Adicione os campos que o formulário aceita, como nome, e-mail e mensagem.</p>}
+          {draft.fields.length === 0 && <p className="text-base leading-relaxed text-muted">No fields yet. Add the fields the form accepts, such as name, email and message.</p>}
 
           {draft.fields.map((field, index) => {
             const row = errors.fields[field.key] ?? {};
@@ -145,17 +145,17 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
                 <div className="grid gap-x-4 sm:grid-cols-2">
                   <Field
                     id={`${field.key}-label`}
-                    label="Rótulo"
+                    label="Label"
                     value={field.label}
                     onChange={(event) => patchField(field.key, { label: event.target.value })}
                     error={row.label}
                     disabled={saving}
-                    placeholder="Seu e-mail"
+                    placeholder="Your email"
                     autoComplete="off"
                   />
                   <Field
                     id={`${field.key}-name`}
-                    label="Nome do campo"
+                    label="Field name"
                     value={field.name}
                     onChange={(event) => patchField(field.key, { name: event.target.value, nameTouched: true })}
                     error={row.name}
@@ -169,18 +169,18 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
 
                 <div className="grid items-end gap-x-4 gap-y-3 sm:grid-cols-[1fr_auto]">
                   <Select id={`${field.key}-type`} label="Tipo" value={field.type} options={FIELD_TYPES} onChange={(type) => patchField(field.key, { type })} disabled={saving} />
-                  <Switch id={`${field.key}-required`} label="Obrigatório" checked={field.required} onChange={(required) => patchField(field.key, { required })} disabled={saving} />
+                  <Switch id={`${field.key}-required`} label="Required" checked={field.required} onChange={(required) => patchField(field.key, { required })} disabled={saving} />
                 </div>
 
                 {field.type === "select" && (
                   <div className="mt-4">
                     <ChipsInput
                       id={`${field.key}-options`}
-                      label="Opções"
+                      label="Options"
                       values={field.options}
                       onChange={(options) => patchField(field.key, { options })}
                       error={row.options}
-                      placeholder="Digite uma opção e tecle Enter"
+                      placeholder="Type an option and press Enter"
                       disabled={saving}
                       max={100}
                     />
@@ -188,13 +188,13 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
                 )}
 
                 <div className="mt-2 flex justify-end gap-1">
-                  <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, -1)} disabled={saving || index === 0} aria-label="Subir campo">
+                  <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, -1)} disabled={saving || index === 0} aria-label="Move field up">
                     <ArrowUpIcon />
                   </button>
-                  <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, 1)} disabled={saving || index === draft.fields.length - 1} aria-label="Descer campo">
+                  <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, 1)} disabled={saving || index === draft.fields.length - 1} aria-label="Move field down">
                     <ArrowDownIcon />
                   </button>
-                  <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })} disabled={saving} aria-label="Remover campo">
+                  <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })} disabled={saving} aria-label="Remove field">
                     <TrashIcon />
                   </button>
                 </div>
@@ -205,28 +205,28 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       </Card>
 
       <Card className="animate-fade-up">
-        <CardHeader title="Entrega" />
+        <CardHeader title="Delivery" />
         <div className="px-5 pb-2 sm:px-6">
           <ChipsInput
             id="destinations"
-            label="Destinos"
+            label="Destinations"
             values={draft.destinations}
             onChange={(destinations) => patch({ destinations })}
             validate={validateEmailChip}
             normalize={(value) => value.trim().toLowerCase()}
-            placeholder="voce@empresa.com"
+            placeholder="you@company.com"
             error={errors.destinations}
             max={20}
             disabled={saving}
           />
           <ChipsInput
             id="domains"
-            label="Sites permitidos"
+            label="Allowed sites"
             values={draft.domains}
             onChange={(domains) => patch({ domains })}
             validate={validateDomain}
             normalize={normalizeDomain}
-            placeholder="empresa.com ou *.empresa.com"
+            placeholder="company.com or *.company.com"
             error={errors.domains}
             disabled={saving}
           />
@@ -238,14 +238,14 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         {onDelete ? (
           <ActionButton type="button" variant="danger" onClick={onDelete} disabled={saving} className="h-14 px-6">
-            <TrashIcon /> Excluir
+            <TrashIcon /> Delete
           </ActionButton>
         ) : (
           <span aria-hidden="true" />
         )}
 
         <ActionButton type="submit" loading={saving} className="h-14 w-full px-8 sm:w-auto">
-          {form ? "Salvar alterações" : "Criar formulário"}
+          {form ? "Save changes" : "Create form"}
         </ActionButton>
       </div>
     </form>

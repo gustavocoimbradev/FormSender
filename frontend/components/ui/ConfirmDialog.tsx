@@ -22,7 +22,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel, onConfirm, o
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2">
         <GhostButton type="button" onClick={onClose} disabled={busy} data-autofocus>
-          Cancelar
+          Cancel
         </GhostButton>
         <Button
           type="button"

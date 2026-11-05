@@ -74,8 +74,8 @@ export function withUsername(draft: SmtpDraft, username: string): SmtpDraft {
 /** Maps the API's field errors (`smtp.host`...) to friendly messages. */
 export function smtpErrorsFromApi(fieldErrors: Record<string, string[]>): SmtpErrors {
   const errors: SmtpErrors = {};
-  if (fieldErrors["smtp.host"]) errors.host = "Informe o endereço do servidor.";
-  if (fieldErrors["smtp.port"]) errors.port = "Informe uma porta entre 1 e 65535.";
-  if (fieldErrors["smtp.from_address"]) errors.fromAddress = "Informe um e-mail de remetente válido.";
+  if (fieldErrors["smtp.host"]) errors.host = "Enter the server address.";
+  if (fieldErrors["smtp.port"]) errors.port = "Enter a port between 1 and 65535.";
+  if (fieldErrors["smtp.from_address"]) errors.fromAddress = "Enter a valid sender email.";
   return errors;
 }

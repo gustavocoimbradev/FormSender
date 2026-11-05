@@ -68,36 +68,36 @@ value() { grep -E "^$1=" .env 2>/dev/null | cut -d= -f2; }
 preflight() {
     command -v docker >/dev/null 2>&1 || {
         if is_wsl; then
-            fail "O Docker não foi encontrado neste terminal." \
-                "Abra o Docker Desktop > Settings > Resources > WSL integration, ative esta distro" \
-                "e abra um novo terminal."
+            fail "Docker was not found in this terminal." \
+                "Open Docker Desktop > Settings > Resources > WSL integration, enable this distro" \
+                "and open a new terminal."
         fi
-        fail "O Docker não foi encontrado." "Instale em https://docs.docker.com/get-docker/ e rode make up de novo."
+        fail "Docker was not found." "Install it from https://docs.docker.com/get-docker/ and run make up again."
     }
 
     local info
     if ! info="$(docker info 2>&1)"; then
         if echo "$info" | grep -qi 'wsl'; then
-            fail "O Docker não está integrado a este terminal (WSL)." \
-                "Abra o Docker Desktop > Settings > Resources > WSL integration, ative esta distro" \
-                "e abra um novo terminal."
+            fail "Docker is not integrated with this terminal (WSL)." \
+                "Open Docker Desktop > Settings > Resources > WSL integration, enable this distro" \
+                "and open a new terminal."
         elif echo "$info" | grep -qi 'permission denied'; then
-            fail "Sem permissão para usar o Docker." \
-                "Adicione seu usuário ao grupo docker (sudo usermod -aG docker \$USER) e abra um novo terminal."
+            fail "No permission to use Docker." \
+                "Add your user to the docker group (sudo usermod -aG docker \$USER) and open a new terminal."
         fi
-        fail "O Docker não está em execução." "Abra o Docker Desktop, espere ele iniciar e rode make up de novo."
+        fail "Docker is not running." "Open Docker Desktop, wait for it to start and run make up again."
     fi
 
     docker compose version >/dev/null 2>&1 \
-        || fail "O Docker Compose (v2) não foi encontrado." "Atualize o Docker Desktop ou instale o plugin docker-compose-plugin."
+        || fail "Docker Compose (v2) was not found." "Update Docker Desktop or install the docker-compose-plugin."
 
-    ok "Docker pronto"
+    ok "Docker ready"
 }
 
 choose_ports() {
     ./scripts/free-ports.sh >/dev/null 2>&1 \
-        || fail "Não consegui escolher as portas do projeto." "Rode ./scripts/free-ports.sh para ver o motivo."
-    ok "Portas escolhidas"
+        || fail "Could not choose the project's ports." "Run ./scripts/free-ports.sh to see why."
+    ok "Ports chosen"
 }
 
 # Explains, in plain words, why `docker compose up` failed, then ends the command.
@@ -106,29 +106,29 @@ diagnose() {
     local details=()
 
     port="$(grep -oE 'Bind for [^ ]*:[0-9]+ failed' "$LOG_FILE" 2>/dev/null | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' | tail -1)"
-    [ -n "$port" ] && fail "A porta $port foi ocupada por outro programa." "Rode make up de novo: uma porta livre será escolhida."
+    [ -n "$port" ] && fail "Port $port was taken by another program." "Run make up again: a free port will be picked."
 
     if grep -qiE 'pull access denied|no such host|TLS handshake|i/o timeout|Temporary failure in name resolution' "$LOG_FILE" 2>/dev/null; then
-        fail "Não consegui baixar as imagens do Docker." "Verifique sua conexão com a internet e rode make up de novo."
+        fail "Could not download the Docker images." "Check your internet connection and run make up again."
     fi
 
     bad="$(docker compose ps -a --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null \
         | awk '$2 != "running" || ($3 != "" && $3 != "healthy") { print $1 }' | head -3)"
 
     for service in $bad; do
-        details+=("Serviço com problema: $service")
+        details+=("Service with a problem: $service")
         while IFS= read -r line; do details+=("  $line"); done < <(docker compose logs --no-color --tail 6 "$service" 2>/dev/null | cut -c1-110)
     done
 
-    fail "Algo não subiu como esperado." "${details[@]}" "Veja tudo com: make up logs   (e, para limpar: make down)"
+    fail "Something did not start as expected." "${details[@]}" "See everything with: make up logs   (and to clean up: make down)"
 }
 
 seed_database() {
     local output
     if ! output="$(docker compose exec -T app php artisan db:seed --force 2>&1)"; then
-        fail "Não consegui preparar o banco de dados." "$(echo "$output" | tail -2 | cut -c1-110)" "Veja tudo com: make up logs"
+        fail "Could not prepare the database." "$(echo "$output" | tail -2 | cut -c1-110)" "See everything with: make up logs"
     fi
-    ok "Banco de dados pronto"
+    ok "Database ready"
 }
 
 check_panel() {
@@ -138,10 +138,10 @@ check_panel() {
     port="$(value FRONTEND_PORT)"
     code="$(curl -s -o /dev/null -w '%{http_code}' -m 10 "http://localhost:$port/api/setup" 2>/dev/null)"
 
-    [ "$code" = "200" ] || fail "O painel subiu, mas não está conseguindo falar com o servidor." \
-        "Resposta recebida em localhost:$port: ${code:-nenhuma}" \
-        "Veja os detalhes com: make up logs"
-    ok "Painel respondendo"
+    [ "$code" = "200" ] || fail "The dashboard started, but it cannot reach the server." \
+        "Response received on localhost:$port: ${code:-none}" \
+        "See the details with: make up logs"
+    ok "Dashboard responding"
 }
 
 summary() {
@@ -149,12 +149,12 @@ summary() {
     front="$(value FRONTEND_PORT)"
     api="$(value APP_PORT)"
     mailpit="$(value MAILPIT_UI_PORT)"
-    printf '\n%s%s✔ Form Sender no ar!%s\n\n' "$G" "$B" "$N"
-    printf '  Painel     %s%s%s\n' "$B" "http://localhost:$front" "$N"
+    printf '\n%s%s✔ Form Sender is up!%s\n\n' "$G" "$B" "$N"
+    printf '  Dashboard  %s%s%s\n' "$B" "http://localhost:$front" "$N"
     printf '  API        %s%s%s\n' "$B" "http://localhost:$api" "$N"
     printf '  Mailpit    %s%s%s\n' "$B" "http://localhost:$mailpit" "$N"
 
-    printf '\n  %sPressione Ctrl+C para parar tudo.%s\n' "$D" "$N"
+    printf '\n  %sPress Ctrl+C to stop everything.%s\n' "$D" "$N"
 }
 
 # ------------------------------------------------------------------ the modes
@@ -169,7 +169,7 @@ if [ "$MODE" = "after" ]; then
         fi
         sleep 3
     done
-    warn "O painel ainda não respondeu. Acompanhe os logs acima."
+    warn "The dashboard has not responded yet. Follow the logs above."
     exit 0
 fi
 
@@ -194,8 +194,8 @@ mkdir -p "$LOG_DIR"
 : > "$LOG_FILE"
 
 docker compose up -d --wait --remove-orphans >"$LOG_FILE" 2>&1 &
-spin $! "Iniciando os serviços (na primeira vez pode levar alguns minutos)" || diagnose
-ok "Serviços no ar"
+spin $! "Starting the services (the first time can take a few minutes)" || diagnose
+ok "Services up"
 
 seed_database
 check_panel
@@ -205,8 +205,8 @@ stop_all() {
     trap - INT TERM HUP
     printf '\n'
     docker compose stop >"$LOG_DIR/stop.log" 2>&1 &
-    spin $! "Parando os serviços" || warn "Nem tudo parou. Rode make down."
-    ok "Tudo parado. Até logo!"
+    spin $! "Stopping the services" || warn "Not everything stopped. Run make down."
+    ok "Everything stopped. See you!"
     exit 0
 }
 

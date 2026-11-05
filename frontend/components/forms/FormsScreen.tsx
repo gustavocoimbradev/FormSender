@@ -15,16 +15,16 @@ import { PageHeader } from "../ui/PageHeader";
 import { Pagination } from "../ui/Pagination";
 
 const COLUMNS: Column<Form>[] = [
-  { id: "name", header: "Nome", primary: true, cell: (form) => <span className="font-medium">{form.name}</span> },
-  { id: "fields", header: "Campos", cell: (form) => plural(form.fields.length, "campo", "campos"), className: "whitespace-nowrap" },
-  { id: "destinations", header: "Destinos", cell: (form) => plural(form.destinations.length, "destino", "destinos"), className: "whitespace-nowrap" },
+  { id: "name", header: "Name", primary: true, cell: (form) => <span className="font-medium">{form.name}</span> },
+  { id: "fields", header: "Fields", cell: (form) => plural(form.fields.length, "field", "fields"), className: "whitespace-nowrap" },
+  { id: "destinations", header: "Destinations", cell: (form) => plural(form.destinations.length, "destination", "destinations"), className: "whitespace-nowrap" },
   {
     id: "domains",
-    header: "Sites permitidos",
-    cell: (form) => (form.allowed_domains.length === 0 ? <span className="text-muted">Qualquer site</span> : plural(form.allowed_domains.length, "site", "sites")),
+    header: "Allowed sites",
+    cell: (form) => (form.allowed_domains.length === 0 ? <span className="text-muted">Any site</span> : plural(form.allowed_domains.length, "site", "sites")),
     className: "whitespace-nowrap",
   },
-  { id: "created", header: "Criado em", cell: (form) => <span className="text-muted">{formatDate(form.created_at)}</span>, className: "whitespace-nowrap" },
+  { id: "created", header: "Created", cell: (form) => <span className="text-muted">{formatDate(form.created_at)}</span>, className: "whitespace-nowrap" },
 ];
 
 export function FormsScreen() {
@@ -34,13 +34,13 @@ export function FormsScreen() {
 
   const newForm = (
     <ActionLink href="/forms/new">
-      <PlusIcon /> Novo formulário
+      <PlusIcon /> New form
     </ActionLink>
   );
 
   return (
     <>
-      <PageHeader title="Formulários">{newForm}</PageHeader>
+      <PageHeader title="Forms">{newForm}</PageHeader>
 
       <Card className="animate-fade-up overflow-hidden">
         {error ? (
@@ -55,7 +55,7 @@ export function FormsScreen() {
               getKey={(form) => form.code}
               onRowClick={(form) => router.push(`/forms/${form.code}`)}
               loading={loading && !data}
-              empty={<EmptyState icon={<FormsIcon />} title="Nenhum formulário ainda" text="Crie o primeiro e use o endereço dele no seu site." action={newForm} />}
+              empty={<EmptyState icon={<FormsIcon />} title="No forms yet" text="Create the first one and use its address on your website." action={newForm} />}
             />
             {data && <Pagination meta={data.meta} onPage={setPage} />}
           </>

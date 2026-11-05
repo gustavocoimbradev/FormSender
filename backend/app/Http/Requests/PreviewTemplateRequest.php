@@ -24,7 +24,7 @@ class PreviewTemplateRequest extends FormRequest
             /**
              * Subject of the email to preview.
              *
-             * @example Nova mensagem: {{form_name}}
+             * @example New message: {{form_name}}
              */
             'subject' => ['present', 'nullable', 'string', 'max:200'],
             /**

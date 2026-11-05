@@ -35,11 +35,11 @@ export function UsersScreen() {
     setBusy(true);
     try {
       await deleteUser(removing.id);
-      toast("Usuário excluído.");
+      toast("User deleted.");
       setRemoving(undefined);
       reload();
     } catch (failure) {
-      toast(failure instanceof ApiError && failure.status === 403 ? "Você não pode excluir esse usuário." : "Não foi possível excluir.", "error");
+      toast(failure instanceof ApiError && failure.status === 403 ? "You cannot delete this user." : "Could not delete.", "error");
     } finally {
       setBusy(false);
     }
@@ -48,31 +48,31 @@ export function UsersScreen() {
   const columns: Column<ManagedUser>[] = [
     {
       id: "name",
-      header: "Nome",
+      header: "Name",
       primary: true,
       cell: (item) => (
         <span className="inline-flex flex-wrap items-center gap-2 font-medium">
           {item.name}
-          {item.id === actor.id && <Badge tone="neutral">Você</Badge>}
+          {item.id === actor.id && <Badge tone="neutral">You</Badge>}
         </span>
       ),
     },
-    { id: "email", header: "E-mail", cell: (item) => <span className="break-all text-muted">{item.email}</span> },
-    { id: "role", header: "Papel", cell: (item) => <Badge tone={item.role === "admin" ? "accent" : "neutral"}>{roleLabel(item)}</Badge>, className: "whitespace-nowrap" },
-    { id: "created", header: "Criado em", cell: (item) => <span className="text-muted">{formatDate(item.created_at)}</span>, className: "whitespace-nowrap" },
+    { id: "email", header: "Email", cell: (item) => <span className="break-all text-muted">{item.email}</span> },
+    { id: "role", header: "Role", cell: (item) => <Badge tone={item.role === "admin" ? "accent" : "neutral"}>{roleLabel(item)}</Badge>, className: "whitespace-nowrap" },
+    { id: "created", header: "Created", cell: (item) => <span className="text-muted">{formatDate(item.created_at)}</span>, className: "whitespace-nowrap" },
     {
       id: "actions",
-      header: "Ações",
+      header: "Actions",
       className: "w-px whitespace-nowrap",
       cell: (item) => (
         <span className="inline-flex gap-1">
           {canEditUser(actor, item) && (
-            <button type="button" className={ICON_BUTTON} onClick={() => setEditing(item)} aria-label={`Editar ${item.name}`}>
+            <button type="button" className={ICON_BUTTON} onClick={() => setEditing(item)} aria-label={`Edit ${item.name}`}>
               <PencilIcon />
             </button>
           )}
           {canDeleteUser(actor, item) && (
-            <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => setRemoving(item)} aria-label={`Excluir ${item.name}`}>
+            <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => setRemoving(item)} aria-label={`Delete ${item.name}`}>
               <TrashIcon />
             </button>
           )}
@@ -83,13 +83,13 @@ export function UsersScreen() {
 
   const newUser = (
     <ActionButton type="button" onClick={() => setEditing("new")}>
-      <PlusIcon /> Novo usuário
+      <PlusIcon /> New user
     </ActionButton>
   );
 
   return (
     <>
-      <PageHeader title="Usuários">{newUser}</PageHeader>
+      <PageHeader title="Users">{newUser}</PageHeader>
 
       <Card className="animate-fade-up overflow-hidden">
         {error ? (
@@ -103,7 +103,7 @@ export function UsersScreen() {
               rows={data?.data ?? []}
               getKey={(item) => item.id}
               loading={loading && !data}
-              empty={<EmptyState icon={<UsersIcon />} title="Nenhum usuário" action={newUser} />}
+              empty={<EmptyState icon={<UsersIcon />} title="No users" action={newUser} />}
             />
             {data && <Pagination meta={data.meta} onPage={setPage} />}
           </>
@@ -114,9 +114,9 @@ export function UsersScreen() {
 
       <ConfirmDialog
         open={removing !== undefined}
-        title="Excluir usuário?"
-        message={removing ? `${removing.name} (${removing.email}) perde o acesso na hora.` : ""}
-        confirmLabel="Excluir usuário"
+        title="Delete user?"
+        message={removing ? `${removing.name} (${removing.email}) loses access immediately.` : ""}
+        confirmLabel="Delete user"
         onConfirm={() => void remove()}
         onClose={() => setRemoving(undefined)}
         busy={busy}

@@ -57,7 +57,7 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
             type="button"
             onClick={onClose}
             disabled={busy}
-            aria-label="Fechar"
+            aria-label="Close"
             className="grid size-11 place-items-center rounded-control text-muted transition-colors duration-300 hover:text-text disabled:opacity-40"
           >
             <CloseIcon />

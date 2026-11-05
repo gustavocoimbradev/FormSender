@@ -6,7 +6,7 @@ export type Target = {
   code: (form: Form, endpoint: string) => string;
 };
 
-const FALLBACK: FormField = { name: "mensagem", label: "Mensagem", type: "textarea", required: true };
+const FALLBACK: FormField = { name: "message", label: "Message", type: "textarea", required: true };
 
 const fieldsOf = (form: Form): FormField[] => (form.fields.length > 0 ? form.fields : [FALLBACK]);
 
@@ -28,8 +28,8 @@ function payloadValue(field: FormField, read: string): string {
   return read;
 }
 
-const OK = "Mensagem enviada!";
-const FAIL = "Não foi possível enviar. Tente de novo.";
+const OK = "Message sent!";
+const FAIL = "Could not send. Please try again.";
 
 /** A site only reaches FormSender if it is on the allowed list; server code must say which site it speaks for. */
 function serverOrigin(form: Form): string | null {
@@ -41,7 +41,7 @@ function serverOrigin(form: Form): string | null {
 /** The JSON the form is sent as: every accepted field with an example value. */
 export function sample(form: Form): Record<string, unknown> {
   return Object.fromEntries(
-    fieldsOf(form).map((field) => [field.name, field.type === "checkbox" ? true : field.type === "number" ? 1 : field.type === "email" ? "pessoa@exemplo.com" : "..."]),
+    fieldsOf(form).map((field) => [field.name, field.type === "checkbox" ? true : field.type === "number" ? 1 : field.type === "email" ? "person@example.com" : "..."]),
   );
 }
 
@@ -73,7 +73,7 @@ export function htmlSnippet(form: Form, endpoint: string): string {
   return `<form id="formsender">
 ${rows}
 
-  <button type="submit">Enviar</button>
+  <button type="submit">Send</button>
   <p id="formsender-status" role="status"></p>
 </form>
 
@@ -177,7 +177,7 @@ ${payload}
     <form onSubmit={submit}>
 ${rows}
 
-      <button type="submit">Enviar</button>
+      <button type="submit">Send</button>
       <p role="status">{status}</p>
     </form>
   );
@@ -237,7 +237,7 @@ ${payload}
   <form @submit.prevent="submit">
 ${rows}
 
-    <button type="submit">Enviar</button>
+    <button type="submit">Send</button>
     <p role="status">{{ status }}</p>
   </form>
 </template>`;
@@ -295,7 +295,7 @@ ${payload}
 <form on:submit={(event) => { event.preventDefault(); submit(); }}>
 ${rows}
 
-  <button type="submit">Enviar</button>
+  <button type="submit">Send</button>
   <p role="status">{status}</p>
 </form>`;
 }
@@ -339,7 +339,7 @@ curl_setopt_array($curl, [
     CURLOPT_POST => true,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json',${origin ? `\n        'Origin: ${origin}', // the site must be in "Sites permitidos"` : ""}
+        'Content-Type: application/json',${origin ? `\n        'Origin: ${origin}', // the site must be in "Allowed sites"` : ""}
     ],
     CURLOPT_POSTFIELDS => json_encode($payload),
 ]);
@@ -395,7 +395,7 @@ function nodeSnippet(form: Form, endpoint: string): string {
 const response = await fetch("${endpoint}", {
   method: "POST",
   headers: {
-    "Content-Type": "application/json",${origin ? `\n    Origin: "${origin}", // the site must be in "Sites permitidos"` : ""}
+    "Content-Type": "application/json",${origin ? `\n    Origin: "${origin}", // the site must be in "Allowed sites"` : ""}
   },
   body: JSON.stringify(${indent(JSON.stringify(sample(form), null, 2), 2).trimStart()}),
 });
@@ -415,7 +415,7 @@ response = requests.post(
     "${endpoint}",
     json={
 ${items}
-    },${origin ? `\n    headers={"Origin": "${origin}"},  # the site must be in "Sites permitidos"` : ""}
+    },${origin ? `\n    headers={"Origin": "${origin}"},  # the site must be in "Allowed sites"` : ""}
     timeout=10,
 )
 

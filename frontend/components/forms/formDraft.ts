@@ -3,14 +3,14 @@ import { slugify } from "@/lib/format";
 import { isValidEmail } from "@/lib/validation";
 
 export const FIELD_TYPES: { value: FieldType; label: string }[] = [
-  { value: "text", label: "Texto curto" },
-  { value: "textarea", label: "Texto longo" },
-  { value: "email", label: "E-mail" },
-  { value: "phone", label: "Telefone" },
-  { value: "number", label: "Número" },
-  { value: "select", label: "Lista de opções" },
-  { value: "checkbox", label: "Caixa de seleção" },
-  { value: "date", label: "Data" },
+  { value: "text", label: "Short text" },
+  { value: "textarea", label: "Long text" },
+  { value: "email", label: "Email" },
+  { value: "phone", label: "Phone" },
+  { value: "number", label: "Number" },
+  { value: "select", label: "List of options" },
+  { value: "checkbox", label: "Checkbox" },
+  { value: "date", label: "Date" },
 ];
 
 export type FieldDraft = {
@@ -95,25 +95,25 @@ export function normalizeDomain(value: string): string {
     .replace(/:\d+$/, "");
 }
 
-export const validateDomain = (value: string) => (DOMAIN.test(value) ? null : "Use um endereço como empresa.com ou *.empresa.com.");
-export const validateEmailChip = (value: string) => (isValidEmail(value) ? null : "Informe um e-mail válido.");
+export const validateDomain = (value: string) => (DOMAIN.test(value) ? null : "Use an address like company.com or *.company.com.");
+export const validateEmailChip = (value: string) => (isValidEmail(value) ? null : "Enter a valid email.");
 
 /** Client-side checks that mirror the API, so most mistakes are caught before sending. */
 export function validateDraft(draft: FormDraft): DraftErrors {
   const errors: DraftErrors = { fields: {} };
 
-  if (!draft.name.trim()) errors.name = "Dê um nome ao formulário.";
+  if (!draft.name.trim()) errors.name = "Give the form a name.";
 
   const seen = new Set<string>();
   for (const field of draft.fields) {
     const row: { name?: string; label?: string; options?: string } = {};
 
-    if (!field.label.trim()) row.label = "Informe o rótulo do campo.";
-    if (!FIELD_NAME.test(field.name)) row.name = "Use letras minúsculas, números e _ (começando por letra).";
-    else if (seen.has(field.name)) row.name = "Já existe um campo com esse nome.";
+    if (!field.label.trim()) row.label = "Enter the field label.";
+    if (!FIELD_NAME.test(field.name)) row.name = "Use lowercase letters, numbers and _ (starting with a letter).";
+    else if (seen.has(field.name)) row.name = "A field with this name already exists.";
     seen.add(field.name);
 
-    if (field.type === "select" && field.options.length === 0) row.options = "Informe ao menos uma opção.";
+    if (field.type === "select" && field.options.length === 0) row.options = "Enter at least one option.";
 
     if (Object.keys(row).length > 0) errors.fields[field.key] = row;
   }
@@ -134,23 +134,23 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
   for (const key of Object.keys(error.fieldErrors)) {
     const parts = key.split(".");
 
-    if (key === "name") errors.name = "Dê um nome ao formulário.";
-    else if (parts[0] === "destinations") errors.destinations = "Confira os e-mails de destino.";
-    else if (parts[0] === "allowed_domains") errors.domains = "Confira os sites permitidos.";
+    if (key === "name") errors.name = "Give the form a name.";
+    else if (parts[0] === "destinations") errors.destinations = "Check the destination emails.";
+    else if (parts[0] === "allowed_domains") errors.domains = "Check the allowed sites.";
     else if (parts[0] === "fields" && parts[1] !== undefined) {
       const field = draft.fields[Number(parts[1])];
       if (!field) continue;
 
       const row = (errors.fields[field.key] ??= {});
-      if (parts[2] === "name") row.name = "Esse nome de campo não é válido ou está repetido.";
-      else if (parts[2] === "label") row.label = "Informe o rótulo do campo.";
-      else if (parts[2] === "options") row.options = "Informe ao menos uma opção.";
-      else errors.general = "Confira os campos do formulário.";
+      if (parts[2] === "name") row.name = "This field name is invalid or repeated.";
+      else if (parts[2] === "label") row.label = "Enter the field label.";
+      else if (parts[2] === "options") row.options = "Enter at least one option.";
+      else errors.general = "Check the form fields.";
     }
   }
 
   if (!errors.name && !errors.destinations && !errors.domains && Object.keys(errors.fields).length === 0) {
-    errors.general = "Confira os dados do formulário e tente de novo.";
+    errors.general = "Check the form details and try again.";
   }
 
   return errors;

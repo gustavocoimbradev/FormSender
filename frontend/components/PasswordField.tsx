@@ -35,7 +35,7 @@ const Lock = () => (
 );
 
 /** Password input with a show/hide toggle and a live strength meter. */
-export function PasswordField({ id, label, value, onChange, onBlur, error, disabled, showStrength = true, placeholder = "Mínimo de 8 caracteres" }: PasswordFieldProps) {
+export function PasswordField({ id, label, value, onChange, onBlur, error, disabled, showStrength = true, placeholder = "At least 8 characters" }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   const { score, label: strengthLabel } = passwordStrength(value);
 
@@ -56,7 +56,7 @@ export function PasswordField({ id, label, value, onChange, onBlur, error, disab
         <button
           type="button"
           onClick={() => setVisible((current) => !current)}
-          aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
+          aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
           className="grid size-11 place-items-center rounded-control text-muted transition-colors duration-300 hover:text-text"
         >

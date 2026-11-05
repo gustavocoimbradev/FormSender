@@ -17,11 +17,11 @@ type Phase = "checking" | "ready" | "unreachable";
 const step = (index: number): CSSProperties => ({ "--i": index }) as CSSProperties;
 
 function toMessage(error: unknown): string {
-  if (!(error instanceof ApiError)) return "Algo deu errado. Tente novamente.";
-  if (error.status === 422) return "E-mail ou senha incorretos.";
-  if (error.status === 429) return "Muitas tentativas. Aguarde um minuto e tente de novo.";
-  if (error.status === 0) return "Não consegui falar com o servidor. Verifique sua conexão.";
-  return "Algo deu errado do nosso lado. Tente novamente em instantes.";
+  if (!(error instanceof ApiError)) return "Something went wrong. Please try again.";
+  if (error.status === 422) return "Incorrect email or password.";
+  if (error.status === 429) return "Too many attempts. Wait a minute and try again.";
+  if (error.status === 0) return "Could not reach the server. Check your connection.";
+  return "Something went wrong on our side. Please try again shortly.";
 }
 
 export function LoginScreen() {
@@ -92,11 +92,11 @@ export function LoginScreen() {
       {phase === "unreachable" && <CardUnreachable onRetry={prepare} />}
 
       {phase === "ready" && (
-        <form onSubmit={handleSubmit} noValidate aria-label="Entrar">
+        <form onSubmit={handleSubmit} noValidate aria-label="Sign in">
           <div className="stagger animate-fade-up" style={step(0)}>
             <Field
               id="email"
-              label="E-mail"
+              label="Email"
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -107,19 +107,19 @@ export function LoginScreen() {
               autoCapitalize="none"
               spellCheck={false}
               autoFocus
-              placeholder="voce@empresa.com"
+              placeholder="you@company.com"
             />
           </div>
 
           <div className="stagger animate-fade-up" style={step(1)}>
             <PasswordField
               id="password"
-              label="Senha"
+              label="Password"
               value={password}
               onChange={setPassword}
               disabled={submitting}
               showStrength={false}
-              placeholder="Sua senha"
+              placeholder="Your password"
             />
           </div>
 
@@ -133,8 +133,8 @@ export function LoginScreen() {
           </div>
 
           <div className="stagger mt-1 animate-fade-up" style={step(2)}>
-            <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Entrando…">
-              Entrar
+            <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Signing in…">
+              Sign in
             </Button>
           </div>
         </form>

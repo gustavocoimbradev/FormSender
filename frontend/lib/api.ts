@@ -125,7 +125,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
       },
     });
   } catch {
-    throw new ApiError(0, "A API não respondeu.");
+    throw new ApiError(0, "The API did not respond.");
   }
 
   if (!response.ok) {
@@ -144,7 +144,7 @@ async function authed<T>(path: string, init: RequestInit = {}): Promise<T> {
 
   if (!token) {
     window.location.assign("/login");
-    throw new ApiError(401, "Sessão encerrada.");
+    throw new ApiError(401, "Session ended.");
   }
 
   try {

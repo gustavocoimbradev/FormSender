@@ -215,12 +215,12 @@ describe('docs design', function (): void {
     it('links back to the dashboard when its address is known', function (): void {
         config(['app.frontend_url' => 'http://localhost:3000']);
 
-        $this->get('/')->assertSee('href="http://localhost:3000"', false)->assertSee('Abrir painel');
+        $this->get('/')->assertSee('href="http://localhost:3000"', false)->assertSee('Open dashboard');
     });
 
     it('does not show a dead link to the dashboard when its address is unknown', function (): void {
         config(['app.frontend_url' => null]);
 
-        $this->get('/')->assertDontSee('Abrir painel');
+        $this->get('/')->assertDontSee('Open dashboard');
     });
 });

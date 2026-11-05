@@ -124,7 +124,7 @@ export function Select<T extends string>({ id, label, value, options, onChange, 
       >
         <span className="flex min-w-0 items-center gap-3">
           {selected?.icon && <span className="shrink-0 text-text/80">{selected.icon}</span>}
-          <span className="truncate">{selected?.label ?? "Selecione"}</span>
+          <span className="truncate">{selected?.label ?? "Select"}</span>
         </span>
         <ChevronIcon className={`size-5 shrink-0 text-muted transition-transform duration-300 ${open ? "-rotate-90" : "rotate-90"}`} />
       </button>
@@ -148,8 +148,8 @@ export function Select<T extends string>({ id, label, value, options, onChange, 
                   setQuery(event.target.value);
                   setActive(0);
                 }}
-                placeholder="Buscar"
-                aria-label="Buscar"
+                placeholder="Search"
+                aria-label="Search"
                 className="h-12 w-full bg-transparent text-base text-text placeholder:text-muted/60 focus:outline-none focus-visible:ring-0"
               />
             </div>
@@ -179,7 +179,7 @@ export function Select<T extends string>({ id, label, value, options, onChange, 
           </ul>
 
           {/* Keeps the keyboard working when there is no search box. */}
-          {options.length <= 6 && <input ref={search} readOnly aria-label="Opções" className="sr-only" onKeyDown={onKeyDown} />}
+          {options.length <= 6 && <input ref={search} readOnly aria-label="Options" className="sr-only" onKeyDown={onKeyDown} />}
         </div>,
         document.body,
       )}

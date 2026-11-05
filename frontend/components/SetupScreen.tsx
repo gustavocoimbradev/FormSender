@@ -23,21 +23,21 @@ const step = (index: number): CSSProperties => ({ "--i": index }) as CSSProperti
 
 /** Friendly Portuguese messages for what the API can answer to the setup. */
 function toErrors(error: unknown): { errors: Errors; alreadyDone: boolean } {
-  if (!(error instanceof ApiError)) return { errors: { form: "Algo deu errado. Tente novamente." }, alreadyDone: false };
+  if (!(error instanceof ApiError)) return { errors: { form: "Something went wrong. Please try again." }, alreadyDone: false };
 
   if (error.status === 403) return { errors: {}, alreadyDone: true };
-  if (error.status === 429) return { errors: { form: "Muitas tentativas. Aguarde um minuto e tente de novo." }, alreadyDone: false };
-  if (error.status === 0) return { errors: { form: "Não consegui falar com o servidor. Verifique sua conexão." }, alreadyDone: false };
+  if (error.status === 429) return { errors: { form: "Too many attempts. Wait a minute and try again." }, alreadyDone: false };
+  if (error.status === 0) return { errors: { form: "Could not reach the server. Check your connection." }, alreadyDone: false };
 
   if (error.status === 422) {
     const errors: Errors = { ...smtpErrorsFromApi(error.fieldErrors) };
-    if (error.fieldErrors.email) errors.email = "Informe um e-mail válido.";
-    if (error.fieldErrors.password) errors.password = "A senha precisa ter pelo menos 8 caracteres.";
-    if (error.fieldErrors["smtp.encryption"]) errors.form = "Escolha uma opção de segurança válida.";
+    if (error.fieldErrors.email) errors.email = "Enter a valid email.";
+    if (error.fieldErrors.password) errors.password = "The password must be at least 8 characters.";
+    if (error.fieldErrors["smtp.encryption"]) errors.form = "Choose a valid security option.";
     return { errors, alreadyDone: false };
   }
 
-  return { errors: { form: "Algo deu errado do nosso lado. Tente novamente em instantes." }, alreadyDone: false };
+  return { errors: { form: "Something went wrong on our side. Please try again shortly." }, alreadyDone: false };
 }
 
 export function SetupScreen() {
@@ -115,28 +115,28 @@ export function SetupScreen() {
         <div className="flex flex-col items-center text-center">
           <SuccessCheck />
           <h1 className="stagger mt-6 animate-fade-up text-3xl font-semibold tracking-tight" style={step(3)}>
-            Conta criada!
+            Account created!
           </h1>
           <p className="stagger mb-7 mt-3 animate-fade-up text-base leading-relaxed text-muted" style={step(4)}>
-            Sua conta de administrador está pronta.
+            Your administrator account is ready.
             <br />
             <span className="break-all text-text">{createdEmail}</span>
           </p>
           <div className="stagger w-full animate-fade-up" style={step(5)}>
-            <LinkButton href="/login">Ir para o login</LinkButton>
+            <LinkButton href="/login">Go to sign in</LinkButton>
           </div>
         </div>
       )}
 
       {phase === "pending" && (
-        <form onSubmit={handleSubmit} noValidate aria-label="Criar conta">
+        <form onSubmit={handleSubmit} noValidate aria-label="Create account">
           <SetupSteps step={stage} onBack={submitting ? undefined : () => setStage(1)} />
 
           {stage === 1 && (
             <div key="admin" className="animate-fade-up">
               <Field
                 id="email"
-                label="E-mail"
+                label="Email"
                 type="email"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
@@ -147,11 +147,11 @@ export function SetupScreen() {
                 autoCapitalize="none"
                 spellCheck={false}
                 autoFocus
-                placeholder="voce@empresa.com"
+                placeholder="you@company.com"
               />
               <PasswordField
                 id="password"
-                label="Senha"
+                label="Password"
                 value={password}
                 onChange={(value) => {
                   setPassword(value);
@@ -161,21 +161,21 @@ export function SetupScreen() {
               />
               <PasswordField
                 id="confirmation"
-                label="Confirmar senha"
+                label="Confirm password"
                 value={confirmation}
                 onChange={(value) => {
                   setConfirmation(value);
                   setConfirmationChecked(false);
                 }}
                 onBlur={() => setConfirmationChecked(true)}
-                error={mismatch ? "As senhas não coincidem." : undefined}
+                error={mismatch ? "The passwords do not match." : undefined}
                 showStrength={false}
-                placeholder="Repita a senha"
+                placeholder="Repeat the password"
               />
 
               <div className="mt-1">
                 <Button type="submit" disabled={!adminReady}>
-                  Continuar
+                  Continue
                 </Button>
               </div>
             </div>
@@ -190,8 +190,8 @@ export function SetupScreen() {
               </div>
 
               <div className="mt-1">
-                <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Criando conta…">
-                  Criar conta
+                <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Creating account…">
+                  Create account
                 </Button>
               </div>
             </div>

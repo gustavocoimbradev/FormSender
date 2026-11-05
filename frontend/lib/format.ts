@@ -1,5 +1,5 @@
-const dateTime = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short" });
-const date = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" });
+const dateTime = new Intl.DateTimeFormat("en-US", { dateStyle: "short", timeStyle: "short" });
+const date = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
 
 export function formatDateTime(value: string | null): string {
   return value ? dateTime.format(new Date(value)) : "–";

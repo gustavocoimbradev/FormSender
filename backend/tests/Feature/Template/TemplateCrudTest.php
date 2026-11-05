@@ -9,18 +9,18 @@ beforeEach(fn () => actingAsUser());
 
 function templatePayload(array $overrides = []): array
 {
-    return ['name' => 'Promocional', 'subject' => 'Nova mensagem de {{form_name}}', 'html' => '<p>{{fields}}</p>', ...$overrides];
+    return ['name' => 'Promotional', 'subject' => 'New message from {{form_name}}', 'html' => '<p>{{fields}}</p>', ...$overrides];
 }
 
 it('lists the templates with the default first, creating it when missing', function (): void {
     Template::factory()->create(['name' => 'Zeta']);
-    Template::factory()->create(['name' => 'Alfa']);
+    Template::factory()->create(['name' => 'Alpha']);
 
     $response = $this->getJson('/api/templates')->assertOk()->assertJsonCount(3, 'data');
 
     expect($response->json('data.0.is_default'))->toBeTrue()
-        ->and($response->json('data.0.name'))->toBe('Padrão')
-        ->and(collect($response->json('data'))->pluck('name')->all())->toBe(['Padrão', 'Alfa', 'Zeta']);
+        ->and($response->json('data.0.name'))->toBe('Default')
+        ->and(collect($response->json('data'))->pluck('name')->all())->toBe(['Default', 'Alpha', 'Zeta']);
 });
 
 it('lists the code, name, subject, html, usage and no numeric id', function (): void {
@@ -37,7 +37,7 @@ it('lists the code, name, subject, html, usage and no numeric id', function (): 
 it('creates a template with a unique code', function (): void {
     $response = $this->postJson('/api/templates', templatePayload())
         ->assertCreated()
-        ->assertJsonPath('data.name', 'Promocional')
+        ->assertJsonPath('data.name', 'Promotional')
         ->assertJsonPath('data.is_default', false);
 
     expect($response->json('data.code'))->toMatch('/^[a-z0-9]{20}$/');
@@ -48,7 +48,7 @@ it('shows and updates a template by its code, never the numeric id', function ()
 
     $this->getJson("/api/templates/{$template->code}")->assertOk()->assertJsonPath('data.code', $template->code);
     $this->putJson("/api/templates/{$template->code}", templatePayload(['name' => 'Renomeado']))->assertOk()->assertJsonPath('data.name', 'Renomeado');
-    $this->patchJson("/api/templates/{$template->code}", ['subject' => 'Só o assunto'])->assertOk()->assertJsonPath('data.subject', 'Só o assunto');
+    $this->patchJson("/api/templates/{$template->code}", ['subject' => 'Only the subject'])->assertOk()->assertJsonPath('data.subject', 'Only the subject');
 
     $this->getJson("/api/templates/{$template->id}")->assertNotFound();
 });
@@ -56,7 +56,7 @@ it('shows and updates a template by its code, never the numeric id', function ()
 it('lets the default template be edited but never deleted', function (): void {
     $default = Template::defaultTemplate();
 
-    $this->putJson("/api/templates/{$default->code}", templatePayload(['name' => 'Padrão']))->assertOk();
+    $this->putJson("/api/templates/{$default->code}", templatePayload(['name' => 'Default']))->assertOk();
     $this->deleteJson("/api/templates/{$default->code}")->assertUnprocessable();
 
     expect(Template::find($default->id))->not->toBeNull();
@@ -100,10 +100,10 @@ it('requires a logged in user for every template route', function (): void {
 
 describe('preview', function (): void {
     it('renders the given subject and html with sample data, without saving anything', function (): void {
-        $this->postJson('/api/templates/preview', ['subject' => 'Oi {{form_name}}', 'html' => '<h1>{{form_name}}</h1>{{fields}}'])
+        $this->postJson('/api/templates/preview', ['subject' => 'Hi {{form_name}}', 'html' => '<h1>{{form_name}}</h1>{{fields}}'])
             ->assertOk()
-            ->assertJsonPath('data.subject', 'Oi Formulário de contato')
-            ->assertJsonPath('data.html', fn (string $html): bool => str_contains($html, '<h1>Formulário de contato</h1>') && str_contains($html, 'Maria Souza'));
+            ->assertJsonPath('data.subject', 'Hi Contact form')
+            ->assertJsonPath('data.html', fn (string $html): bool => str_contains($html, '<h1>Contact form</h1>') && str_contains($html, 'Maria Souza'));
 
         expect(Template::where('is_default', false)->count())->toBe(0);
     });

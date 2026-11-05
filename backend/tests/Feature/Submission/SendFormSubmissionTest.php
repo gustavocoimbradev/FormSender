@@ -78,7 +78,7 @@ it('sends from the configured smtp address and names the form in the subject', f
 
     (new SendFormSubmission(makeSubmission()))->handle();
 
-    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasFrom('no-reply@example.com') && $mail->hasSubject('Nova mensagem: Contact'));
+    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasFrom('no-reply@example.com') && $mail->hasSubject('New message: Contact'));
 });
 
 it('delivers the email with the template chosen for the form', function (): void {
@@ -100,7 +100,7 @@ it('falls back to the default template when the form has none, or was deleted', 
     $submission->form->delete();
     (new SendFormSubmission($submission->fresh()))->handle();
 
-    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('Nova mensagem: Contact') && str_contains($mail->render(), 'Form Sender'));
+    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('New message: Contact') && str_contains($mail->render(), 'Form Sender'));
 });
 
 it('lists the submitted values by field label, in the form order, and escapes html', function (): void {

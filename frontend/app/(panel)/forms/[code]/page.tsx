@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FormDetailScreen } from "@/components/forms/FormDetailScreen";
 
-export const metadata: Metadata = { title: "Formulário · FormSender" };
+export const metadata: Metadata = { title: "Form · FormSender" };
 
 const TABS = ["config", "integration", "messages", "test"] as const;
 

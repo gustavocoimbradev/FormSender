@@ -36,14 +36,14 @@ class EmailTemplateRenderer
     public function renderSample(string $subject, string $html): array
     {
         $sample = new FormSubmission([
-            'form_name' => 'Formulário de contato',
+            'form_name' => 'Contact form',
             'fields' => [
-                ['name' => 'name', 'label' => 'Nome', 'type' => 'text'],
+                ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
                 ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
-                ['name' => 'message', 'label' => 'Mensagem', 'type' => 'textarea'],
+                ['name' => 'message', 'label' => 'Message', 'type' => 'textarea'],
             ],
-            'data' => ['name' => 'Maria Souza', 'email' => 'maria@empresa.com', 'message' => "Olá! Gostaria de saber mais sobre os planos.\nPodem me retornar ainda hoje?"],
-            'origin' => 'meusite.com.br',
+            'data' => ['name' => 'Maria Souza', 'email' => 'maria@company.com', 'message' => "Hi! I would like to know more about your plans.\nCould you get back to me today?"],
+            'origin' => 'yoursite.com',
             'ip' => '203.0.113.10',
         ]);
         $sample->created_at = now();
@@ -77,7 +77,7 @@ class EmailTemplateRenderer
         }
 
         if ($token === 'date') {
-            return $submission->created_at?->format('d/m/Y H:i') ?? '';
+            return $submission->created_at?->format('Y-m-d H:i') ?? '';
         }
 
         if ($token === 'origin' || $token === 'ip') {
@@ -125,7 +125,7 @@ class EmailTemplateRenderer
     private function display(string $type, mixed $value): string
     {
         if ($type === 'checkbox') {
-            return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'Sim' : 'Não';
+            return filter_var($value, FILTER_VALIDATE_BOOLEAN) ? 'Yes' : 'No';
         }
 
         return is_scalar($value) ? (string) $value : (string) json_encode($value);

@@ -42,7 +42,7 @@ export function ChipsInput({ id, label, values, onChange, validate, normalize, p
       return true;
     }
     if (values.length >= max) {
-      setProblem(`No máximo ${max} itens.`);
+      setProblem(`At most ${max} items.`);
       return false;
     }
 
@@ -81,7 +81,7 @@ export function ChipsInput({ id, label, values, onChange, validate, normalize, p
               type="button"
               disabled={disabled}
               onClick={() => onChange(values.filter((current) => current !== value))}
-              aria-label={`Remover ${value}`}
+              aria-label={`Remove ${value}`}
               className="grid size-8 place-items-center rounded-full text-muted transition-colors duration-300 hover:text-text"
             >
               <CloseIcon className="size-4" />

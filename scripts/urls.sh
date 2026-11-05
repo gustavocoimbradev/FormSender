@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 value() { grep -E "^$1=" .env | cut -d= -f2; }
 
 echo
-echo "Form Sender está no ar:"
-echo "  Painel    http://localhost:$(value FRONTEND_PORT)"
+echo "Form Sender is up:"
+echo "  Dashboard http://localhost:$(value FRONTEND_PORT)"
 echo "  API       http://localhost:$(value APP_PORT)/api"
 echo "  Postgres  localhost:$(value DB_PORT)  (db: $(value DB_DATABASE), user: $(value DB_USERNAME))"
 echo "  Redis     localhost:$(value REDIS_PORT)"

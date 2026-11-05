@@ -27,7 +27,7 @@ const SHIMMER =
 export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = false, empty }: DataTableProps<T>) {
   if (loading) {
     return (
-      <div role="status" aria-label="Carregando" className="space-y-1 p-4">
+      <div role="status" aria-label="Loading" className="space-y-1 p-4">
         {Array.from({ length: 4 }, (_, index) => (
           <div key={index} className={`h-14 rounded-control ${SHIMMER}`} style={{ animationDelay: `${index * 120}ms` }} />
         ))}

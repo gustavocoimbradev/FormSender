@@ -29,7 +29,7 @@ export function SmtpScreen() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (!isSmtpReady(draft)) {
-      toast("Confira o servidor, a porta e o remetente.", "error");
+      toast("Check the server, port and sender.", "error");
       return;
     }
 
@@ -38,13 +38,13 @@ export function SmtpScreen() {
     try {
       const saved = await saveSmtp(settingsFromDraft(draft));
       if (saved) setDraft(draftFromSettings(saved));
-      toast("Configurações salvas.");
+      toast("Settings saved.");
     } catch (failure) {
       if (failure instanceof ApiError && failure.status === 422) {
         setErrors(smtpErrorsFromApi(failure.fieldErrors));
-        toast("Confira os campos destacados.", "error");
+        toast("Check the highlighted fields.", "error");
       } else {
-        toast("Não foi possível salvar. Tente de novo.", "error");
+        toast("Could not save. Please try again.", "error");
       }
     } finally {
       setSaving(false);
@@ -56,7 +56,7 @@ export function SmtpScreen() {
       <PageHeader title="SMTP" />
 
       <Card className="animate-fade-up">
-        <CardHeader title="Servidor de e-mail" />
+        <CardHeader title="Email server" />
 
         <div className="px-5 pb-6 sm:px-6">
           {error ? (
@@ -69,7 +69,7 @@ export function SmtpScreen() {
 
               <div className="mt-2 flex justify-end">
                 <ActionButton type="submit" loading={saving} disabled={!isSmtpReady(draft)} className="h-14 w-full px-8 sm:w-auto">
-                  Salvar
+                  Save
                 </ActionButton>
               </div>
             </form>

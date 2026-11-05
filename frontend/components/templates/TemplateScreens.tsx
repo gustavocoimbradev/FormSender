@@ -28,7 +28,7 @@ export function NewTemplateScreen() {
 
   return (
     <>
-      <PageHeader title="Novo template" back={<BackLink />} />
+      <PageHeader title="New template" back={<BackLink />} />
       {error ? (
         <Card className="p-8">
           <CardUnreachable onRetry={reload} />
@@ -58,10 +58,10 @@ export function TemplateDetailScreen({ code }: { code: string }) {
     setDeleting(true);
     try {
       await deleteTemplate(current.code);
-      toast("Template excluído.");
+      toast("Template deleted.");
       router.push("/templates");
     } catch {
-      toast("Não foi possível excluir.", "error");
+      toast("Could not delete.", "error");
       setDeleting(false);
     }
   }
@@ -72,7 +72,7 @@ export function TemplateDetailScreen({ code }: { code: string }) {
       <>
         <BackLink />
         <Card className="p-8">
-          {missing ? <EmptyState icon={<TemplateIcon />} title="Template não encontrado" text="Ele pode ter sido excluído." /> : <CardUnreachable onRetry={reload} />}
+          {missing ? <EmptyState icon={<TemplateIcon />} title="Template not found" text="It may have been deleted." /> : <CardUnreachable onRetry={reload} />}
         </Card>
       </>
     );
@@ -98,9 +98,9 @@ export function TemplateDetailScreen({ code }: { code: string }) {
 
       <ConfirmDialog
         open={confirming}
-        title="Excluir template?"
-        message="Os formulários que usam este template voltam a usar o padrão."
-        confirmLabel="Excluir template"
+        title="Delete template?"
+        message="Forms that use this template go back to the default one."
+        confirmLabel="Delete template"
         onConfirm={() => void remove()}
         onClose={() => setConfirming(false)}
         busy={deleting}

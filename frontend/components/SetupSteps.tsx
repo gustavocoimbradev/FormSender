@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-const STEPS = ["Administrador", "SMTP"];
+const STEPS = ["Administrator", "SMTP"];
 
 type SetupStepsProps = {
   step: 1 | 2;
@@ -45,7 +45,7 @@ export function SetupSteps({ step, onBack }: SetupStepsProps) {
                 <button
                   type="button"
                   onClick={onBack}
-                  aria-label={`Voltar para ${title}`}
+                  aria-label={`Back to ${title}`}
                   className="group -my-3 block w-full min-w-0 rounded-control py-3 text-left"
                 >
                   {content}

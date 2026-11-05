@@ -16,8 +16,8 @@ const SCROLLBAR_STYLE = `<style>
 </style>`;
 
 const WIDTHS: { id: Width; label: string }[] = [
-  { id: "desktop", label: "Computador" },
-  { id: "mobile", label: "Celular" },
+  { id: "desktop", label: "Desktop" },
+  { id: "mobile", label: "Phone" },
 ];
 
 /** The email as it will arrive, filled with example data by the API itself (the same code that sends it). */
@@ -48,20 +48,20 @@ export function TemplatePreview({ subject, html }: { subject: string; html: stri
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Pills label="Largura da prévia" value={width} options={WIDTHS} onChange={setWidth} />
+        <Pills label="Preview width" value={width} options={WIDTHS} onChange={setWidth} />
       </div>
 
       <p className="mb-3 truncate text-base text-muted" title={rendered?.subject}>
-        Assunto: <span className="text-text">{rendered?.subject ?? "…"}</span>
+        Subject: <span className="text-text">{rendered?.subject ?? "…"}</span>
       </p>
 
       <div aria-live="polite" className="mb-3 text-base text-danger">
-        {failed && "Não foi possível atualizar a prévia. Confira o conteúdo (scripts não são permitidos)."}
+        {failed && "Could not update the preview. Check the content (scripts are not allowed)."}
       </div>
 
       <div className="overflow-hidden rounded-control border border-surface/10 bg-bg">
         <iframe
-          title="Prévia do e-mail"
+          title="Email preview"
           sandbox=""
           srcDoc={rendered ? SCROLLBAR_STYLE + rendered.html : ""}
           className={`mx-auto block h-[34rem] border-0 bg-white transition-[width] duration-300 ease-out ${width === "mobile" ? "w-[390px] max-w-full" : "w-full"}`}

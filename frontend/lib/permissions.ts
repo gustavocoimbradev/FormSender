@@ -19,6 +19,6 @@ export function canDeleteUser(actor: User, target: ManagedUser): boolean {
 }
 
 export function roleLabel(user: Pick<User, "role" | "is_owner">): string {
-  if (user.is_owner) return "Administrador principal";
-  return user.role === "admin" ? "Administrador" : "Usuário";
+  if (user.is_owner) return "Owner administrator";
+  return user.role === "admin" ? "Administrator" : "User";
 }

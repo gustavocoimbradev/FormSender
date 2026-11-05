@@ -17,14 +17,14 @@ export function Pagination({ meta, onPage }: PaginationProps) {
   if (meta.total === 0) return null;
 
   return (
-    <nav aria-label="Paginação" className="flex flex-col items-center justify-between gap-4 border-t border-surface/10 px-5 py-4 sm:flex-row">
+    <nav aria-label="Pagination" className="flex flex-col items-center justify-between gap-4 border-t border-surface/10 px-5 py-4 sm:flex-row">
       <p className="text-base text-muted">
-        Mostrando <span className="text-text">{meta.from}–{meta.to}</span> de <span className="text-text">{meta.total}</span>
+        Showing <span className="text-text">{meta.from}–{meta.to}</span> of <span className="text-text">{meta.total}</span>
       </p>
 
       {meta.last_page > 1 && (
         <div className="flex items-center gap-1">
-          <button type="button" aria-label="Página anterior" disabled={meta.current_page <= 1} onClick={() => onPage(meta.current_page - 1)} className={`${BASE} text-muted hover:text-text disabled:opacity-30`}>
+          <button type="button" aria-label="Previous page" disabled={meta.current_page <= 1} onClick={() => onPage(meta.current_page - 1)} className={`${BASE} text-muted hover:text-text disabled:opacity-30`}>
             <ChevronIcon className="size-5 rotate-180" />
           </button>
 
@@ -40,7 +40,7 @@ export function Pagination({ meta, onPage }: PaginationProps) {
             </button>
           ))}
 
-          <button type="button" aria-label="Próxima página" disabled={meta.current_page >= meta.last_page} onClick={() => onPage(meta.current_page + 1)} className={`${BASE} text-muted hover:text-text disabled:opacity-30`}>
+          <button type="button" aria-label="Next page" disabled={meta.current_page >= meta.last_page} onClick={() => onPage(meta.current_page + 1)} className={`${BASE} text-muted hover:text-text disabled:opacity-30`}>
             <ChevronIcon className="size-5" />
           </button>
         </div>

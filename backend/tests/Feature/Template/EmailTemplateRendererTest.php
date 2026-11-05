@@ -20,7 +20,7 @@ it('fills the form name, date, origin and ip', function (): void {
 
     $rendered = renderWith('<p>{{form_name}}|{{date}}|{{origin}}|{{ip}}</p>', 'S', $submission->fresh());
 
-    expect($rendered['html'])->toBe('<p>Contact|05/11/2026 15:42|meusite.com|203.0.113.9</p>');
+    expect($rendered['html'])->toBe('<p>Contact|2026-11-05 15:42|meusite.com|203.0.113.9</p>');
 });
 
 it('accepts spaces inside the braces and leaves unknown variables as they are', function (): void {
@@ -35,12 +35,12 @@ it('fills single fields by name and their labels', function (): void {
     expect($rendered['html'])->toBe('Name: Jane / Email: jane@example.com');
 });
 
-it('shows checkboxes as Sim or Não and keeps line breaks in long text', function (): void {
+it('shows checkboxes as Yes or No and keeps line breaks in long text', function (): void {
     $submission = makeSubmission(['name' => 'Jane', 'email' => 'jane@example.com', 'newsletter' => true, 'message' => "one\ntwo"]);
 
     $rendered = renderWith('{{field.newsletter}}|{{field.message}}', 'S', $submission);
 
-    expect($rendered['html'])->toBe("Sim|one<br />\ntwo");
+    expect($rendered['html'])->toBe("Yes|one<br />\ntwo");
 });
 
 it('never lets submitted values inject html', function (): void {
@@ -72,15 +72,15 @@ it('fills the subject too, as plain text on a single line', function (): void {
 it('renders a sample, for the preview, with no submission', function (): void {
     $rendered = app(EmailTemplateRenderer::class)->renderSample('Hi {{form_name}}', '<p>{{form_name}}</p>{{fields}}');
 
-    expect($rendered['subject'])->toBe('Hi Formulário de contato')
-        ->and($rendered['html'])->toContain('<p>Formulário de contato</p>')->toContain('Maria Souza')->toContain('maria@empresa.com');
+    expect($rendered['subject'])->toBe('Hi Contact form')
+        ->and($rendered['html'])->toContain('<p>Contact form</p>')->toContain('Maria Souza')->toContain('maria@company.com');
 });
 
 it('has a default template that looks like the panel and uses the variables', function (): void {
     $default = Template::defaultTemplate();
 
     expect($default->is_default)->toBeTrue()
-        ->and($default->name)->toBe('Padrão')
+        ->and($default->name)->toBe('Default')
         ->and($default->subject)->toContain('{{form_name}}')
         ->and($default->html)->toContain('{{fields}}')->toContain('#07070d')->toContain('#8b6bff')
         ->and(Template::defaultTemplate()->is($default))->toBeTrue()

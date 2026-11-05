@@ -75,7 +75,7 @@ class TemplateController extends Controller
     public function destroy(Template $template): Response|JsonResponse
     {
         if ($template->is_default) {
-            return response()->json(['message' => 'O template padrão não pode ser excluído.'], 422);
+            return response()->json(['message' => 'The default template cannot be deleted.'], 422);
         }
 
         $template->delete();

@@ -26,38 +26,38 @@ fail() {
     exit 1
 }
 
-command -v docker >/dev/null 2>&1 || fail "O Docker não foi encontrado." "Abra o Docker Desktop (com a integração WSL ativa) e tente de novo."
-docker info >/dev/null 2>&1 || fail "O Docker não está em execução." "Abra o Docker Desktop, espere ele iniciar e tente de novo."
+command -v docker >/dev/null 2>&1 || fail "Docker was not found." "Open Docker Desktop (with WSL integration on) and try again."
+docker info >/dev/null 2>&1 || fail "Docker is not running." "Open Docker Desktop, wait for it to start and try again."
 
 [ -n "$(docker compose ps -q app 2>/dev/null)" ] \
-    || fail "O projeto não está no ar." "Suba com make up (ou make start) e rode make reset de novo."
+    || fail "The project is not running." "Start it with make up (or make start) and run make reset again."
 
 printf '\n'
 brand_title
 printf '\n\n'
-printf '%s!%s Isto apaga %stodos os dados%s: usuários, formulários, mensagens recebidas e configurações.\n' "$Y" "$N" "$B" "$N"
-printf '  O banco volta ao estado inicial e você precisará criar o administrador de novo.\n\n'
+printf '%s!%s This erases %sall data%s: users, forms, received messages and settings.\n' "$Y" "$N" "$B" "$N"
+printf '  The database goes back to its initial state and you will need to create the administrator again.\n\n'
 
 if [ "${YES:-}" != "1" ]; then
-    [ -t 0 ] || fail "Sem terminal para confirmar." "Rode com YES=1 para confirmar sem perguntar: make reset YES=1"
+    [ -t 0 ] || fail "No terminal to confirm." "Run with YES=1 to confirm without asking: make reset YES=1"
 
-    printf 'Digite %ssim%s para continuar: ' "$B" "$N"
+    printf 'Type %syes%s to continue: ' "$B" "$N"
     read -r answer
     case "$(printf '%s' "$answer" | tr '[:upper:]' '[:lower:]')" in
-        sim|s|yes|y) ;;
-        *) printf '\n%sNada foi alterado.%s\n' "$D" "$N"; exit 0 ;;
+        yes|y|sim|s) ;;
+        *) printf '\n%sNothing was changed.%s\n' "$D" "$N"; exit 0 ;;
     esac
     printf '\n'
 fi
 
 if ! output="$(docker compose exec -T app php artisan migrate:fresh --seed --force 2>&1)"; then
-    fail "Não consegui limpar o banco de dados." "$(printf '%s' "$output" | tail -3 | cut -c1-110)" "Veja os detalhes com: make logs"
+    fail "Could not wipe the database." "$(printf '%s' "$output" | tail -3 | cut -c1-110)" "See the details with: make logs"
 fi
-ok "Banco de dados limpo"
+ok "Database wiped"
 
 docker compose exec -T redis redis-cli FLUSHALL >/dev/null 2>&1 \
-    && ok "Fila e cache esvaziados" \
-    || printf '%s!%s Não consegui esvaziar a fila (Redis). Tarefas antigas podem sobrar.\n' "$Y" "$N"
+    && ok "Queue and cache emptied" \
+    || printf '%s!%s Could not empty the queue (Redis). Old jobs may remain.\n' "$Y" "$N"
 
-printf '\n%s%s✔ Tudo no estado inicial.%s\n' "$G" "$B" "$N"
-printf '  %sAbra o painel: a primeira tela é a de configuração inicial.%s\n\n' "$D" "$N"
+printf '\n%s%s✔ Back to a fresh install.%s\n' "$G" "$B" "$N"
+printf '  %sOpen the dashboard: the first screen is the initial setup.%s\n\n' "$D" "$N"

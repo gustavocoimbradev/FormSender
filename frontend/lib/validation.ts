@@ -17,7 +17,7 @@ export function isValidPassword(value: string): boolean {
 
 export type Strength = { score: 0 | 1 | 2 | 3 | 4; label: string };
 
-const LABELS = ["", "Fraca", "Razoável", "Boa", "Forte"] as const;
+const LABELS = ["", "Weak", "Fair", "Good", "Strong"] as const;
 
 /** A friendly 0-4 estimate; only the length is actually required by the API. */
 export function passwordStrength(value: string): Strength {

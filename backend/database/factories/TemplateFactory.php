@@ -19,7 +19,7 @@ class TemplateFactory extends Factory
     {
         return [
             'name' => fake()->words(2, true),
-            'subject' => 'Nova mensagem: {{form_name}}',
+            'subject' => 'New message: {{form_name}}',
             'html' => '<p>{{fields}}</p>',
         ];
     }
