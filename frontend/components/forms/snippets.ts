@@ -28,7 +28,7 @@ function payloadValue(field: FormField, read: string): string {
   return read;
 }
 
-/** Hidden field every form has built in: people never fill it, bots do, and then the message is dropped. */
+/** Hidden field every form has built in. It is never explained inside the snippets, so a bot reading them learns nothing. */
 const HONEYPOT = "_gotcha";
 const HONEYPOT_STYLE = "position:absolute;left:-9999px";
 const HONEYPOT_ATTRS = 'tabindex="-1" autocomplete="off" aria-hidden="true"';
@@ -77,7 +77,6 @@ export function htmlSnippet(form: Form, endpoint: string): string {
   const data = [`          ${HONEYPOT}: form.elements["${HONEYPOT}"].value,`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `form.elements["${field.name}"]${field.type === "checkbox" ? ".checked" : ".value"}`)},`)].join("\n");
 
   return `<form id="formsender">
-  <!-- Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. -->
   <input type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}">
 
 ${rows}
@@ -184,7 +183,6 @@ ${payload}
 
   return (
     <form onSubmit={submit}>
-      {/* Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. */}
       <input type="text" name="${HONEYPOT}" value={values.${HONEYPOT}} onChange={change} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
 
 ${rows}
@@ -247,8 +245,7 @@ ${payload}
 
 <template>
   <form @submit.prevent="submit">
-    <!-- Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. -->
-    <input v-model="values.${HONEYPOT}" type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
+      <input v-model="values.${HONEYPOT}" type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
 
 ${rows}
 
@@ -308,7 +305,6 @@ ${payload}
 </script>
 
 <form on:submit={(event) => { event.preventDefault(); submit(); }}>
-  <!-- Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. -->
   <input type="text" name="${HONEYPOT}" bind:value={values.${HONEYPOT}} ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
 
 ${rows}
@@ -338,7 +334,7 @@ function phpPayload(form: Form, read: (field: FormField) => string): string {
 
 function phpSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
-  const honeypot = `    '${HONEYPOT}' => $_POST['${HONEYPOT}'] ?? '', // honeypot: keep the hidden "${HONEYPOT}" input first in your HTML form\n`;
+  const honeypot = `    '${HONEYPOT}' => $_POST['${HONEYPOT}'] ?? '',\n`;
   const payload = honeypot + phpPayload(form, (field) => {
     const input = `$_POST['${field.name}'] ?? ''`;
     if (field.type === "checkbox") return `isset($_POST['${field.name}'])`;
@@ -372,7 +368,7 @@ echo $sent ? '${OK}' : '${FAIL}';`;
 
 function laravelSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
-  const honeypot = `        '${HONEYPOT}' => $request->input('${HONEYPOT}'), // honeypot: keep the hidden "${HONEYPOT}" input first in your form\n`;
+  const honeypot = `        '${HONEYPOT}' => $request->input('${HONEYPOT}'),\n`;
   const payload = honeypot + fieldsOf(form)
     .map((field) => {
       if (field.type === "checkbox") return `        '${field.name}' => $request->boolean('${field.name}'),`;

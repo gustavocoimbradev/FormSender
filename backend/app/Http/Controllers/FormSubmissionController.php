@@ -24,7 +24,7 @@ class FormSubmissionController extends Controller
      * Newest first, paginated, with the processing status and the delivery result of each destination. Filter with `status`.
      */
     #[Endpoint(operationId: 'listSubmissions')]
-    #[QueryParameter('status', description: 'Only show submissions in this delivery status: `pending`, `processing`, `sent`, `partial` or `failed`.', required: false, type: 'string', example: 'failed')]
+    #[QueryParameter('status', description: 'Only show submissions in this delivery status: `pending`, `processing`, `sent`, `partial`, `failed` or `spam` (caught by the hidden `_gotcha` field and never sent).', required: false, type: 'string', example: 'failed')]
     public function index(Request $request, Form $form): AnonymousResourceCollection
     {
         $filters = $request->validate([

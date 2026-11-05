@@ -23,6 +23,7 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: "sent", label: "Sent" },
   { id: "partial", label: "Partial" },
   { id: "failed", label: "Failed" },
+  { id: "spam", label: "Spam" },
 ];
 
 const STATUS: Record<SubmissionStatus, { label: string; tone: "neutral" | "accent" | "success" | "warning" | "danger" }> = {
@@ -31,6 +32,7 @@ const STATUS: Record<SubmissionStatus, { label: string; tone: "neutral" | "accen
   sent: { label: "Sent", tone: "success" },
   partial: { label: "Partial", tone: "warning" },
   failed: { label: "Failed", tone: "danger" },
+  spam: { label: "Spam", tone: "warning" },
 };
 
 const DELIVERY: Record<string, { label: string; tone: "neutral" | "success" | "danger" }> = {
@@ -64,7 +66,7 @@ export function SubmissionsPanel({ form }: { form: Form }) {
     {
       id: "deliveries",
       header: "Deliveries",
-      cell: (item) => `${item.deliveries.filter((delivery) => delivery.status === "sent").length}/${item.deliveries.length}`,
+      cell: (item) => item.status === "spam" ? "–" : `${item.deliveries.filter((delivery) => delivery.status === "sent").length}/${item.deliveries.length}`,
       className: "whitespace-nowrap",
     },
   ];
@@ -125,25 +127,32 @@ export function SubmissionsPanel({ form }: { form: Form }) {
               </dl>
             </section>
 
-            <section>
-              <h3 className="mb-3 text-lg font-semibold">Delivery</h3>
-              <ul className="divide-y divide-surface/10 rounded-control border border-surface/10">
-                {open.deliveries.map((delivery) => (
-                  <li key={delivery.destination} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                      <p className="break-all text-base">{delivery.destination}</p>
-                      {delivery.error && <p className="text-base text-danger">{delivery.error}</p>}
-                      {delivery.sent_at && <p className="text-base text-muted">Delivered {formatDateTime(delivery.sent_at)}</p>}
-                    </div>
-                    <Badge tone={DELIVERY[delivery.status].tone}>{DELIVERY[delivery.status].label}</Badge>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-3 text-base text-muted">
-                {open.attempts} {open.attempts === 1 ? "attempt" : "attempts"}
-                {open.error ? ` · ${open.error}` : ""}
-              </p>
-            </section>
+            {open.status === "spam" ? (
+              <section>
+                <h3 className="mb-3 text-lg font-semibold">Delivery</h3>
+                <p className="text-base text-muted">Marked as spam. This message was not sent to anyone.</p>
+              </section>
+            ) : (
+              <section>
+                <h3 className="mb-3 text-lg font-semibold">Delivery</h3>
+                <ul className="divide-y divide-surface/10 rounded-control border border-surface/10">
+                  {open.deliveries.map((delivery) => (
+                    <li key={delivery.destination} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="break-all text-base">{delivery.destination}</p>
+                        {delivery.error && <p className="text-base text-danger">{delivery.error}</p>}
+                        {delivery.sent_at && <p className="text-base text-muted">Delivered {formatDateTime(delivery.sent_at)}</p>}
+                      </div>
+                      <Badge tone={DELIVERY[delivery.status].tone}>{DELIVERY[delivery.status].label}</Badge>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-base text-muted">
+                  {open.attempts} {open.attempts === 1 ? "attempt" : "attempts"}
+                  {open.error ? ` · ${open.error}` : ""}
+                </p>
+              </section>
+            )}
 
             <section>
               <h3 className="mb-3 text-lg font-semibold">Source</h3>

@@ -11,7 +11,8 @@
   <img src="https://img.shields.io/badge/PHP-8.4-777bb4?logo=php&logoColor=white" alt="PHP 8.4">
   <img src="https://img.shields.io/badge/Next.js-14-000?logo=nextdotjs" alt="Next.js 14">
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL 16">
-  <img src="https://img.shields.io/badge/tests-311%20passing-3ddc97" alt="311 tests">
+  <img src="https://img.shields.io/badge/tests-317%20passing-3ddc97" alt="317 tests">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8b6bff" alt="MIT license"></a>
 </p>
 
 <p align="center"><img src="docs/screenshots/templates.png" alt="Email template editor with live preview" width="900"></p>
@@ -40,7 +41,7 @@ flowchart LR
 |---|---|
 | **Instant and reliable** | Emails never block a request. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
 | **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
-| **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202`, and nothing is saved or sent. |
+| **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |
 | **No secrets in the browser** | No token to leak. A form is reached by a random public `code`; sending is controlled by its **allowed sites** (`Origin`/`Referer`, `*.company.com` wildcards, per-form CORS) and rate limiting. Numeric ids are never exposed. |
 | **Audit trail** | Every message is stored with a snapshot of the form, and it stays even if the form is deleted. |
 | **Teams and roles** | `admin` and `user`. Users manage forms; admins also manage people and SMTP. Only the *owner* (first admin) can touch other admins. |
@@ -100,7 +101,7 @@ Headless **Laravel 13** on **PHP 8.4**, **PostgreSQL 16**, **Redis**, **Sanctum*
 
 - **The Laravel way, no over-engineering.** Form Requests, API Resources, Policies, route-model binding, Eloquent. Controllers stay thin; an Action class exists only when a use case earns it (multi-step, transactional, side effects). No repositories or service layers "just in case".
 - **Strict and typed everywhere.** `declare(strict_types=1)` on every file, typed parameters, returns and properties.
-- **Test-driven.** 311 Pest tests written before the code. CI runs them on every push against **SQLite and a real PostgreSQL 16**.
+- **Test-driven.** 317 Pest tests written before the code. CI runs them on every push against **SQLite and a real PostgreSQL 16**.
 - **Hardened by default.** Security headers, restricted CORS, per-route throttling, login without account enumeration, password reset by a hashed emailed code, encrypted queue payloads for secrets.
 - **One renderer.** The same `EmailTemplateRenderer` produces the delivered email and the editor preview, and escapes every submitted value.
 
@@ -138,6 +139,10 @@ curl -X POST http://localhost:8000/api/forms/YOUR_FORM_CODE/submit \
   -H 'Content-Type: application/json' \
   -d '{"name": "Maria", "email": "maria@company.com", "message": "Hello!"}'
 ```
+
+## License
+
+[MIT](LICENSE): free to use, copy, modify and distribute, including commercially, as long as the copyright notice (credit to **Gustavo Coimbra**) is kept.
 
 ## Structure
 

@@ -48,7 +48,7 @@ export type Form = {
 
 export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains" | "template">;
 
-export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed";
+export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed" | "spam";
 
 export type Delivery = {
   destination: string;

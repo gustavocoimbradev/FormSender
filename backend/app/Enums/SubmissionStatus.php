@@ -11,4 +11,6 @@ enum SubmissionStatus: string
     case Sent = 'sent';
     case Partial = 'partial';
     case Failed = 'failed';
+    /** Caught by the honeypot: kept for review, never delivered. */
+    case Spam = 'spam';
 }

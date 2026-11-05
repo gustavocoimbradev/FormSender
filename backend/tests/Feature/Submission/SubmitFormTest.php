@@ -196,23 +196,41 @@ describe('allowed domains', function (): void {
 });
 
 describe('honeypot', function (): void {
-    it('quietly accepts a submission whose hidden _gotcha field was filled by a bot, without saving or sending it', function (): void {
+    it('answers a bot exactly like a real visitor, but records the message as spam and never sends it', function (): void {
         $form = contactForm();
 
-        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'http://spam.test']))
+        $response = $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'http://spam.test']))
             ->assertStatus(202)
+            ->assertJsonPath('data.status', 'pending')
             ->assertJsonStructure(['message', 'data' => ['id', 'status']]);
 
-        expect(FormSubmission::count())->toBe(0);
+        $submission = FormSubmission::sole();
+
+        expect($submission->status->value)->toBe('spam')
+            ->and($response->json('data.id'))->toBe($submission->id)
+            ->and($submission->data)->toBe(['name' => 'Jane', 'email' => 'jane@example.com'])
+            ->and($submission->destinations)->toBe([])
+            ->and($submission->deliveries)->toBe([])
+            ->and($submission->processed_at)->not->toBeNull();
+
         Queue::assertNothingPushed();
     });
 
-    it('does not tell a bot anything even when the rest of its payload is invalid', function (): void {
+    it('also keeps the message of a bot whose payload is invalid, and says nothing about it', function (): void {
         $form = contactForm();
 
-        $this->postJson("/api/forms/{$form->code}/submit", ['_gotcha' => 'x'])->assertStatus(202);
+        $this->postJson("/api/forms/{$form->code}/submit", ['_gotcha' => 'x', 'email' => 'not-an-email', 'extra' => 'dropped'])->assertStatus(202);
 
-        expect(FormSubmission::count())->toBe(0);
+        expect(FormSubmission::sole()->status->value)->toBe('spam')
+            ->and(FormSubmission::sole()->data)->toBe(['email' => 'not-an-email']);
+        Queue::assertNothingPushed();
+    });
+
+    it('does not reveal a missing email setup or destinations to a bot', function (): void {
+        Setting::where('key', 'smtp')->delete();
+        $form = contactForm(['destinations' => []]);
+
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'x']))->assertStatus(202);
     });
 
     it('accepts people: an empty _gotcha is ignored and never stored', function (): void {
@@ -220,7 +238,8 @@ describe('honeypot', function (): void {
 
         $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => '']))->assertStatus(202);
 
-        expect(FormSubmission::sole()->data)->not->toHaveKey('_gotcha');
+        expect(FormSubmission::sole()->data)->not->toHaveKey('_gotcha')
+            ->and(FormSubmission::sole()->status->value)->toBe('pending');
         Queue::assertPushed(SendFormSubmission::class, 1);
     });
 
@@ -228,5 +247,15 @@ describe('honeypot', function (): void {
         $form = contactForm(['allowed_domains' => ['site.test']]);
 
         $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'x']), ['Origin' => 'https://evil.test'])->assertForbidden();
+    });
+
+    it('lists spam in the messages and lets it be filtered', function (): void {
+        actingAsUser();
+        $form = contactForm();
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'x']));
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission());
+
+        $this->getJson("/api/forms/{$form->code}/submissions")->assertJsonCount(2, 'data');
+        $this->getJson("/api/forms/{$form->code}/submissions?status=spam")->assertJsonCount(1, 'data')->assertJsonPath('data.0.status', 'spam');
     });
 });
