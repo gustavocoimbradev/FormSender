@@ -62,6 +62,7 @@ export function SetupScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
+  const [confirmationChecked, setConfirmationChecked] = useState(false);
   const [stage, setStage] = useState<1 | 2>(1);
   const [host, setHost] = useState(DEFAULT_SMTP.host);
   const [port, setPort] = useState(DEFAULT_SMTP.port);
@@ -91,7 +92,8 @@ export function SetupScreen() {
     void checkStatus();
   }, [checkStatus]);
 
-  const mismatch = confirmation.length > 0 && confirmation !== password;
+  // Only told once the person leaves the field (or tries to continue), never while typing.
+  const mismatch = confirmationChecked && confirmation.length > 0 && confirmation !== password;
   const adminReady = isValidEmail(email) && isValidPassword(password) && confirmation === password;
   const serverReady = isValidHost(host) && isValidPort(port) && isValidEmail(fromAddress);
   const canSubmit = adminReady && serverReady && !submitting;
@@ -115,6 +117,7 @@ export function SetupScreen() {
     // Enter on the first step just moves on to the second.
     if (stage === 1) {
       if (adminReady) setStage(2);
+      else setConfirmationChecked(true);
       return;
     }
 
@@ -195,12 +198,25 @@ export function SetupScreen() {
                 autoFocus
                 placeholder="voce@empresa.com"
               />
-              <PasswordField id="password" label="Senha" value={password} onChange={setPassword} error={errors.password} />
+              <PasswordField
+                id="password"
+                label="Senha"
+                value={password}
+                onChange={(value) => {
+                  setPassword(value);
+                  setConfirmationChecked(false);
+                }}
+                error={errors.password}
+              />
               <PasswordField
                 id="confirmation"
                 label="Confirmar senha"
                 value={confirmation}
-                onChange={setConfirmation}
+                onChange={(value) => {
+                  setConfirmation(value);
+                  setConfirmationChecked(false);
+                }}
+                onBlur={() => setConfirmationChecked(true)}
                 error={mismatch ? "As senhas não coincidem." : undefined}
                 showStrength={false}
                 placeholder="Repita a senha"

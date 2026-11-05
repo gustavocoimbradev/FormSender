@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from "react";
+import { useEffect, useRef, type InputHTMLAttributes, type ReactNode } from "react";
 
 type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   id: string;
@@ -16,6 +16,24 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
 /** Labelled input with an animated focus glow and an inline error that announces itself. */
 export function Field({ id, label, hint, error, icon, trailing, footer, labelAside, className = "", ...input }: FieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const box = useRef<HTMLDivElement>(null);
+
+  // A small shake when an error shows up. It runs on the existing element, so the
+  // input is never remounted (which would take the focus away while typing).
+  useEffect(() => {
+    if (!error || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    box.current?.animate(
+      [
+        { transform: "translateX(0)" },
+        { transform: "translateX(-6px)" },
+        { transform: "translateX(6px)" },
+        { transform: "translateX(-4px)" },
+        { transform: "translateX(0)" },
+      ],
+      { duration: 380, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+  }, [error]);
 
   return (
     <div className="mb-4">
@@ -26,12 +44,11 @@ export function Field({ id, label, hint, error, icon, trailing, footer, labelAsi
         {labelAside}
       </div>
 
-      {/* Remounted on a new error so the shake plays each time. */}
       <div
-        key={error ?? "ok"}
+        ref={box}
         className={`group relative flex items-center rounded-control border bg-surface/[0.04] transition duration-300 ease-out focus-within:bg-surface/[0.07] focus-within:ring-4 ${
           error
-            ? "animate-shake border-danger/70 focus-within:border-danger focus-within:ring-danger/20"
+            ? "border-danger/70 focus-within:border-danger focus-within:ring-danger/20"
             : "border-surface/10 hover:border-surface/20 focus-within:border-accent focus-within:ring-accent/20"
         }`}
       >

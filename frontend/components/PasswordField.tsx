@@ -9,6 +9,7 @@ type PasswordFieldProps = {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   error?: string;
   disabled?: boolean;
   /** Live strength meter; for choosing a password, not for typing an existing one. */
@@ -34,7 +35,7 @@ const Lock = () => (
 );
 
 /** Password input with a show/hide toggle and a live strength meter. */
-export function PasswordField({ id, label, value, onChange, error, disabled, showStrength = true, placeholder = "Mínimo de 8 caracteres" }: PasswordFieldProps) {
+export function PasswordField({ id, label, value, onChange, onBlur, error, disabled, showStrength = true, placeholder = "Mínimo de 8 caracteres" }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   const { score, label: strengthLabel } = passwordStrength(value);
 
@@ -45,6 +46,7 @@ export function PasswordField({ id, label, value, onChange, error, disabled, sho
       type={visible ? "text" : "password"}
       value={value}
       onChange={(event) => onChange(event.target.value)}
+      onBlur={onBlur}
       error={error}
       disabled={disabled}
       icon={<Lock />}
