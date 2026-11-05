@@ -2,11 +2,11 @@
 
 import { useState, type FormEvent } from "react";
 import { ApiError, createUser, updateUser, type ManagedUser, type User, type UserInput } from "@/lib/api";
-import { canChangeRole } from "@/lib/permissions";
+import { canChangeRole, canDeleteUser } from "@/lib/permissions";
 import { isValidEmail, isValidPassword, normalizeEmail } from "@/lib/validation";
 import { ActionButton } from "../Button";
 import { Field } from "../Field";
-import { MailIcon } from "../icons";
+import { MailIcon, TrashIcon } from "../icons";
 import { PasswordField } from "../PasswordField";
 import { Select } from "../ui/Select";
 import { Modal } from "../ui/Modal";
@@ -27,18 +27,20 @@ type UserModalProps = {
   user?: ManagedUser;
   onClose: () => void;
   onSaved: () => void;
+  /** Asks to delete the user being edited (the screen shows the confirmation). */
+  onDelete?: (user: ManagedUser) => void;
 };
 
-export function UserModal({ open, actor, user, onClose, onSaved }: UserModalProps) {
+export function UserModal({ open, actor, user, onClose, onSaved, onDelete }: UserModalProps) {
   return (
     <Modal open={open} title={user ? "Edit user" : "New user"} onClose={onClose}>
       {/* Remounted on each open so the form always starts from the right user. */}
-      {open && <UserForm key={user?.id ?? "new"} actor={actor} user={user} onClose={onClose} onSaved={onSaved} />}
+      {open && <UserForm key={user?.id ?? "new"} actor={actor} user={user} onClose={onClose} onSaved={onSaved} onDelete={onDelete} />}
     </Modal>
   );
 }
 
-function UserForm({ actor, user, onClose, onSaved }: Omit<UserModalProps, "open">) {
+function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalProps, "open">) {
   const toast = useToast();
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
@@ -134,11 +136,17 @@ function UserForm({ actor, user, onClose, onSaved }: Omit<UserModalProps, "open"
 
       {errors.form && <p role="alert" className="mb-4 rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.form}</p>}
 
-      <div className="mt-2 grid gap-3 sm:grid-cols-2">
-        <ActionButton type="button" variant="ghost" onClick={onClose} disabled={saving} className="h-14">
-          Cancel
-        </ActionButton>
-        <ActionButton type="submit" loading={saving} className="h-14">
+      <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {user && onDelete && canDeleteUser(actor, user) ? (
+          <ActionButton type="button" variant="danger" onClick={() => onDelete(user)} disabled={saving} className="h-14 px-6">
+            <TrashIcon /> Delete
+          </ActionButton>
+        ) : (
+          <ActionButton type="button" variant="ghost" onClick={onClose} disabled={saving} className="h-14 px-6">
+            Cancel
+          </ActionButton>
+        )}
+        <ActionButton type="submit" loading={saving} className="h-14 sm:px-10">
           {user ? "Save" : "Create user"}
         </ActionButton>
       </div>

@@ -7,7 +7,7 @@ import { useResource } from "@/lib/hooks";
 import { canDeleteUser, canEditUser, roleLabel } from "@/lib/permissions";
 import { ActionButton, PhoneLabel } from "../Button";
 import { CardUnreachable } from "../CardStates";
-import { PencilIcon, PlusIcon, TrashIcon, UsersIcon } from "../icons";
+import { ChevronIcon, PencilIcon, PlusIcon, TrashIcon, UsersIcon } from "../icons";
 import { useSession } from "../panel/PanelFrame";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
@@ -102,6 +102,21 @@ export function UsersScreen() {
               columns={columns}
               rows={data?.data ?? []}
               getKey={(item) => item.id}
+              onRowClick={(item) => canEditUser(actor, item) && setEditing(item)}
+              renderMobileRow={(item) => (
+                <div className="flex min-h-14 items-center gap-3">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface/10 text-lg font-semibold">{(item.name.trim()[0] ?? "?").toUpperCase()}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-lg font-medium">
+                      {item.name}
+                      {item.id === actor.id && <span className="ml-2 text-base font-normal text-muted">(you)</span>}
+                    </p>
+                    <p className="truncate text-base text-muted">{item.email}</p>
+                  </div>
+                  {item.role === "admin" && <Badge tone="accent">Admin</Badge>}
+                  {canEditUser(actor, item) && <ChevronIcon className="size-5 shrink-0 text-muted" />}
+                </div>
+              )}
               loading={loading && !data}
               empty={<EmptyState icon={<UsersIcon />} title="No users" action={newUser} />}
             />
@@ -110,7 +125,17 @@ export function UsersScreen() {
         )}
       </Card>
 
-      <UserModal open={editing !== undefined} actor={actor} user={editing === "new" ? undefined : editing} onClose={() => setEditing(undefined)} onSaved={reload} />
+      <UserModal
+        open={editing !== undefined}
+        actor={actor}
+        user={editing === "new" ? undefined : editing}
+        onClose={() => setEditing(undefined)}
+        onSaved={reload}
+        onDelete={(item) => {
+          setEditing(undefined);
+          setRemoving(item);
+        }}
+      />
 
       <ConfirmDialog
         open={removing !== undefined}

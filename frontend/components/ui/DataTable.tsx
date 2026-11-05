@@ -18,13 +18,15 @@ type DataTableProps<T> = {
   /** Rows to show as skeletons while loading. */
   loading?: boolean;
   empty?: ReactNode;
+  /** A compact row for phones. Without it, phones get a card listing every column. */
+  renderMobileRow?: (row: T) => ReactNode;
 };
 
 const SHIMMER =
   "animate-shimmer rounded-full bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]";
 
 /** A table on desktop, a list of cards on phones. */
-export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = false, empty }: DataTableProps<T>) {
+export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = false, empty, renderMobileRow }: DataTableProps<T>) {
   if (loading) {
     return (
       <div role="status" aria-label="Loading" className="space-y-1 p-4">
@@ -80,15 +82,21 @@ export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = fals
             onKeyDown={onRowClick ? (event) => event.key === "Enter" && onRowClick(row) : undefined}
             tabIndex={onRowClick ? 0 : undefined}
             style={{ animationDelay: `${Math.min(index, 8) * 40}ms` }}
-            className={`animate-fade-up space-y-2 px-4 py-4 transition-colors duration-300 active:bg-surface/[0.06] ${onRowClick ? "cursor-pointer" : ""}`}
+            className={`animate-fade-up px-4 transition-colors duration-300 active:bg-surface/[0.06] ${renderMobileRow ? "py-3" : "space-y-2 py-4"} ${onRowClick ? "cursor-pointer" : ""}`}
           >
-            <div className="text-lg font-medium">{primary.cell(row)}</div>
-            {others.map((column) => (
-              <div key={column.id} className="flex items-center justify-between gap-4 text-base">
-                <span className="text-muted">{column.header}</span>
-                <span className="min-w-0 text-right">{column.cell(row)}</span>
-              </div>
-            ))}
+            {renderMobileRow ? (
+              renderMobileRow(row)
+            ) : (
+              <>
+                <div className="text-lg font-medium">{primary.cell(row)}</div>
+                {others.map((column) => (
+                  <div key={column.id} className="flex items-center justify-between gap-4 text-base">
+                    <span className="text-muted">{column.header}</span>
+                    <span className="min-w-0 text-right">{column.cell(row)}</span>
+                  </div>
+                ))}
+              </>
+            )}
           </li>
         ))}
       </ul>
