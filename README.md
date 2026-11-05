@@ -1,101 +1,150 @@
-# FormSender
+<h1 align="center">➤ Form Sender</h1>
 
-[![CI](https://github.com/gustavocoimbradev/form-sender/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavocoimbradev/form-sender/actions/workflows/ci.yml)
+<p align="center">
+  <b>Forms without a backend.</b><br>
+  Create a form, paste one snippet into any website, and every message lands in your inbox, beautifully formatted.
+</p>
 
-Form backend as a service. Create a form, drop its endpoint on any website, and every submission is saved and delivered by email to the destinations you choose.
+<p align="center">
+  <a href="https://github.com/gustavocoimbradev/form-sender/actions/workflows/ci.yml"><img src="https://github.com/gustavocoimbradev/form-sender/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/Laravel-13-ff2d20?logo=laravel&logoColor=white" alt="Laravel 13">
+  <img src="https://img.shields.io/badge/PHP-8.4-777bb4?logo=php&logoColor=white" alt="PHP 8.4">
+  <img src="https://img.shields.io/badge/Next.js-14-000?logo=nextdotjs" alt="Next.js 14">
+  <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL 16">
+  <img src="https://img.shields.io/badge/tests-311%20passing-3ddc97" alt="311 tests">
+</p>
 
-> **Status:** the API (`/backend`) is complete and tested. The dashboard (`/frontend`, Next.js) covers setup, login, forms, templates, users and SMTP.
+<p align="center"><img src="docs/screenshots/templates.png" alt="Email template editor with live preview" width="900"></p>
 
-## How it works
+## What it does
 
-1. An admin logs in and creates a **form**: accepted fields, destination emails, allowed websites.
-2. The form gets a unique, random **code** (never the numeric id).
-3. A website sends `POST /api/forms/{code}/submit` straight from the page: no backend, no token.
-4. The API validates the data, **saves it**, and answers `202` immediately.
-5. A **queue worker** delivers the email through the configured SMTP. Every destination keeps its own delivery status for auditing.
+You have a contact page, a landing page, a signup sheet. You do **not** want to build a server just to receive what people type.
+
+1. **Create a form** in the dashboard: its fields, who receives the messages, which sites may send it.
+2. **Copy the snippet** (HTML, JavaScript, React, PHP, Python... the panel generates it for your stack).
+3. **Done.** Each submission is validated, saved, and emailed to your team, with the answer arriving instantly (`202`) because the email goes out in the background.
+
+```mermaid
+flowchart LR
+    A[Visitor on your site] -->|POST /api/forms/code/submit| B[API]
+    B -->|validate, save, 202| A
+    B -->|job| C[(Redis queue)]
+    C --> D[Worker]
+    D -->|your template| E[SMTP]
+    E --> F[Team inbox]
+```
 
 ## Highlights
 
-- **Instant responses.** Emails never block a request: Redis queue, retries with backoff, per-destination status (`pending`, `sent`, `partial`, `failed`).
-- **Email templates.** Each form can use its own email: a subject and HTML written for email clients, with variables (`{{form_name}}`, `{{fields}}`, `{{field.NAME}}`…). The panel has a code editor (autocomplete, a checker for what email clients ignore) and a live preview rendered by the same code that sends the email. A default template that matches the panel's look always exists.
-- **Audit trail.** Submissions are stored with a snapshot of the form and are kept even if the form is deleted.
-- **No backend for the visitor.** Sending is controlled by each form's **allowed sites** (checked on `Origin`/`Referer`, dynamic CORS per form, `*.example.com` wildcards), the form's unguessable code and rate limiting. Forms are addressed by code everywhere, so ids cannot be walked.
-- **Roles and ownership.** `admin` and `user`; only the initial admin (the *owner*) can change or remove other admins.
-- **SMTP configured at runtime** through the API, stored encrypted. Mailpit is the local default, so development never sends a real email.
-- **Auth.** Sanctum bearer tokens with expiry, one-time `/setup` for the first admin, password reset by a hashed emailed code (cool-down, throttling, attempt lock), login throttling without account enumeration.
-- **Hardened by default.** Security headers, restricted CORS, encrypted queue payloads for secrets.
-- **Self-documenting API.** OpenAPI docs generated from the code, written in plain language, and enforced by tests.
-
-## Stack
-
-| Layer | Choice |
+| | |
 |---|---|
-| API | Laravel 13, PHP 8.4, strict types everywhere |
-| Data | PostgreSQL 16, Redis 7 (queue and cache) |
-| Auth | Laravel Sanctum |
-| Tests | Pest, TDD |
-| Docs | Scramble (OpenAPI) |
-| Infra | Docker Compose, Mailpit, GitHub Actions |
-| Front-end | Next.js 14, TypeScript, Tailwind (scaffold) |
+| **Instant and reliable** | Emails never block a request. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
+| **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
+| **No secrets in the browser** | No token to leak. A form is reached by a random public `code`; sending is controlled by its **allowed sites** (`Origin`/`Referer`, `*.company.com` wildcards, per-form CORS) and rate limiting. Numeric ids are never exposed. |
+| **Audit trail** | Every message is stored with a snapshot of the form, and it stays even if the form is deleted. |
+| **Teams and roles** | `admin` and `user`. Users manage forms; admins also manage people and SMTP. Only the *owner* (first admin) can touch other admins. |
+| **SMTP at runtime** | Configured in the panel, stored encrypted, never in `.env`. Locally it points at Mailpit. |
+| **Self-documenting API** | OpenAPI docs generated from the code, written in plain language, and **enforced by tests**: an undocumented endpoint fails the build. |
 
-## Engineering notes
+## Screens
 
-- **The Laravel way, without over-engineering.** Form Requests, API Resources, policies, route model binding. Controllers stay thin; an Action class exists only where a use case earns it (multiple steps, transaction, side effects). No repositories or service layers "just in case".
-- **Test-driven.** About 250 Pest tests, written before the code. CI runs them on every push against **SQLite and a real PostgreSQL 16**.
-- **Conventional Commits** and small, focused commits.
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/integration.png" alt="Integration tab with a ready-to-paste snippet"></td>
+    <td width="50%"><img src="docs/screenshots/messages.png" alt="Received messages with delivery status"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Ready-to-paste snippets, one per stack</sub></td>
+    <td align="center"><sub>Every message, with its delivery status</sub></td>
+  </tr>
+</table>
 
-## Running it
+## What is Mailpit?
+
+[Mailpit](https://mailpit.axllent.org) is a **fake SMTP server with a web inbox**. In development, Form Sender sends every email to it instead of to real people: nothing leaves your machine, and you can open the inbox and see exactly what your template produces. It comes with the Docker setup, is wired up automatically, and has a shortcut in the panel's user menu (admins only).
+
+## Run it in one command
 
 Requires Docker.
 
 ```bash
-make up      # checks Docker, starts everything, prints the Panel, API and Mailpit URLs; Ctrl+C stops it
-make up logs # same, streaming every log
-make urls    # lists every URL (panel, API docs, Mailpit)
+make up
 ```
 
-Then create the first admin once:
+It checks Docker, picks **free ports on its own** (so it never collides with anything you already run), starts everything, seeds the database and prints:
 
-```bash
-curl -X POST http://localhost:8000/api/setup \
-  -H 'Content-Type: application/json' \
-  -d '{"email": "you@company.com", "password": "a-long-password"}'
+```
+✔ Form Sender no ar!
+
+  Painel     http://localhost:3000
+  API        http://localhost:8000
+  Mailpit    http://localhost:8025
 ```
 
-| URL | What |
-|---|---|
-| `http://localhost:8000/` | API documentation |
-| `http://localhost:8025` | Mailpit inbox (every email sent locally lands here) |
-
-Ports are chosen automatically (`scripts/free-ports.sh`) so the stack never collides with anything already running. The exact links are printed by `make up`.
+Open the **Painel**, create the first admin (a two-step setup: administrator, then SMTP, already filled with Mailpit), and build your first form. **Ctrl+C** stops everything.
 
 | Command | |
 |---|---|
-| `make start` | Same as `up`, but in the background (`make down` stops it) |
-| `make test` | Run the test suite |
-| `make migrate` / `make seed` | Run migrations / seeders |
-| `make reset` | Wipe the database back to a fresh install (asks first) |
-| `make status` / `make down` | Container status / stop |
+| `make up logs` | Same, streaming every log |
+| `make start` / `make down` | Run in the background / stop |
+| `make test` | Run the whole test suite |
+| `make reset` | Back to a fresh install (asks first) |
+| `make urls` / `make status` | Every URL / container status |
+
+## Under the hood
+
+### Back-end: `/backend`
+
+Headless **Laravel 13** on **PHP 8.4**, **PostgreSQL 16**, **Redis**, **Sanctum** for dashboard users.
+
+- **The Laravel way, no over-engineering.** Form Requests, API Resources, Policies, route-model binding, Eloquent. Controllers stay thin; an Action class exists only when a use case earns it (multi-step, transactional, side effects). No repositories or service layers "just in case".
+- **Strict and typed everywhere.** `declare(strict_types=1)` on every file, typed parameters, returns and properties.
+- **Test-driven.** 311 Pest tests written before the code. CI runs them on every push against **SQLite and a real PostgreSQL 16**.
+- **Hardened by default.** Security headers, restricted CORS, per-route throttling, login without account enumeration, password reset by a hashed emailed code, encrypted queue payloads for secrets.
+- **One renderer.** The same `EmailTemplateRenderer` produces the delivered email and the editor preview, and escapes every submitted value.
+
+### Front-end: `/frontend`
+
+**Next.js 14** (App Router), **TypeScript**, **Tailwind**, **CodeMirror 6**.
+
+- **A real product UI**, not a landing page: dark, violet-to-cyan identity, glass cards, a floating bottom bar on phones, a sliding round navigation on desktop.
+- **Mobile-first** and checked at 360 to 1440px: no horizontal scroll, 44px touch targets, 16px minimum text.
+- **Custom controls** (searchable selects, switches, chips) instead of native ones, with CSS-only micro-animations that respect `prefers-reduced-motion`.
+- **Same-origin `/api` proxy**, so the browser never deals with CORS; one typed API client; 422 errors map to the inputs and only a `401` ends a session.
+- **Design tokens** for every color, radius and duration.
+
+### Infra
+
+Docker Compose at the root runs the API, queue worker, front-end, PostgreSQL, Redis and Mailpit. GitHub Actions runs the full suite on every push and pull request.
 
 ## API at a glance
 
+Full, friendly docs are served at the API root (`/`).
+
 | Area | Endpoints |
 |---|---|
-| Setup and auth | `POST /setup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
-| Password reset | `POST /auth/forgot-password`, `POST /auth/reset-password` |
-| Forms | CRUD on `/forms/{code}` |
+| Setup and auth | `POST /setup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, password reset |
+| Forms | CRUD on `/forms/{code}`, `POST /forms/{code}/test` |
+| Submitting | `POST /forms/{code}/submit` (public: allowed sites, no token) |
+| Submissions | `GET /forms/{code}/submissions` (+ filter by status) |
 | Templates | CRUD on `/templates/{code}`, `POST /templates/preview` |
-| Submitting | `POST /forms/{code}/submit` (no login, no token: allowed sites) |
-| Submissions | `GET /forms/{code}/submissions`, `GET /forms/{code}/submissions/{id}` |
-| Users (admin) | CRUD on `/users` |
-| Settings (admin) | `GET` and `PUT /settings` (SMTP) |
+| Users, Settings | CRUD on `/users`, `GET`/`PUT /settings` (admin) |
+
+```bash
+# What a website sends. No token, no backend of your own.
+curl -X POST http://localhost:8000/api/forms/YOUR_FORM_CODE/submit \
+  -H 'Origin: https://your-site.com' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Maria", "email": "maria@company.com", "message": "Hello!"}'
+```
 
 ## Structure
 
 ```
-backend/    Laravel API (app/Actions, Http, Jobs, Policies, tests)
-frontend/   Next.js dashboard (scaffold)
-docker/     PHP image and entrypoint
-scripts/    free port detection, URLs
-.github/    CI workflow
+backend/     Laravel API (Actions, Http, Jobs, Policies, Support, tests)
+frontend/    Next.js dashboard
+docker/      PHP image and entrypoint
+scripts/     make up: free ports, URLs, reset, branding
+docs/        screenshots
+.github/     CI workflow
 ```
