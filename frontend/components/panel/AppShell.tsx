@@ -300,14 +300,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="absolute inset-0 backdrop-blur-[10px] [mask-image:linear-gradient(to_bottom,black_10%,transparent_55%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/20 to-transparent" />
         </div>
-        {/* Left: a way back when the screen is a sub screen (not in the bottom bar), otherwise the brand. */}
-        {backHref ? (
+        {/* Left: a way back when the screen is a sub screen (not in the bottom bar). Otherwise nothing. */}
+        {backHref && (
           <Link href={backHref} aria-label="Back" className="relative col-start-1 row-start-1 grid size-11 place-items-center justify-self-start rounded-full text-text transition-colors duration-300 hover:bg-surface/10">
             <ChevronIcon className="size-6 rotate-180" />
-          </Link>
-        ) : (
-          <Link href="/" aria-label="FormSender, home" className="relative col-start-1 row-start-1 grid size-11 place-items-center justify-self-start rounded-full transition-opacity duration-300 hover:opacity-80">
-            <LogoMark className="size-8" />
           </Link>
         )}
 
