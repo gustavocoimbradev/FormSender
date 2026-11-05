@@ -1,8 +1,8 @@
 <h1 align="center">➤ Form Sender</h1>
 
 <p align="center">
-  <b>Forms without a backend.</b><br>
-  Create a form, paste one snippet into any website, and every message lands in your inbox, beautifully formatted.
+  <b>Your own form backend, up in one command.</b><br>
+  Self-hosted and open source. Create a form, paste one snippet into any website, and every message lands in your team's inbox, in a template you design.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ## What it does
 
-You have a contact page, a landing page, a signup sheet. You do **not** want to build a server just to receive what people type.
+You have a contact page, a landing page, a signup sheet. You should not have to write, secure and maintain form handling for each one. Run Form Sender once, and every site you own can use it.
 
 1. **Create a form** in the dashboard: its fields, who receives the messages, which sites may send it.
 2. **Copy the snippet** (HTML, JavaScript, React, PHP, Python... the panel generates it for your stack).
@@ -131,7 +131,7 @@ Full, friendly docs are served at the API root (`/`).
 | Users, Settings | CRUD on `/users`, `GET`/`PUT /settings` (admin) |
 
 ```bash
-# What a website sends. No token, no backend of your own.
+# What a website sends. No token, no extra code on the site.
 curl -X POST http://localhost:8000/api/forms/YOUR_FORM_CODE/submit \
   -H 'Origin: https://your-site.com' \
   -H 'Content-Type: application/json' \
