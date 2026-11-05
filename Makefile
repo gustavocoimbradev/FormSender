@@ -1,4 +1,4 @@
-.PHONY: up down urls test migrate
+.PHONY: up down urls test migrate status
 
 up:
 	@./scripts/free-ports.sh
@@ -16,3 +16,6 @@ test:
 
 migrate:
 	@docker compose exec app php artisan migrate --force $(ARGS)
+
+status:
+	@docker compose ps
