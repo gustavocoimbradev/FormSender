@@ -1,4 +1,4 @@
-const STEPS = ["Administrador", "Servidor de e-mail"];
+const STEPS = ["Administrador", "SMTP"];
 
 const Check = () => (
   <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
