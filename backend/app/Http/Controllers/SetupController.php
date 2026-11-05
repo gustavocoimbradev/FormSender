@@ -33,7 +33,8 @@ class SetupController extends Controller
      * Create the initial admin account.
      *
      * Only works while no admin exists (HTTP 403 afterwards). The created account is the *owner*:
-     * the admin that can later change or remove other admins. `name` defaults to "Admin".
+     * the admin that can later change or remove other admins. `name` defaults to "Admin". The email
+     * server (`smtp`) can be saved right here, in the same step; if it is wrong nothing is created.
      */
     #[Endpoint(operationId: 'createInitialAdmin')]
     public function __invoke(SetupRequest $request, CreateInitialAdminAction $createInitialAdmin): UserResource

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Setup;
 
 use App\Enums\Role;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,9 @@ class CreateInitialAdminAction
      * Creates the owner account. Only works while no admin exists; the lock
      * stops two simultaneous requests from both creating an owner.
      *
-     * @param  array{name?: ?string, email: string, password: string}  $data
+     * When `smtp` is given, the email server settings are saved in the same transaction.
+     *
+     * @param  array{name?: ?string, email: string, password: string, smtp?: array<string, mixed>}  $data
      */
     public function execute(array $data): User
     {
@@ -31,6 +34,10 @@ class CreateInitialAdminAction
                 $owner->role = Role::Admin;
                 $owner->is_owner = true;
                 $owner->save();
+
+                if (isset($data['smtp'])) {
+                    Setting::updateOrCreate(['key' => 'smtp'], ['value' => $data['smtp']]);
+                }
 
                 return $owner;
             });
