@@ -1,5 +1,7 @@
 <?php
 
+beforeEach(fn () => actingAsUser());
+
 use App\Models\Form;
 
 it('updates a form name', function () {

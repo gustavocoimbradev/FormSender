@@ -1,5 +1,7 @@
 <?php
 
+beforeEach(fn () => actingAsAdmin());
+
 use App\Models\Setting;
 
 function smtpPayload(array $overrides = []): array
@@ -24,15 +26,15 @@ it('returns null smtp when it was never configured', function () {
         ->assertJsonPath('data.smtp', null);
 });
 
-it('saves the smtp settings without exposing the password', function () {
+it('saves the smtp settings and returns them, password included', function () {
     $this->putJson('/api/settings', smtpPayload())
         ->assertOk()
         ->assertJsonPath('data.smtp.host', 'smtp.example.com')
         ->assertJsonPath('data.smtp.port', 587)
         ->assertJsonPath('data.smtp.encryption', 'tls')
         ->assertJsonPath('data.smtp.from_address', 'no-reply@example.com')
-        ->assertJsonPath('data.smtp.password_set', true)
-        ->assertJsonMissingPath('data.smtp.password');
+        ->assertJsonPath('data.smtp.username', 'user')
+        ->assertJsonPath('data.smtp.password', 'secret-pass');
 });
 
 it('returns the saved smtp settings', function () {
@@ -41,8 +43,7 @@ it('returns the saved smtp settings', function () {
     $this->getJson('/api/settings')
         ->assertOk()
         ->assertJsonPath('data.smtp.host', 'smtp.example.com')
-        ->assertJsonPath('data.smtp.password_set', true)
-        ->assertJsonMissingPath('data.smtp.password');
+        ->assertJsonPath('data.smtp.password', 'secret-pass');
 });
 
 it('stores the smtp settings encrypted', function () {
@@ -72,7 +73,7 @@ it('keeps the current password when none is sent', function () {
 it('accepts smtp settings without authentication or encryption', function () {
     $this->putJson('/api/settings', smtpPayload(['username' => null, 'password' => null, 'encryption' => null]))
         ->assertOk()
-        ->assertJsonPath('data.smtp.password_set', false);
+        ->assertJsonPath('data.smtp.password', null);
 });
 
 it('validates the smtp settings', function (array $payload, string $errorKey) {

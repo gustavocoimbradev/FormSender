@@ -28,13 +28,8 @@ class SettingController extends Controller
 
     private function respond(): JsonResource
     {
-        $smtp = Setting::where('key', 'smtp')->first()?->value;
-
-        if ($smtp !== null) {
-            $smtp['password_set'] = filled($smtp['password'] ?? null);
-            unset($smtp['password']);
-        }
-
-        return new JsonResource(['smtp' => $smtp]);
+        return new JsonResource([
+            'smtp' => Setting::where('key', 'smtp')->first()?->value,
+        ]);
     }
 }

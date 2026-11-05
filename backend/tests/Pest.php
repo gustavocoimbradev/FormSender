@@ -50,3 +50,27 @@ function something()
 {
     // ..
 }
+
+function actingAsUser(): App\Models\User
+{
+    $user = App\Models\User::factory()->create();
+    Laravel\Sanctum\Sanctum::actingAs($user);
+
+    return $user;
+}
+
+function actingAsAdmin(): App\Models\User
+{
+    $admin = App\Models\User::factory()->admin()->create();
+    Laravel\Sanctum\Sanctum::actingAs($admin);
+
+    return $admin;
+}
+
+function actingAsOwner(?App\Models\User $owner = null): App\Models\User
+{
+    $owner ??= App\Models\User::factory()->owner()->create();
+    Laravel\Sanctum\Sanctum::actingAs($owner);
+
+    return $owner;
+}

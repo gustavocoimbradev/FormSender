@@ -1,5 +1,7 @@
 <?php
 
+beforeEach(fn () => actingAsUser());
+
 it('creates a form with a name', function () {
     $response = $this->postJson('/api/forms', ['name' => 'Contact']);
 
