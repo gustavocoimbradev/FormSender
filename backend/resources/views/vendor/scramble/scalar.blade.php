@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#07070d">
     <title>{{ $config->get('ui.title') ?? config('app.name') . ' - API Docs' }}</title>
-    <link rel="icon" href="data:image/svg+xml,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="g" x1="4" y1="36" x2="36" y2="4" gradientUnits="userSpaceOnUse"><stop stop-color="#8b6bff"/><stop offset="1" stop-color="#3dd6f5"/></linearGradient></defs><g stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M36 4 17.5 22.5"/><path d="M36 4 24.5 36l-7-13.5L4 15.5 36 4Z"/></g></svg>') }}">
+    <link rel="icon" href="data:image/svg+xml,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="g" x1="4" y1="20" x2="36" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#8b6bff"/><stop offset="1" stop-color="#3dd6f5"/></linearGradient></defs><path d="M35 20 7 7l8 13-8 13Z" fill="url(#g)" stroke="url(#g)" stroke-width="3" stroke-linejoin="round"/></svg>') }}">
     @include('scramble::dev-tools', ['renderer' => 'scalar'])
 
     {{-- The look of the dashboard: dark surfaces, violet accent, the same radius and fonts. --}}
@@ -143,15 +143,12 @@
     <a class="fs-brand" href="/">
         <svg viewBox="0 0 40 40" fill="none" aria-hidden="true">
             <defs>
-                <linearGradient id="fs-gradient" x1="4" y1="36" x2="36" y2="4" gradientUnits="userSpaceOnUse">
+                <linearGradient id="fs-gradient" x1="4" y1="20" x2="36" y2="20" gradientUnits="userSpaceOnUse">
                     <stop stop-color="#8b6bff"/>
                     <stop offset="1" stop-color="#3dd6f5"/>
                 </linearGradient>
             </defs>
-            <g stroke="url(#fs-gradient)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M36 4 17.5 22.5"/>
-                <path d="M36 4 24.5 36l-7-13.5L4 15.5 36 4Z"/>
-            </g>
+            <path d="M35 20 7 7l8 13-8 13Z" fill="url(#fs-gradient)" stroke="url(#fs-gradient)" stroke-width="3" stroke-linejoin="round"/>
         </svg>
         FormSender
         <span class="fs-tag">API</span>
