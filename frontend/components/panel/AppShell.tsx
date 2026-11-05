@@ -7,7 +7,8 @@ import { apiPublicUrl, mailpitPublicUrl } from "@/lib/config";
 import { isAdmin, roleLabel } from "@/lib/permissions";
 import { AmbientBackground } from "../AmbientBackground";
 import { BookIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon, TemplateIcon, UsersIcon } from "../icons";
-import { Logo, LogoMark } from "../Logo";
+import { LogoMark } from "../Logo";
+import { PHONE_HEADER_SLOT } from "../ui/PageHeader";
 import { Spinner } from "../Spinner";
 import { useSession } from "./PanelFrame";
 
@@ -36,16 +37,16 @@ function Tooltip({ children }: { children: ReactNode }) {
   );
 }
 
-function Avatar({ name, className = "size-full text-lg" }: { name: string; className?: string }) {
+function Avatar({ name }: { name: string }) {
   return (
-    <span className={`grid place-items-center rounded-full bg-gradient-to-br from-accent to-[#6f8cff] font-semibold text-bg ${className}`}>
+    <span className="grid size-full place-items-center rounded-full bg-gradient-to-br from-accent to-[#6f8cff] text-lg font-semibold text-bg">
       {(name.trim()[0] ?? "?").toUpperCase()}
     </span>
   );
 }
 
 /** Only the avatar. The name, the role and the way out open when it is clicked. */
-function UserMenu({ placement }: { placement: "header" | "rail" }) {
+function UserMenu() {
   const { user, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -79,17 +80,15 @@ function UserMenu({ placement }: { placement: "header" | "rail" }) {
         aria-label="User menu"
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`grid place-items-center rounded-full transition duration-300 hover:brightness-110 ${placement === "header" ? "size-11" : "size-12"}`}
+        className="grid size-12 place-items-center rounded-full transition duration-300 hover:brightness-110"
       >
-        <Avatar name={user.name || user.email} className={placement === "header" ? "size-8 text-base" : "size-full text-lg"} />
+        <Avatar name={user.name || user.email} />
       </button>
 
       {open && (
         <div
           role="menu"
-          className={`absolute z-50 w-64 animate-pop rounded-card border border-surface/15 bg-[#12121f] p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)] ${
-            placement === "header" ? "right-0 top-full mt-3" : "bottom-0 left-full ml-5"
-          }`}
+          className="absolute bottom-full right-0 z-50 mb-4 w-64 animate-pop rounded-card border border-surface/15 bg-[#12121f] p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)] lg:bottom-0 lg:left-full lg:right-auto lg:mb-0 lg:ml-5"
         >
           <p className="truncate text-base font-semibold" title={user.name}>
             {user.name}
@@ -239,20 +238,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Phone header: fixed, with a subtle dark fade and a progressive blur (stacked layers, each blurrier and
           shorter than the last). The glass is its own layer, so the fade never clips the user menu. */}
-      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.25rem)]">
           <div className="absolute inset-0 backdrop-blur-[2px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
           <div className="absolute inset-0 backdrop-blur-[5px] [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)]" />
           <div className="absolute inset-0 backdrop-blur-[10px] [mask-image:linear-gradient(to_bottom,black_10%,transparent_55%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/20 to-transparent" />
         </div>
-        <Link href="/" aria-label="FormSender, home" className="relative">
-          <Logo size="sm" />
-        </Link>
-
-        <div className="relative">
-          <UserMenu placement="header" />
-        </div>
+        {/* The current screen puts its title and its main action here (see PageHeader). */}
+        <div id={PHONE_HEADER_SLOT} className="relative flex min-h-12 min-w-0 flex-1 items-center justify-between gap-3" />
       </header>
 
 
@@ -264,13 +258,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
           <NavRail />
 
-          <div className="hidden lg:block">
-            <UserMenu placement="rail" />
-          </div>
+          <UserMenu />
         </div>
       </aside>
 
-      <main className="min-w-0 px-4 pb-32 pt-[calc(4rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10">
+      <main className="min-w-0 px-4 pb-32 pt-[calc(5.25rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
     </div>

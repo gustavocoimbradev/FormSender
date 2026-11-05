@@ -9,7 +9,7 @@ import { Field } from "../Field";
 import { MailIcon, TrashIcon } from "../icons";
 import { PasswordField } from "../PasswordField";
 import { Select } from "../ui/Select";
-import { Modal } from "../ui/Modal";
+import { Modal, ModalActions } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
 
 type Role = "admin" | "user";
@@ -103,7 +103,7 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
   }
 
   return (
-    <form onSubmit={submit} noValidate>
+    <form onSubmit={submit} noValidate className="flex flex-1 flex-col sm:block">
       <Field id="user-name" label="Name" value={name} onChange={(event) => setName(event.target.value)} error={errors.name} disabled={saving} autoComplete="off" placeholder="Maria Souza" />
       <Field
         id="user-email"
@@ -136,7 +136,7 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
 
       {errors.form && <p role="alert" className="mb-4 rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.form}</p>}
 
-      <div className="mt-2 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <ModalActions className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
         {user && onDelete && canDeleteUser(actor, user) ? (
           <ActionButton type="button" variant="danger" onClick={() => onDelete(user)} disabled={saving} className="h-14 px-6">
             <TrashIcon /> Delete
@@ -149,7 +149,7 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
         <ActionButton type="submit" loading={saving} className="h-14 sm:px-10">
           {user ? "Save" : "Create user"}
         </ActionButton>
-      </div>
+      </ModalActions>
     </form>
   );
 }

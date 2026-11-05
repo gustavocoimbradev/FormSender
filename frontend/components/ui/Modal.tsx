@@ -64,8 +64,22 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6 sm:flex-none">{children}</div>
+        <div className="flex flex-1 flex-col overflow-y-auto px-6 pt-6 sm:block sm:flex-none sm:pb-6">{children}</div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The buttons of a dialog. On phones the dialog is a full screen, so they are pinned to the bottom edge
+ * (above the safe area) and stay visible while the content scrolls; on larger screens they simply follow the content.
+ */
+export function ModalActions({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return (
+    <div
+      className={`sticky bottom-0 -mx-6 mt-auto border-t border-surface/10 bg-[#0e0e1a] px-6 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:static sm:mx-0 sm:mt-4 sm:border-0 sm:bg-transparent sm:p-0 ${className}`}
+    >
+      {children}
     </div>
   );
 }

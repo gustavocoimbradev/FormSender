@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, GhostButton } from "../Button";
-import { Modal } from "./Modal";
+import { Modal, ModalActions } from "./Modal";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -20,7 +20,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel, onConfirm, o
     <Modal open={open} title={title} onClose={onClose} busy={busy}>
       <p className="text-base leading-relaxed text-muted">{message}</p>
 
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <ModalActions className="grid gap-3 sm:mt-6 sm:grid-cols-2">
         <GhostButton type="button" onClick={onClose} disabled={busy} data-autofocus>
           Cancel
         </GhostButton>
@@ -32,7 +32,7 @@ export function ConfirmDialog({ open, title, message, confirmLabel, onConfirm, o
         >
           {confirmLabel}
         </Button>
-      </div>
+      </ModalActions>
     </Modal>
   );
 }
