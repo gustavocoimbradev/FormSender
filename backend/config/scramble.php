@@ -71,7 +71,7 @@ REST API of FormSender: create forms, receive their submissions from any website
 
 ## Delivery
 
-Submissions are saved right away and delivered by email in the background (queue), so the submit endpoint answers instantly with `202`. Each submission keeps its processing status per destination for auditing.
+Submissions are saved right away and delivered by email in the background, so the submit endpoint answers instantly with `202`. Each submission keeps its processing status per destination for auditing.
 MD,
     ],
 
@@ -84,10 +84,10 @@ MD,
      * SCRAMBLE_DEV_TOOLS value takes precedence over APP_DEBUG.
      */
     'dev_tools' => [
-        'enabled' => env('SCRAMBLE_DEV_TOOLS', env('APP_DEBUG', false)),
+        'enabled' => env('SCRAMBLE_DEV_TOOLS', false),
     ],
 
-    'renderer' => 'elements',
+    'renderer' => 'scalar',
 
     'renderers' => [
         /*
@@ -109,11 +109,18 @@ MD,
         'scalar' => [
             'view' => 'scramble::scalar',
             'cdn' => 'https://cdn.jsdelivr.net/npm/@scalar/api-reference',
-            'theme' => 'laravel',
-            'proxyUrl' => 'https://proxy.scalar.com',
-            'darkMode' => false,
+            'theme' => 'purple',
+            'layout' => 'modern',
+            'darkMode' => true,
+            'hideDarkModeToggle' => false,
+            'hideDownloadButton' => false,
+            'defaultHttpClient' => ['targetKey' => 'shell', 'clientKey' => 'curl'],
+            'hiddenClients' => ['unirest', 'httpie', 'wget', 'native', 'nsurlsession', 'okhttp', 'restsharp', 'asynchttp', 'httpclient', 'curl-library', 'reqwest'],
             'showDeveloperTools' => 'never',
             'agent' => ['disabled' => true],
+            'metaData' => ['title' => 'FormSender API'],
+            // Requests go straight to this API; nothing is sent through a third-party proxy.
+            'proxyUrl' => null,
             'credentials' => 'include',
         ],
         'fabric' => [

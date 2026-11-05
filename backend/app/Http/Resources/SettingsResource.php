@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Setting;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Setting
+ */
 #[SchemaName('Settings')]
 class SettingsResource extends JsonResource
 {
@@ -20,7 +24,7 @@ class SettingsResource extends JsonResource
             /**
              * The email server (SMTP) used to deliver messages, or null when none was saved yet.
              */
-            'smtp' => $this->resource['smtp'],
+            'smtp' => $this->value,
         ];
     }
 }

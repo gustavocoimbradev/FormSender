@@ -45,8 +45,6 @@ class SettingController extends Controller
 
     private function respond(): SettingsResource
     {
-        return new SettingsResource([
-            'smtp' => Setting::where('key', 'smtp')->first()?->value,
-        ]);
+        return new SettingsResource(Setting::where('key', 'smtp')->first() ?? new Setting(['key' => 'smtp']));
     }
 }
