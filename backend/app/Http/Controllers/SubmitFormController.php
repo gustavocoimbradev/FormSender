@@ -16,6 +16,9 @@ use Illuminate\Support\Str;
 #[Group('Submitting a form', description: 'The endpoint your website calls when a visitor sends the form. No login and no token: only the sites allowed on the form can send it.', weight: 5)]
 class SubmitFormController extends Controller
 {
+    /** The hidden field bots fill in and people never see. */
+    private const HONEYPOT = '_gotcha';
+
     /**
      * Submit a form.
      *
@@ -24,6 +27,10 @@ class SubmitFormController extends Controller
      * `Referer`) of the request must match one of them, otherwise the answer is 403; an empty list
      * lets any site send the form.
      *
+     * Every form has a built-in honeypot: add a hidden field named `_gotcha` to the page (people never see
+     * or fill it, bots do). When it arrives filled, the answer is the same `202`, but nothing is saved or
+     * sent. Leave it empty (or omit it) for real visitors.
+     *
      * Only the fields the form accepts are validated and kept. The submission is saved and queued, and
      * the answer is an instant `202`; the email delivery happens in the background. Limited to 20
      * requests per minute per form and IP.
@@ -31,15 +38,24 @@ class SubmitFormController extends Controller
     #[Endpoint(operationId: 'submitForm')]
     public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission): JsonResponse
     {
+        if ($request->filled(self::HONEYPOT)) {
+            return $this->received(0, 'pending');
+        }
+
         $submission = $receiveSubmission->execute($form, $request->validate($form->submissionRules()), [
             'ip' => $request->ip(),
             'origin' => RequestHost::from($request),
             'user_agent' => Str::limit((string) $request->userAgent(), 255, ''),
         ]);
 
+        return $this->received($submission->id, $submission->status->value);
+    }
+
+    private function received(int $id, string $status): JsonResponse
+    {
         return response()->json([
             'message' => 'Your message was received and will be delivered shortly.',
-            'data' => ['id' => $submission->id, 'status' => $submission->status->value],
+            'data' => ['id' => $id, 'status' => $status],
         ], 202);
     }
 }

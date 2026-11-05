@@ -194,3 +194,39 @@ describe('allowed domains', function (): void {
         'no headers' => [[]],
     ]);
 });
+
+describe('honeypot', function (): void {
+    it('quietly accepts a submission whose hidden _gotcha field was filled by a bot, without saving or sending it', function (): void {
+        $form = contactForm();
+
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'http://spam.test']))
+            ->assertStatus(202)
+            ->assertJsonStructure(['message', 'data' => ['id', 'status']]);
+
+        expect(FormSubmission::count())->toBe(0);
+        Queue::assertNothingPushed();
+    });
+
+    it('does not tell a bot anything even when the rest of its payload is invalid', function (): void {
+        $form = contactForm();
+
+        $this->postJson("/api/forms/{$form->code}/submit", ['_gotcha' => 'x'])->assertStatus(202);
+
+        expect(FormSubmission::count())->toBe(0);
+    });
+
+    it('accepts people: an empty _gotcha is ignored and never stored', function (): void {
+        $form = contactForm();
+
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => '']))->assertStatus(202);
+
+        expect(FormSubmission::sole()->data)->not->toHaveKey('_gotcha');
+        Queue::assertPushed(SendFormSubmission::class, 1);
+    });
+
+    it('still honors the allowed sites for bots', function (): void {
+        $form = contactForm(['allowed_domains' => ['site.test']]);
+
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'x']), ['Origin' => 'https://evil.test'])->assertForbidden();
+    });
+});

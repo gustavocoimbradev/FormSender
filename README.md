@@ -40,6 +40,7 @@ flowchart LR
 |---|---|
 | **Instant and reliable** | Emails never block a request. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
 | **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
+| **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202`, and nothing is saved or sent. |
 | **No secrets in the browser** | No token to leak. A form is reached by a random public `code`; sending is controlled by its **allowed sites** (`Origin`/`Referer`, `*.company.com` wildcards, per-form CORS) and rate limiting. Numeric ids are never exposed. |
 | **Audit trail** | Every message is stored with a snapshot of the form, and it stays even if the form is deleted. |
 | **Teams and roles** | `admin` and `user`. Users manage forms; admins also manage people and SMTP. Only the *owner* (first admin) can touch other admins. |

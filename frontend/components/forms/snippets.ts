@@ -28,6 +28,11 @@ function payloadValue(field: FormField, read: string): string {
   return read;
 }
 
+/** Hidden field every form has built in: people never fill it, bots do, and then the message is dropped. */
+const HONEYPOT = "_gotcha";
+const HONEYPOT_STYLE = "position:absolute;left:-9999px";
+const HONEYPOT_ATTRS = 'tabindex="-1" autocomplete="off" aria-hidden="true"';
+
 const OK = "Message sent!";
 const FAIL = "Could not send. Please try again.";
 
@@ -40,9 +45,10 @@ function serverOrigin(form: Form): string | null {
 
 /** The JSON the form is sent as: every accepted field with an example value. */
 export function sample(form: Form): Record<string, unknown> {
-  return Object.fromEntries(
-    fieldsOf(form).map((field) => [field.name, field.type === "checkbox" ? true : field.type === "number" ? 1 : field.type === "email" ? "person@example.com" : "..."]),
-  );
+  return Object.fromEntries([
+    [HONEYPOT, ""],
+    ...fieldsOf(form).map((field) => [field.name, field.type === "checkbox" ? true : field.type === "number" ? 1 : field.type === "email" ? "person@example.com" : "..."]),
+  ]);
 }
 
 // ------------------------------------------------------------------ plain HTML
@@ -55,7 +61,7 @@ function htmlControl(field: FormField): string {
 
   if (field.type === "select") {
     const options = (field.options ?? []).map((option) => `      <option>${escapeHtml(option)}</option>`).join("\n");
-    return `<select name="${name}"${required}>\n      <option value="">Selecione</option>\n${options}\n    </select>`;
+    return `<select name="${name}"${required}>\n      <option value="">Select</option>\n${options}\n    </select>`;
   }
 
   if (field.type === "checkbox") return `<input type="checkbox" name="${name}"${required}>`;
@@ -68,9 +74,12 @@ export function htmlSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
 
   const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
-  const data = fields.map((field) => `          ${field.name}: ${payloadValue(field, `form.elements["${field.name}"]${field.type === "checkbox" ? ".checked" : ".value"}`)},`).join("\n");
+  const data = [`          ${HONEYPOT}: form.elements["${HONEYPOT}"].value,`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `form.elements["${field.name}"]${field.type === "checkbox" ? ".checked" : ".value"}`)},`)].join("\n");
 
   return `<form id="formsender">
+  <!-- Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. -->
+  <input type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}">
+
 ${rows}
 
   <button type="submit">Send</button>
@@ -125,7 +134,7 @@ function jsxControl(field: FormField, extra: string): string {
 
   if (field.type === "select") {
     const options = (field.options ?? []).map((option) => `            <option>${escapeHtml(option)}</option>`).join("\n");
-    return `<select name="${name}" value={${value}} onChange={change}${required}>\n            <option value="">Selecione</option>\n${options}\n          </select>`;
+    return `<select name="${name}" value={${value}} onChange={change}${required}>\n            <option value="">Select</option>\n${options}\n          </select>`;
   }
 
   if (field.type === "checkbox") return `<input type="checkbox" name="${name}" checked={${value}} onChange={change}${required} />`;
@@ -135,8 +144,8 @@ function jsxControl(field: FormField, extra: string): string {
 
 function reactSnippet(form: Form, endpoint: string, directive = ""): string {
   const fields = fieldsOf(form);
-  const empty = fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`).join(", ");
-  const payload = fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`).join("\n");
+  const empty = [`${HONEYPOT}: ""`, ...fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`)].join(", ");
+  const payload = [`          ${HONEYPOT}: values.${HONEYPOT},`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`)].join("\n");
   const rows = fields.map((field) => `      <label>\n        ${escapeHtml(field.label)}\n        ${jsxControl(field, "")}\n      </label>`).join("\n");
 
   return `${directive}import { useState } from "react";
@@ -175,6 +184,9 @@ ${payload}
 
   return (
     <form onSubmit={submit}>
+      {/* Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. */}
+      <input type="text" name="${HONEYPOT}" value={values.${HONEYPOT}} onChange={change} tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+
 ${rows}
 
       <button type="submit">Send</button>
@@ -194,7 +206,7 @@ function vueControl(field: FormField): string {
 
   if (field.type === "select") {
     const options = (field.options ?? []).map((option) => `        <option>${escapeHtml(option)}</option>`).join("\n");
-    return `<select ${model}${required}>\n        <option value="">Selecione</option>\n${options}\n      </select>`;
+    return `<select ${model}${required}>\n        <option value="">Select</option>\n${options}\n      </select>`;
   }
 
   return `<input ${model} type="${field.type === "checkbox" ? "checkbox" : (INPUT_TYPES[field.type] ?? "text")}"${required} />`;
@@ -202,8 +214,8 @@ function vueControl(field: FormField): string {
 
 function vueSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
-  const empty = fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`).join(", ");
-  const payload = fields.map((field) => `        ${field.name}: ${payloadValue(field, `values.${field.name}`)},`).join("\n");
+  const empty = [`${HONEYPOT}: ""`, ...fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`)].join(", ");
+  const payload = [`        ${HONEYPOT}: values.${HONEYPOT},`, ...fields.map((field) => `        ${field.name}: ${payloadValue(field, `values.${field.name}`)},`)].join("\n");
   const rows = fields.map((field) => `    <label>\n      ${escapeHtml(field.label)}\n      ${vueControl(field)}\n    </label>`).join("\n");
 
   return `<script setup>
@@ -235,6 +247,9 @@ ${payload}
 
 <template>
   <form @submit.prevent="submit">
+    <!-- Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. -->
+    <input v-model="values.${HONEYPOT}" type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
+
 ${rows}
 
     <button type="submit">Send</button>
@@ -253,7 +268,7 @@ function svelteControl(field: FormField): string {
 
   if (field.type === "select") {
     const options = (field.options ?? []).map((option) => `      <option>${escapeHtml(option)}</option>`).join("\n");
-    return `<select bind:value={${value}}${required}>\n      <option value="">Selecione</option>\n${options}\n    </select>`;
+    return `<select bind:value={${value}}${required}>\n      <option value="">Select</option>\n${options}\n    </select>`;
   }
 
   if (field.type === "checkbox") return `<input type="checkbox" bind:checked={${value}}${required} />`;
@@ -263,8 +278,8 @@ function svelteControl(field: FormField): string {
 
 function svelteSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
-  const empty = fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`).join(", ");
-  const payload = fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`).join("\n");
+  const empty = [`${HONEYPOT}: ""`, ...fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`)].join(", ");
+  const payload = [`          ${HONEYPOT}: values.${HONEYPOT},`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`)].join("\n");
   const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${svelteControl(field)}\n  </label>`).join("\n");
 
   return `<script>
@@ -293,6 +308,9 @@ ${payload}
 </script>
 
 <form on:submit={(event) => { event.preventDefault(); submit(); }}>
+  <!-- Honeypot: hidden from people, bots fill it and the message is dropped. Keep it first. -->
+  <input type="text" name="${HONEYPOT}" bind:value={values.${HONEYPOT}} ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
+
 ${rows}
 
   <button type="submit">Send</button>
@@ -320,7 +338,8 @@ function phpPayload(form: Form, read: (field: FormField) => string): string {
 
 function phpSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
-  const payload = phpPayload(form, (field) => {
+  const honeypot = `    '${HONEYPOT}' => $_POST['${HONEYPOT}'] ?? '', // honeypot: keep the hidden "${HONEYPOT}" input first in your HTML form\n`;
+  const payload = honeypot + phpPayload(form, (field) => {
     const input = `$_POST['${field.name}'] ?? ''`;
     if (field.type === "checkbox") return `isset($_POST['${field.name}'])`;
     if (field.type === "number") return `(${input}) === '' ? null : (float) $_POST['${field.name}']`;
@@ -353,7 +372,8 @@ echo $sent ? '${OK}' : '${FAIL}';`;
 
 function laravelSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
-  const payload = fieldsOf(form)
+  const honeypot = `        '${HONEYPOT}' => $request->input('${HONEYPOT}'), // honeypot: keep the hidden "${HONEYPOT}" input first in your form\n`;
+  const payload = honeypot + fieldsOf(form)
     .map((field) => {
       if (field.type === "checkbox") return `        '${field.name}' => $request->boolean('${field.name}'),`;
       if (field.type === "number") return `        '${field.name}' => $request->filled('${field.name}') ? (float) $request->input('${field.name}') : null,`;
