@@ -1,7 +1,7 @@
 node_modules/
 .next/
 .env
-vendor/
+/backend/vendor/
 .DS_Store
 AGENTS.md
 next-env.d.ts
