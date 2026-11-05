@@ -7,7 +7,7 @@ namespace App\Jobs;
 use App\Enums\SubmissionStatus;
 use App\Mail\FormSubmissionMail;
 use App\Models\FormSubmission;
-use App\Models\Setting;
+use App\Support\SmtpMailer;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -34,18 +34,12 @@ class SendFormSubmission implements ShouldQueue, ShouldQueueAfterCommit
 
     public function handle(): void
     {
-        $smtp = Setting::where('key', 'smtp')->first()?->value;
-
-        if ($smtp === null) {
-            throw new RuntimeException('SMTP is not configured.');
-        }
+        $smtp = SmtpMailer::configure();
 
         $submission = $this->submission->refresh();
         $submission->status = SubmissionStatus::Processing;
         $submission->attempts++;
         $submission->save();
-
-        $this->configureMailer($smtp);
 
         $deliveries = $submission->deliveries;
         $failed = [];
@@ -56,7 +50,7 @@ class SendFormSubmission implements ShouldQueue, ShouldQueueAfterCommit
             }
 
             try {
-                Mail::mailer('form-submission')
+                Mail::mailer(SmtpMailer::MAILER)
                     ->to($delivery['destination'])
                     ->send(new FormSubmissionMail($submission, $smtp['from_address'], $smtp['from_name'] ?? null));
 
@@ -97,25 +91,5 @@ class SendFormSubmission implements ShouldQueue, ShouldQueueAfterCommit
         $submission->error = Str::limit($exception->getMessage(), 1000);
         $submission->processed_at = now();
         $submission->save();
-    }
-
-    /**
-     * @param  array<string, mixed>  $smtp
-     */
-    private function configureMailer(array $smtp): void
-    {
-        config(['mail.mailers.form-submission' => [
-            'transport' => 'smtp',
-            'host' => $smtp['host'],
-            'port' => (int) $smtp['port'],
-            'username' => $smtp['username'] ?? null,
-            'password' => $smtp['password'] ?? null,
-            'scheme' => ($smtp['encryption'] ?? null) === 'ssl' ? 'smtps' : null,
-            'timeout' => 15,
-        ]]);
-
-        if (! Mail::isFake()) {
-            Mail::purge('form-submission');
-        }
     }
 }

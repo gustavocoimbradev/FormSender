@@ -44,7 +44,7 @@ function mockMailer(array $rejected = []): stdClass
     });
 
     Mail::shouldReceive('purge')->andReturnNull();
-    Mail::shouldReceive('mailer')->with('form-submission')->andReturn($mailer);
+    Mail::shouldReceive('mailer')->with('saved-smtp')->andReturn($mailer);
 
     return $state;
 }
@@ -106,7 +106,7 @@ it('builds the mailer from the saved smtp settings', function (): void {
 
     (new SendFormSubmission(makeSubmission()))->handle();
 
-    expect(config('mail.mailers.form-submission'))->toMatchArray([
+    expect(config('mail.mailers.saved-smtp'))->toMatchArray([
         'transport' => 'smtp',
         'host' => 'smtp.example.com',
         'port' => 465,

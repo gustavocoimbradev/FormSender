@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormSubmissionController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SubmitFormController;
@@ -17,6 +18,8 @@ Route::post('forms/{form}/submit', SubmitFormController::class)
     ->middleware(['throttle:form-submit', AuthorizeFormSubmission::class]);
 
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('auth/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
+Route::post('auth/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
