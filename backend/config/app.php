@@ -56,6 +56,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Requests per minute each user (or IP) may make to the API.
+    'api_rate_limit' => (int) env('API_RATE_LIMIT', 60),
+
     // Where the dashboard lives (the API docs link back to it).
     'frontend_url' => env('FRONTEND_URL'),
 

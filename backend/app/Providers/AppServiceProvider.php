@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('manage-settings', fn (User $user): bool => $user->isAdmin());
 
-        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute((int) config('app.api_rate_limit'))
             ->by($request->user()?->id ?: $request->ip()));
 
         RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(5)

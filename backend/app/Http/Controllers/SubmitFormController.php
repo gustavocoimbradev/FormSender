@@ -6,10 +6,8 @@ namespace App\Http\Controllers;
 
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
-use App\Actions\Submission\StoreFormSubmissionAction;
-use App\Jobs\SendFormSubmission;
+use App\Actions\Submission\ReceiveFormSubmissionAction;
 use App\Models\Form;
-use App\Models\Setting;
 use App\Support\RequestHost;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,20 +29,13 @@ class SubmitFormController extends Controller
      * requests per minute per form and IP.
      */
     #[Endpoint(operationId: 'submitForm')]
-    public function __invoke(Request $request, Form $form, StoreFormSubmissionAction $storeSubmission): JsonResponse
+    public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission): JsonResponse
     {
-        $data = $request->validate($form->submissionRules());
-
-        abort_if($form->destinations === [], 422, 'This form has no destinations configured.');
-        abort_unless(Setting::where('key', 'smtp')->exists(), 503, 'Email delivery is not configured.');
-
-        $submission = $storeSubmission->execute($form, $data, [
+        $submission = $receiveSubmission->execute($form, $request->validate($form->submissionRules()), [
             'ip' => $request->ip(),
             'origin' => RequestHost::from($request),
             'user_agent' => Str::limit((string) $request->userAgent(), 255, ''),
         ]);
-
-        SendFormSubmission::dispatch($submission);
 
         return response()->json([
             'message' => 'Your message was received and will be delivered shortly.',

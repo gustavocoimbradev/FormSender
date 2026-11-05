@@ -39,6 +39,7 @@ it('documents every api route', function (string $path, string $method): void {
     ['/forms/{form}', 'put'],
     ['/forms/{form}', 'delete'],
     ['/forms/{form}/submit', 'post'],
+    ['/forms/{form}/test', 'post'],
     ['/forms/{form}/submissions', 'get'],
     ['/forms/{form}/submissions/{submission}', 'get'],
     ['/users', 'get'],
@@ -55,7 +56,7 @@ it('declares bearer authentication for protected routes only', function (): void
     expect($document['components']['securitySchemes'])->toHaveKey('http');
     expect($document['components']['securitySchemes']['http'])->toMatchArray(['type' => 'http', 'scheme' => 'bearer']);
 
-    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get']] as [$path, $method]) {
+    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get'], ['/forms/{form}/test', 'post']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->not->toBe([], "{$method} {$path} must be protected");
     }
 
@@ -129,7 +130,7 @@ describe('friendly documentation', function (): void {
         }
 
         expect($ids)->toBe(array_values(array_unique($ids)))
-            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'logIn', 'saveSettings', 'listSubmissions');
+            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'sendTestMessage', 'logIn', 'saveSettings', 'listSubmissions');
     });
 
     it('names schemas after business concepts', function (): void {
@@ -196,6 +197,13 @@ describe('docs design', function (): void {
         $this->get('/')
             ->assertSee('--scalar-color-accent: #8b6bff', false)
             ->assertSee('--scalar-background-1: #07070d', false);
+    });
+
+    it('has the same subtle gradient scrollbars as the dashboard', function (): void {
+        $this->get('/')
+            ->assertSee('::-webkit-scrollbar-thumb', false)
+            ->assertSee('rgba(139, 107, 255, 0.55)', false)
+            ->assertSee('@supports not selector(::-webkit-scrollbar)', false);
     });
 
     it('does not offer a light mode, to stay uniform with the dashboard', function (): void {

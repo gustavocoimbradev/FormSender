@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Submission;
+
+use App\Jobs\SendFormSubmission;
+use App\Models\Form;
+use App\Models\FormSubmission;
+use App\Models\Setting;
+
+class ReceiveFormSubmissionAction
+{
+    public function __construct(private readonly StoreFormSubmissionAction $storeSubmission) {}
+
+    /**
+     * Saves an already validated submission and queues its delivery. Shared by the
+     * public endpoint and by the panel's test.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array{ip?: ?string, origin?: ?string, user_agent?: ?string}  $meta
+     */
+    public function execute(Form $form, array $data, array $meta = []): FormSubmission
+    {
+        abort_if($form->destinations === [], 422, 'This form has no destinations configured.');
+        abort_unless(Setting::where('key', 'smtp')->exists(), 503, 'Email delivery is not configured.');
+
+        $submission = $this->storeSubmission->execute($form, $data, $meta);
+
+        SendFormSubmission::dispatch($submission);
+
+        return $submission;
+    }
+}

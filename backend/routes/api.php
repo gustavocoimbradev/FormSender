@@ -9,6 +9,7 @@ use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SubmitFormController;
+use App\Http\Controllers\TestFormController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureAllowedDomain;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
 
     Route::apiResource('forms', FormController::class);
+    Route::post('forms/{form}/test', TestFormController::class);
     Route::apiResource('forms.submissions', FormSubmissionController::class)->only(['index', 'show'])->scoped();
 
     Route::apiResource('users', UserController::class);
