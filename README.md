@@ -48,8 +48,9 @@ Form backend as a service. Create a form, drop its endpoint on any website, and 
 Requires Docker.
 
 ```bash
-make up      # picks free ports and starts everything; Ctrl+C stops it
-make urls    # prints the links again
+make up      # checks Docker, starts everything, prints the panel URL and a QR code; Ctrl+C stops it
+make up logs # same, streaming every log
+make urls    # lists every URL (panel, API docs, Mailpit)
 ```
 
 Then create the first admin once:

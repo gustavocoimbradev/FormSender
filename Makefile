@@ -1,16 +1,18 @@
-.PHONY: up start down urls test migrate seed status
+.PHONY: up start down urls logs test migrate seed status
 
-# Foreground: logs stream in the terminal and Ctrl+C stops everything.
+# Quiet by default. For the full logs: `make up logs` (or `make up LOGS=1`).
+UP_FLAGS :=
+ifneq ($(filter up,$(MAKECMDGOALS)),)
+ifneq ($(or $(filter logs,$(MAKECMDGOALS)),$(LOGS)),)
+UP_FLAGS := --logs
+endif
+endif
+
+# Foreground: Ctrl+C stops everything.
 up:
-	@./scripts/free-ports.sh
-	@./scripts/after-up.sh & \
-	trap 'kill $$! 2>/dev/null' EXIT; \
-	docker compose up --remove-orphans; \
-	code=$$?; \
-	if [ $$code -eq 130 ]; then exit 0; fi; \
-	exit $$code
+	@./scripts/up.sh $(UP_FLAGS)
 
-# Same stack in the background (for scripts and CI-like use); stop it with `make down`.
+# Same stack in the background (for scripts and automation); stop it with `make down`.
 start:
 	@./scripts/free-ports.sh
 	@docker compose up -d --wait --remove-orphans
@@ -22,6 +24,10 @@ down:
 
 urls:
 	@./scripts/urls.sh
+
+# Follows the logs of a running stack. (`make up logs` already shows them.)
+logs:
+	@$(if $(filter up,$(MAKECMDGOALS)),:,docker compose logs -f --tail=100)
 
 test:
 	@docker compose exec app ./vendor/bin/pest $(ARGS)

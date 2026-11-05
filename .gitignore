@@ -6,3 +6,4 @@ vendor/
 AGENTS.md
 next-env.d.ts
 *.tsbuildinfo
+.logs/
