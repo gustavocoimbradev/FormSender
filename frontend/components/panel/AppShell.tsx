@@ -8,6 +8,7 @@ import { isAdmin, roleLabel } from "@/lib/permissions";
 import { AmbientBackground } from "../AmbientBackground";
 import { BookIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon, TemplateIcon, UsersIcon } from "../icons";
 import { Logo, LogoMark } from "../Logo";
+import { Spinner } from "../Spinner";
 import { useSession } from "./PanelFrame";
 
 type NavItem = { href: string; label: string; icon: ReactNode; adminOnly?: boolean };
@@ -47,6 +48,7 @@ function Avatar({ name }: { name: string }) {
 function UserMenu() {
   const { user, signOut } = useSession();
   const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [docsUrl, setDocsUrl] = useState("/");
   const [mailpitUrl, setMailpitUrl] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
@@ -110,11 +112,16 @@ function UserMenu() {
           <button
             type="button"
             role="menuitem"
-            onClick={() => void signOut()}
-            className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-surface/10 text-base font-medium text-text transition-colors duration-300 hover:bg-surface/[0.16]"
+            disabled={signingOut}
+            aria-busy={signingOut}
+            onClick={() => {
+              setSigningOut(true);
+              void signOut();
+            }}
+            className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-surface/10 text-base font-medium text-text transition-colors duration-300 hover:bg-surface/[0.16] disabled:cursor-wait disabled:opacity-70 disabled:hover:bg-surface/10"
           >
-            <LogoutIcon />
-            Sign out
+            {signingOut ? <Spinner /> : <LogoutIcon />}
+            {signingOut ? "Signing out…" : "Sign out"}
           </button>
         </div>
       )}
