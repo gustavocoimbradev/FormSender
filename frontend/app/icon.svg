@@ -8,7 +8,5 @@
   <g stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <path d="M36 4 17.5 22.5"/>
     <path d="M36 4 24.5 36l-7-13.5L4 15.5 36 4Z"/>
-    <path d="M4 25h7" opacity="0.7"/>
-    <path d="M4 31h4.5" opacity="0.45"/>
   </g>
 </svg>

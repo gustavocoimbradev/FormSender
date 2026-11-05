@@ -1,6 +1,6 @@
 import { useId } from "react";
 
-/** The mark: a paper plane that leaves a trail of form lines. Loose, no tile behind it. */
+/** The mark: a loose paper plane, no tile behind it. */
 export function LogoMark({ className = "size-9" }: { className?: string }) {
   const gradient = useId();
 
@@ -15,8 +15,6 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
       <g stroke={`url(#${gradient})`} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
         <path d="M36 4 17.5 22.5" />
         <path d="M36 4 24.5 36l-7-13.5L4 15.5 36 4Z" />
-        <path d="M4 25h7" opacity="0.7" />
-        <path d="M4 31h4.5" opacity="0.45" />
       </g>
     </svg>
   );
