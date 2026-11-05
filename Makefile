@@ -1,4 +1,4 @@
-.PHONY: up start down urls logs test migrate seed status
+.PHONY: up start down urls logs test migrate seed reset status
 
 # Quiet by default. For the full logs: `make up logs` (or `make up LOGS=1`).
 UP_FLAGS :=
@@ -37,6 +37,10 @@ migrate:
 
 seed:
 	@docker compose exec -T app php artisan db:seed --force $(ARGS)
+
+# Back to a fresh install (asks first). `make reset YES=1` skips the question.
+reset:
+	@YES=$(YES) ./scripts/reset.sh
 
 status:
 	@docker compose ps

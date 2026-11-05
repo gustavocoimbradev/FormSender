@@ -73,6 +73,7 @@ Ports are chosen automatically (`scripts/free-ports.sh`) so the stack never coll
 | `make start` | Same as `up`, but in the background (`make down` stops it) |
 | `make test` | Run the test suite |
 | `make migrate` / `make seed` | Run migrations / seeders |
+| `make reset` | Wipe the database back to a fresh install (asks first) |
 | `make status` / `make down` | Container status / stop |
 
 ## API at a glance
