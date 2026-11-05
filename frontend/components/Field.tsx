@@ -9,17 +9,22 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   trailing?: ReactNode;
   /** Rendered between the input and the message (e.g. a strength meter). */
   footer?: ReactNode;
+  /** Shown on the right of the label (e.g. the password strength). */
+  labelAside?: ReactNode;
 };
 
 /** Labelled input with an animated focus glow and an inline error that announces itself. */
-export function Field({ id, label, hint, error, icon, trailing, footer, className = "", ...input }: FieldProps) {
+export function Field({ id, label, hint, error, icon, trailing, footer, labelAside, className = "", ...input }: FieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
   return (
-    <div className="mb-3">
-      <label htmlFor={id} className="mb-2 block text-base font-medium text-text/90">
-        {label}
-      </label>
+    <div className="mb-4">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <label htmlFor={id} className="text-base font-medium text-text/90">
+          {label}
+        </label>
+        {labelAside}
+      </div>
 
       {/* Remounted on a new error so the shake plays each time. */}
       <div
@@ -47,13 +52,13 @@ export function Field({ id, label, hint, error, icon, trailing, footer, classNam
 
       {footer && <div className="mt-3">{footer}</div>}
 
-      <div aria-live="polite" className="mt-2 min-h-6 text-base leading-6">
+      <div aria-live="polite" className="text-base leading-6">
         {error ? (
-          <p id={`${id}-error`} className="animate-fade-in text-danger">
+          <p id={`${id}-error`} className="mt-2 animate-fade-in text-danger">
             {error}
           </p>
         ) : hint ? (
-          <p id={`${id}-hint`} className="text-muted">
+          <p id={`${id}-hint`} className="mt-2 text-muted">
             {hint}
           </p>
         ) : null}

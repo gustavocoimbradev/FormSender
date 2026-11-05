@@ -1,0 +1,142 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "react";
+import { ApiError, getCurrentUser, getSetupStatus, login } from "@/lib/api";
+import { clearToken, getToken, saveToken } from "@/lib/session";
+import { isValidEmail, normalizeEmail } from "@/lib/validation";
+import { AuthShell } from "./AuthShell";
+import { Button } from "./Button";
+import { CardSkeleton, CardUnreachable } from "./CardStates";
+import { Field } from "./Field";
+import { PasswordField } from "./PasswordField";
+import { MailIcon } from "./icons";
+
+type Phase = "checking" | "ready" | "unreachable";
+
+const step = (index: number): CSSProperties => ({ "--i": index }) as CSSProperties;
+
+function toMessage(error: unknown): string {
+  if (!(error instanceof ApiError)) return "Algo deu errado. Tente novamente.";
+  if (error.status === 422) return "E-mail ou senha incorretos.";
+  if (error.status === 429) return "Muitas tentativas. Aguarde um minuto e tente de novo.";
+  if (error.status === 0) return "Não consegui falar com o servidor. Verifique sua conexão.";
+  return "Algo deu errado do nosso lado. Tente novamente em instantes.";
+}
+
+export function LoginScreen() {
+  const router = useRouter();
+  const [phase, setPhase] = useState<Phase>("checking");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const prepare = useCallback(async () => {
+    setPhase("checking");
+
+    try {
+      // A fresh install has no account to log into yet.
+      if (!(await getSetupStatus())) {
+        router.replace("/setup");
+        return;
+      }
+
+      // Already signed in on this browser: straight to the app.
+      const token = getToken();
+      if (token) {
+        try {
+          await getCurrentUser(token);
+          router.replace("/");
+          return;
+        } catch (failure) {
+          if (failure instanceof ApiError && failure.status === 0) throw failure;
+          clearToken();
+        }
+      }
+
+      setPhase("ready");
+    } catch {
+      setPhase("unreachable");
+    }
+  }, [router]);
+
+  useEffect(() => {
+    void prepare();
+  }, [prepare]);
+
+  const canSubmit = isValidEmail(email) && password.length > 0 && !submitting;
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (!canSubmit) return;
+
+    setSubmitting(true);
+    setError(undefined);
+
+    try {
+      const session = await login({ email: normalizeEmail(email), password });
+      saveToken(session.token);
+      router.replace("/");
+    } catch (failure) {
+      setError(toMessage(failure));
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <AuthShell>
+      {phase === "checking" && <CardSkeleton rows={2} />}
+      {phase === "unreachable" && <CardUnreachable onRetry={prepare} />}
+
+      {phase === "ready" && (
+        <form onSubmit={handleSubmit} noValidate aria-label="Entrar">
+          <div className="stagger animate-fade-up" style={step(0)}>
+            <Field
+              id="email"
+              label="E-mail"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={submitting}
+              icon={<MailIcon />}
+              autoComplete="email"
+              inputMode="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              autoFocus
+              placeholder="voce@empresa.com"
+            />
+          </div>
+
+          <div className="stagger animate-fade-up" style={step(1)}>
+            <PasswordField
+              id="password"
+              label="Senha"
+              value={password}
+              onChange={setPassword}
+              disabled={submitting}
+              showStrength={false}
+              placeholder="Sua senha"
+            />
+          </div>
+
+          {/* Remounted on every new message so the shake plays again. */}
+          <div aria-live="assertive" className="text-base">
+            {error && (
+              <p key={error + String(submitting)} className="mb-3 animate-shake rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-danger">
+                {error}
+              </p>
+            )}
+          </div>
+
+          <div className="stagger mt-1 animate-fade-up" style={step(2)}>
+            <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Entrando…">
+              Entrar
+            </Button>
+          </div>
+        </form>
+      )}
+    </AuthShell>
+  );
+}

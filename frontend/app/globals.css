@@ -37,6 +37,27 @@
   :focus-visible {
     @apply outline-none ring-4 ring-accent/40;
   }
+
+  /*
+   * A field filled by the browser (a saved email, for instance) keeps the look of
+   * the design: no repainted background, no changed text color. The very long
+   * transition is the reliable way to stop Chromium from tinting the background.
+   */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: rgb(var(--text));
+    caret-color: rgb(var(--text));
+    transition:
+      background-color 600000s 0s,
+      color 600000s 0s;
+  }
+
+  input:autofill {
+    background-color: transparent;
+    color: rgb(var(--text));
+  }
 }
 
 /* Delay each entrance by its position: style={{ "--i": 2 }} */

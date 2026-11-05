@@ -1,48 +1,77 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "react";
 import { ApiError, createInitialAdmin, getSetupStatus } from "@/lib/api";
-import { isValidEmail, isValidPassword, normalizeEmail } from "@/lib/validation";
-import { AmbientBackground } from "./AmbientBackground";
-import { Button } from "./Button";
+import { DEFAULT_SMTP } from "@/lib/defaults";
+import { isValidEmail, isValidHost, isValidPassword, isValidPort, normalizeEmail, securityForPort, type Security } from "@/lib/validation";
+import { AuthShell } from "./AuthShell";
+import { Button, GhostButton, LinkButton } from "./Button";
+import { CardSkeleton, CardUnreachable } from "./CardStates";
 import { Field } from "./Field";
-import { Logo } from "./Logo";
 import { PasswordField } from "./PasswordField";
+import { Segmented } from "./Segmented";
+import { SetupSteps } from "./SetupSteps";
 import { SuccessCheck } from "./SuccessCheck";
+import { MailIcon } from "./icons";
 
-type Phase = "checking" | "pending" | "completed" | "unreachable" | "created";
+type Phase = "checking" | "pending" | "unreachable" | "created";
 
-type Errors = { email?: string; password?: string; form?: string };
+type Errors = {
+  email?: string;
+  password?: string;
+  host?: string;
+  port?: string;
+  fromAddress?: string;
+  form?: string;
+};
 
-const Mail = () => (
-  <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <rect x="3" y="5" width="18" height="14" rx="2.5" />
-    <path d="m4 7 8 6 8-6" />
-  </svg>
-);
+const SECURITY_OPTIONS: { value: Security; label: string }[] = [
+  { value: "none", label: "Nenhuma" },
+  { value: "ssl", label: "SSL" },
+  { value: "tls", label: "TLS" },
+];
+
+const step = (index: number): CSSProperties => ({ "--i": index }) as CSSProperties;
 
 /** Friendly Portuguese messages for what the API can answer to the setup. */
-function toErrors(error: unknown): { errors: Errors; completed: boolean } {
-  if (!(error instanceof ApiError)) return { errors: { form: "Algo deu errado. Tente novamente." }, completed: false };
+function toErrors(error: unknown): { errors: Errors; alreadyDone: boolean } {
+  if (!(error instanceof ApiError)) return { errors: { form: "Algo deu errado. Tente novamente." }, alreadyDone: false };
 
-  if (error.status === 403) return { errors: {}, completed: true };
-  if (error.status === 429) return { errors: { form: "Muitas tentativas. Aguarde um minuto e tente de novo." }, completed: false };
-  if (error.status === 0) return { errors: { form: "Não consegui falar com o servidor. Verifique sua conexão." }, completed: false };
+  if (error.status === 403) return { errors: {}, alreadyDone: true };
+  if (error.status === 429) return { errors: { form: "Muitas tentativas. Aguarde um minuto e tente de novo." }, alreadyDone: false };
+  if (error.status === 0) return { errors: { form: "Não consegui falar com o servidor. Verifique sua conexão." }, alreadyDone: false };
 
   if (error.status === 422) {
     const errors: Errors = {};
     if (error.fieldErrors.email) errors.email = "Informe um e-mail válido.";
     if (error.fieldErrors.password) errors.password = "A senha precisa ter pelo menos 8 caracteres.";
-    return { errors, completed: false };
+    if (error.fieldErrors["smtp.host"]) errors.host = "Informe o endereço do servidor.";
+    if (error.fieldErrors["smtp.port"]) errors.port = "Informe uma porta entre 1 e 65535.";
+    if (error.fieldErrors["smtp.from_address"]) errors.fromAddress = "Informe um e-mail de remetente válido.";
+    if (error.fieldErrors["smtp.encryption"]) errors.form = "Escolha uma opção de segurança válida.";
+    return { errors, alreadyDone: false };
   }
 
-  return { errors: { form: "Algo deu errado do nosso lado. Tente novamente em instantes." }, completed: false };
+  return { errors: { form: "Algo deu errado do nosso lado. Tente novamente em instantes." }, alreadyDone: false };
 }
 
 export function SetupScreen() {
+  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("checking");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [stage, setStage] = useState<1 | 2>(1);
+  const [host, setHost] = useState(DEFAULT_SMTP.host);
+  const [port, setPort] = useState(DEFAULT_SMTP.port);
+  const [security, setSecurity] = useState<Security>(DEFAULT_SMTP.security);
+  const [securityChosen, setSecurityChosen] = useState(false);
+  const [smtpUser, setSmtpUser] = useState(DEFAULT_SMTP.username);
+  const [smtpPassword, setSmtpPassword] = useState(DEFAULT_SMTP.password);
+  const [fromAddress, setFromAddress] = useState(DEFAULT_SMTP.fromAddress);
+  const [fromTouched, setFromTouched] = useState(true);
+  const [fromName, setFromName] = useState(DEFAULT_SMTP.fromName);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [createdEmail, setCreatedEmail] = useState("");
@@ -50,157 +79,249 @@ export function SetupScreen() {
   const checkStatus = useCallback(async () => {
     setPhase("checking");
     try {
-      setPhase((await getSetupStatus()) ? "completed" : "pending");
+      // Someone who already did the setup never sees this screen again.
+      if (await getSetupStatus()) router.replace("/login");
+      else setPhase("pending");
     } catch {
       setPhase("unreachable");
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     void checkStatus();
   }, [checkStatus]);
 
-  const canSubmit = isValidEmail(email) && isValidPassword(password) && !submitting;
+  const mismatch = confirmation.length > 0 && confirmation !== password;
+  const adminReady = isValidEmail(email) && isValidPassword(password) && confirmation === password;
+  const serverReady = isValidHost(host) && isValidPort(port) && isValidEmail(fromAddress);
+  const canSubmit = adminReady && serverReady && !submitting;
+
+  // Smart defaults: the usual security for the port, and the login as the sender, until the person chooses.
+  function changePort(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 5);
+    setPort(digits);
+    const usual = securityForPort(digits);
+    if (usual && !securityChosen) setSecurity(usual);
+  }
+
+  function changeSmtpUser(value: string) {
+    setSmtpUser(value);
+    if (!fromTouched && isValidEmail(value)) setFromAddress(value.trim());
+  }
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+
+    // Enter on the first step just moves on to the second.
+    if (stage === 1) {
+      if (adminReady) setStage(2);
+      return;
+    }
+
     if (!canSubmit) return;
 
     setSubmitting(true);
     setErrors({});
 
     try {
-      const user = await createInitialAdmin({ email: normalizeEmail(email), password });
+      const user = await createInitialAdmin({
+        email: normalizeEmail(email),
+        password,
+        smtp: {
+          host: host.trim(),
+          port: Number(port),
+          username: smtpUser.trim() || null,
+          password: smtpPassword || null,
+          encryption: security === "none" ? null : security,
+          from_address: normalizeEmail(fromAddress),
+          from_name: fromName.trim() || null,
+        },
+      });
       setCreatedEmail(user.email);
       setPhase("created");
     } catch (error) {
       const result = toErrors(error);
-      if (result.completed) setPhase("completed");
-      else setErrors(result.errors);
+      if (result.alreadyDone) router.replace("/login");
+      else {
+        setErrors(result.errors);
+        // Problems with the account live on the first step.
+        if (result.errors.email || result.errors.password) setStage(1);
+      }
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <main className="relative grid min-h-dvh place-items-center px-5 py-10 sm:px-10">
-      <AmbientBackground />
+    <AuthShell wide={phase === "pending"}>
+      {phase === "checking" && <CardSkeleton rows={3} />}
+      {phase === "unreachable" && <CardUnreachable onRetry={checkStatus} />}
 
-      <section className="w-full max-w-[28rem]">
-        <div className="mb-8 flex animate-fade-in justify-center">
-          <Logo />
-        </div>
-
-        <div>
-          <div className="animate-fade-up rounded-card border border-surface/10 bg-surface/[0.04] p-6 shadow-[0_30px_80px_-30px_rgb(0_0_0/0.8)] backdrop-blur-xl sm:p-8">
-            {phase === "checking" && <Checking />}
-            {phase === "unreachable" && <Unreachable onRetry={checkStatus} />}
-            {phase === "completed" && <AlreadyDone />}
-            {phase === "created" && <Created email={createdEmail} />}
-
-            {phase === "pending" && (
-              <form onSubmit={handleSubmit} noValidate>
-                <p className="stagger animate-fade-up inline-flex items-center gap-2 rounded-full bg-accent/15 px-3 py-1 text-base font-medium text-accent" style={{ "--i": 0 } as React.CSSProperties}>
-                  <span className="size-2 animate-pulse rounded-full bg-accent" />
-                  Configuração inicial
-                </p>
-
-                <h1 className="stagger animate-fade-up mt-4 text-3xl font-semibold tracking-tight" style={{ "--i": 1 } as React.CSSProperties}>
-                  Crie sua conta de administrador
-                </h1>
-                <p className="stagger animate-fade-up mb-7 mt-2 text-base leading-relaxed text-muted" style={{ "--i": 2 } as React.CSSProperties}>
-                  É a conta principal do FormSender. Você só faz isso uma vez.
-                </p>
-
-                <div className="stagger animate-fade-up" style={{ "--i": 3 } as React.CSSProperties}>
-                  <Field
-                    id="email"
-                    label="E-mail"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    error={errors.email}
-                    disabled={submitting}
-                    icon={<Mail />}
-                    autoComplete="email"
-                    inputMode="email"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    autoFocus
-                    placeholder="voce@empresa.com"
-                  />
-                </div>
-
-                <div className="stagger animate-fade-up" style={{ "--i": 4 } as React.CSSProperties}>
-                  <PasswordField id="password" label="Senha" value={password} onChange={setPassword} error={errors.password} disabled={submitting} />
-                </div>
-
-                <div aria-live="assertive" className="text-base">
-                  {errors.form && <p className="mb-3 animate-fade-in rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-danger">{errors.form}</p>}
-                </div>
-
-                <div className="stagger animate-fade-up mt-1" style={{ "--i": 5 } as React.CSSProperties}>
-                  <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Criando conta…">
-                    Criar conta e continuar
-                  </Button>
-                </div>
-              </form>
-            )}
+      {phase === "created" && (
+        <div className="flex flex-col items-center text-center">
+          <SuccessCheck />
+          <h1 className="stagger mt-6 animate-fade-up text-3xl font-semibold tracking-tight" style={step(3)}>
+            Conta criada!
+          </h1>
+          <p className="stagger mb-7 mt-3 animate-fade-up text-base leading-relaxed text-muted" style={step(4)}>
+            Sua conta de administrador está pronta.
+            <br />
+            <span className="break-all text-text">{createdEmail}</span>
+          </p>
+          <div className="stagger w-full animate-fade-up" style={step(5)}>
+            <LinkButton href="/login">Ir para o login</LinkButton>
           </div>
         </div>
-      </section>
-    </main>
-  );
-}
+      )}
 
-function Checking() {
-  return (
-    <div className="space-y-5" role="status" aria-label="Verificando">
-      <div className="h-8 w-40 animate-shimmer rounded-full bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]" />
-      <div className="h-14 animate-shimmer rounded-control bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]" />
-      <div className="h-14 animate-shimmer rounded-control bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]" />
-      <div className="h-14 animate-shimmer rounded-control bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]" />
-    </div>
-  );
-}
+      {phase === "pending" && (
+        <form onSubmit={handleSubmit} noValidate aria-label="Criar conta">
+          <SetupSteps step={stage} />
 
-function Unreachable({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="animate-fade-up text-center" role="alert">
-      <h1 className="text-2xl font-semibold tracking-tight">Não foi possível conectar</h1>
-      <p className="mb-7 mt-3 text-base leading-relaxed text-muted">
-        Confira sua conexão e tente de novo em instantes.
-      </p>
-      <Button type="button" onClick={onRetry}>
-        Tentar novamente
-      </Button>
-    </div>
-  );
-}
+          {stage === 1 && (
+            <div key="admin" className="animate-fade-up">
+              <Field
+                id="email"
+                label="E-mail"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                error={errors.email}
+                icon={<MailIcon />}
+                autoComplete="email"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
+                autoFocus
+                placeholder="voce@empresa.com"
+              />
+              <PasswordField id="password" label="Senha" value={password} onChange={setPassword} error={errors.password} />
+              <PasswordField
+                id="confirmation"
+                label="Confirmar senha"
+                value={confirmation}
+                onChange={setConfirmation}
+                error={mismatch ? "As senhas não coincidem." : undefined}
+                showStrength={false}
+                placeholder="Repita a senha"
+              />
 
-function AlreadyDone() {
-  return (
-    <div className="animate-fade-up text-center">
-      <h1 className="text-2xl font-semibold tracking-tight">Tudo pronto por aqui</h1>
-      <p className="mt-3 text-base leading-relaxed text-muted">
-        O FormSender já foi configurado. Entre com a conta de administrador.
-      </p>
-    </div>
-  );
-}
+              <div className="mt-1">
+                <Button type="submit" disabled={!adminReady}>
+                  Continuar
+                </Button>
+              </div>
+            </div>
+          )}
 
-function Created({ email }: { email: string }) {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <SuccessCheck />
-      <h1 className="stagger mt-6 animate-fade-up text-3xl font-semibold tracking-tight" style={{ "--i": 3 } as React.CSSProperties}>
-        Conta criada!
-      </h1>
-      <p className="stagger mt-3 animate-fade-up text-base leading-relaxed text-muted" style={{ "--i": 4 } as React.CSSProperties}>
-        Sua conta de administrador está pronta.
-        <br />
-        <span className="break-all text-text">{email}</span>
-      </p>
-    </div>
+          {stage === 2 && (
+            <div key="server" className="animate-fade-up">
+              <div className="grid gap-x-4 sm:grid-cols-[1fr_9rem]">
+                <Field
+                  id="smtp-host"
+                  label="Servidor"
+                  value={host}
+                  onChange={(event) => setHost(event.target.value)}
+                  error={errors.host}
+                  disabled={submitting}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  autoFocus
+                  placeholder="smtp.empresa.com"
+                />
+                <Field
+                  id="smtp-port"
+                  label="Porta"
+                  value={port}
+                  onChange={(event) => changePort(event.target.value)}
+                  error={errors.port}
+                  disabled={submitting}
+                  autoComplete="off"
+                  inputMode="numeric"
+                  placeholder="587"
+                />
+              </div>
+
+              <Segmented
+                label="Segurança"
+                value={security}
+                options={SECURITY_OPTIONS}
+                onChange={(value) => {
+                  setSecurity(value);
+                  setSecurityChosen(true);
+                }}
+                disabled={submitting}
+              />
+
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <Field
+                  id="smtp-user"
+                  label="Usuário"
+                  value={smtpUser}
+                  onChange={(event) => changeSmtpUser(event.target.value)}
+                  disabled={submitting}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="Opcional"
+                />
+                <PasswordField
+                  id="smtp-password"
+                  label="Senha do servidor"
+                  value={smtpPassword}
+                  onChange={setSmtpPassword}
+                  disabled={submitting}
+                  showStrength={false}
+                  placeholder="Opcional"
+                />
+              </div>
+
+              <div className="grid gap-x-4 sm:grid-cols-2">
+                <Field
+                  id="smtp-from"
+                  label="Enviar como"
+                  type="email"
+                  value={fromAddress}
+                  onChange={(event) => {
+                    setFromAddress(event.target.value);
+                    setFromTouched(true);
+                  }}
+                  error={errors.fromAddress}
+                  disabled={submitting}
+                  autoComplete="off"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="nao-responda@empresa.com"
+                />
+                <Field
+                  id="smtp-from-name"
+                  label="Nome do remetente"
+                  value={fromName}
+                  onChange={(event) => setFromName(event.target.value)}
+                  disabled={submitting}
+                  autoComplete="off"
+                  placeholder="Minha Empresa"
+                />
+              </div>
+
+              <div aria-live="assertive" className="text-base">
+                {errors.form && <p className="mb-3 animate-fade-in rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-danger">{errors.form}</p>}
+              </div>
+
+              <div className="mt-1 grid grid-cols-[auto_1fr] gap-3">
+                <GhostButton type="button" onClick={() => setStage(1)} disabled={submitting} className="w-auto">
+                  Voltar
+                </GhostButton>
+                <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Criando conta…">
+                  Criar conta
+                </Button>
+              </div>
+            </div>
+          )}
+        </form>
+      )}
+    </AuthShell>
   );
 }

@@ -34,3 +34,23 @@ export function passwordStrength(value: string): Strength {
 
   return { score, label: LABELS[score] };
 }
+
+export function isValidHost(value: string): boolean {
+  const host = value.trim();
+  return host.length > 0 && !/\s/.test(host);
+}
+
+export function isValidPort(value: string): boolean {
+  const port = Number(value);
+  return /^\d+$/.test(value) && port >= 1 && port <= 65535;
+}
+
+export type Security = "none" | "ssl" | "tls";
+
+/** The usual security for the usual ports, so most people never have to choose. */
+export function securityForPort(value: string): Security | null {
+  if (value === "465") return "ssl";
+  if (value === "587") return "tls";
+  if (value === "25") return "none";
+  return null;
+}

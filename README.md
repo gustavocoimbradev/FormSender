@@ -4,7 +4,7 @@
 
 Form backend as a service. Create a form, drop its endpoint on any website, and every submission is saved and delivered by email to the destinations you choose.
 
-> **Status:** the API (`/backend`) is complete and tested. The dashboard (`/frontend`, Next.js) is scaffolded and not started yet.
+> **Status:** the API (`/backend`) is complete and tested. The dashboard (`/frontend`, Next.js) has the first-run setup (two steps) and login so far; the panel comes next.
 
 ## How it works
 

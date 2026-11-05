@@ -11,6 +11,16 @@ export type User = {
   is_owner: boolean;
 };
 
+export type SmtpSettings = {
+  host: string;
+  port: number;
+  username: string | null;
+  password: string | null;
+  encryption: "ssl" | "tls" | null;
+  from_address: string;
+  from_name: string | null;
+};
+
 export type FieldErrors = Record<string, string[]>;
 
 export class ApiError extends Error {
@@ -27,7 +37,7 @@ export class ApiError extends Error {
 
 type ErrorBody = { message?: string; errors?: FieldErrors };
 
-async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   let response: Response;
 
   try {
@@ -36,6 +46,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       headers: {
         Accept: "application/json",
         ...(init.body ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
     });
@@ -47,6 +58,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     const body = (await response.json().catch(() => ({}))) as ErrorBody;
     throw new ApiError(response.status, body.message ?? "Erro inesperado.", body.errors);
   }
+
+  if (response.status === 204) return undefined as T;
 
   return (await response.json()) as T;
 }
@@ -61,10 +74,31 @@ export async function getSetupStatus(): Promise<boolean> {
 export async function createInitialAdmin(payload: {
   email: string;
   password: string;
+  smtp?: SmtpSettings;
 }): Promise<User> {
   const { data } = await request<{ data: User }>("/setup", {
     method: "POST",
     body: JSON.stringify(payload),
   });
   return data;
+}
+
+/** Logs in. The token goes in `Authorization: Bearer <token>` on later calls. */
+export async function login(payload: { email: string; password: string }): Promise<{ token: string; user: User }> {
+  const body = await request<{ token: string; data: User }>("/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return { token: body.token, user: body.data };
+}
+
+/** The user a token belongs to. Fails with 401 when the token is no longer valid. */
+export async function getCurrentUser(token: string): Promise<User> {
+  const { data } = await request<{ data: User }>("/auth/me", {}, token);
+  return data;
+}
+
+/** Revokes the token on the server. */
+export async function logout(token: string): Promise<void> {
+  await request<void>("/auth/logout", { method: "POST" }, token);
 }

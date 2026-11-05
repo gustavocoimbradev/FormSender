@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation";
+import { HomeScreen } from "@/components/HomeScreen";
 
-// The first screen of a fresh install is the setup.
 export default function Home() {
-  redirect("/setup");
+  return <HomeScreen />;
 }

@@ -11,6 +11,9 @@ type PasswordFieldProps = {
   onChange: (value: string) => void;
   error?: string;
   disabled?: boolean;
+  /** Live strength meter; for choosing a password, not for typing an existing one. */
+  showStrength?: boolean;
+  placeholder?: string;
 };
 
 const BAR_COLORS = ["bg-surface/10", "bg-danger", "bg-[#ffb454]", "bg-accent-2", "bg-success"];
@@ -31,7 +34,7 @@ const Lock = () => (
 );
 
 /** Password input with a show/hide toggle and a live strength meter. */
-export function PasswordField({ id, label, value, onChange, error, disabled }: PasswordFieldProps) {
+export function PasswordField({ id, label, value, onChange, error, disabled, showStrength = true, placeholder = "Mínimo de 8 caracteres" }: PasswordFieldProps) {
   const [visible, setVisible] = useState(false);
   const { score, label: strengthLabel } = passwordStrength(value);
 
@@ -46,7 +49,7 @@ export function PasswordField({ id, label, value, onChange, error, disabled }: P
       disabled={disabled}
       icon={<Lock />}
       autoComplete="new-password"
-      placeholder="Mínimo de 8 caracteres"
+      placeholder={placeholder}
       trailing={
         <button
           type="button"
@@ -58,9 +61,16 @@ export function PasswordField({ id, label, value, onChange, error, disabled }: P
           <Eye off={visible} />
         </button>
       }
+      labelAside={
+        showStrength && value.length > 0 ? (
+          <span className="animate-fade-in text-base text-muted" aria-live="polite">
+            {strengthLabel}
+          </span>
+        ) : undefined
+      }
       footer={
-        <div className="flex items-center gap-3" aria-hidden={value.length === 0}>
-          <div className="grid flex-1 grid-cols-4 gap-1.5">
+        showStrength ? (
+          <div className="grid grid-cols-4 gap-1.5" aria-hidden="true">
             {[1, 2, 3, 4].map((step) => (
               <span
                 key={step}
@@ -68,10 +78,7 @@ export function PasswordField({ id, label, value, onChange, error, disabled }: P
               />
             ))}
           </div>
-          <span className="w-24 text-right text-base text-muted" aria-live="polite">
-            {strengthLabel}
-          </span>
-        </div>
+        ) : undefined
       }
     />
   );
