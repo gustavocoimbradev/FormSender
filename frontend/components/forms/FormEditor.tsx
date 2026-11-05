@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ApiError, createForm, listTemplates, updateForm, type Form } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
-import { ActionButton } from "../Button";
+import { ActionButton, PhoneLabel } from "../Button";
 import { Field } from "../Field";
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
@@ -129,8 +129,8 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
 
       <Card className="animate-fade-up">
         <CardHeader title="Fields">
-          <ActionButton type="button" variant="ghost" onClick={() => patch({ fields: [...draft.fields, emptyField()] })} disabled={saving}>
-            <PlusIcon /> Add field
+          <ActionButton type="button" variant="ghost" onClick={() => patch({ fields: [...draft.fields, emptyField()] })} disabled={saving} roundOnPhone>
+            <PlusIcon /> <PhoneLabel>Add field</PhoneLabel>
           </ActionButton>
         </CardHeader>
 

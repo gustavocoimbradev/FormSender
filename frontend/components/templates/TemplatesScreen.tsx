@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { listTemplates, type Template } from "@/lib/api";
 import { formatDate, plural } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import { ActionLink } from "../Button";
+import { ActionLink, PhoneLabel } from "../Button";
 import { CardUnreachable } from "../CardStates";
 import { PlusIcon, TemplateIcon } from "../icons";
 import { Badge } from "../ui/Badge";
@@ -35,8 +35,8 @@ export function TemplatesScreen() {
   const { data, loading, error, reload } = useResource(listTemplates, []);
 
   const newTemplate = (
-    <ActionLink href="/templates/new">
-      <PlusIcon /> New template
+    <ActionLink href="/templates/new" roundOnPhone>
+      <PlusIcon /> <PhoneLabel>New template</PhoneLabel>
     </ActionLink>
   );
 

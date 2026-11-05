@@ -54,25 +54,33 @@ const VARIANTS = {
 
 type Variant = keyof typeof VARIANTS;
 
+/** On phones the action shrinks to a perfectly round icon button (44px); the label stays for screen readers. */
+const ROUND_ON_PHONE = "max-sm:w-11 max-sm:rounded-full max-sm:px-0";
+
+export function PhoneLabel({ children }: { children: ReactNode }) {
+  return <span className="max-sm:sr-only">{children}</span>;
+}
+
 /** A compact action for page headers, tables and dialogs. */
 export function ActionButton({
   variant = "primary",
   loading = false,
   disabled,
   className = "",
+  roundOnPhone = false,
   children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; loading?: boolean }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; loading?: boolean; roundOnPhone?: boolean }) {
   return (
-    <button {...props} disabled={disabled || loading} aria-busy={loading} className={`${ACTION} ${VARIANTS[variant]} ${className}`}>
+    <button {...props} disabled={disabled || loading} aria-busy={loading} className={`${ACTION} ${VARIANTS[variant]} ${roundOnPhone ? ROUND_ON_PHONE : ""} ${className}`}>
       {loading && <Spinner className="size-4" />}
       {children}
     </button>
   );
 }
 
-export function ActionLink({ href, variant = "primary", children, target, rel }: { href: string; variant?: Variant; children: ReactNode; target?: string; rel?: string }) {
-  const classes = `${ACTION} ${VARIANTS[variant]}`;
+export function ActionLink({ href, variant = "primary", children, target, rel, roundOnPhone = false }: { href: string; variant?: Variant; children: ReactNode; target?: string; rel?: string; roundOnPhone?: boolean }) {
+  const classes = `${ACTION} ${VARIANTS[variant]} ${roundOnPhone ? ROUND_ON_PHONE : ""}`;
 
   return target ? (
     <a href={href} target={target} rel={rel} className={classes}>

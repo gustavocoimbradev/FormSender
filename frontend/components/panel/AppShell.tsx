@@ -36,16 +36,16 @@ function Tooltip({ children }: { children: ReactNode }) {
   );
 }
 
-function Avatar({ name }: { name: string }) {
+function Avatar({ name, className = "size-full text-lg" }: { name: string; className?: string }) {
   return (
-    <span className="grid size-12 place-items-center rounded-full bg-gradient-to-br from-accent to-[#6f8cff] text-lg font-semibold text-bg">
+    <span className={`grid place-items-center rounded-full bg-gradient-to-br from-accent to-[#6f8cff] font-semibold text-bg ${className}`}>
       {(name.trim()[0] ?? "?").toUpperCase()}
     </span>
   );
 }
 
 /** Only the avatar. The name, the role and the way out open when it is clicked. */
-function UserMenu() {
+function UserMenu({ placement }: { placement: "header" | "rail" }) {
   const { user, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -79,15 +79,17 @@ function UserMenu() {
         aria-label="User menu"
         aria-haspopup="menu"
         aria-expanded={open}
-        className="grid size-12 place-items-center rounded-full ring-2 ring-surface/10 transition duration-300 hover:ring-accent/60"
+        className={`grid place-items-center rounded-full transition duration-300 hover:brightness-110 ${placement === "header" ? "size-11" : "size-12"}`}
       >
-        <Avatar name={user.name || user.email} />
+        <Avatar name={user.name || user.email} className={placement === "header" ? "size-8 text-base" : "size-full text-lg"} />
       </button>
 
       {open && (
         <div
           role="menu"
-          className="absolute bottom-full right-0 z-50 mb-4 w-64 animate-pop rounded-card border border-surface/15 bg-[#12121f] p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)] lg:bottom-0 lg:left-full lg:right-auto lg:mb-0 lg:ml-5"
+          className={`absolute z-50 w-64 animate-pop rounded-card border border-surface/15 bg-[#12121f] p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)] ${
+            placement === "header" ? "right-0 top-full mt-3" : "bottom-0 left-full ml-5"
+          }`}
         >
           <p className="truncate text-base font-semibold" title={user.name}>
             {user.name}
@@ -235,25 +237,40 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="relative min-h-dvh lg:grid lg:grid-cols-[6.5rem_1fr]">
       <AmbientBackground />
 
-      <header className="flex items-center px-4 py-3 lg:hidden">
-        <Link href="/" aria-label="FormSender, home">
+      {/* Phone header: fixed, with a subtle dark fade and a progressive blur (stacked layers, each blurrier and
+          shorter than the last). The glass is its own layer, so the fade never clips the user menu. */}
+      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.25rem)]">
+          <div className="absolute inset-0 backdrop-blur-[2px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+          <div className="absolute inset-0 backdrop-blur-[5px] [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)]" />
+          <div className="absolute inset-0 backdrop-blur-[10px] [mask-image:linear-gradient(to_bottom,black_10%,transparent_55%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/20 to-transparent" />
+        </div>
+        <Link href="/" aria-label="FormSender, home" className="relative">
           <Logo size="sm" />
         </Link>
+
+        <div className="relative">
+          <UserMenu placement="header" />
+        </div>
       </header>
 
+
       <aside className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4">
-        <div className="flex items-center gap-2 rounded-full border border-surface/10 bg-[#0c0c18]/90 p-2 shadow-[0_20px_60px_-20px_rgb(0_0_0/1)] backdrop-blur-xl lg:h-full lg:flex-col lg:rounded-[2rem] lg:bg-surface/[0.04] lg:px-0 lg:py-5">
+        <div className="flex items-center gap-2 rounded-full border border-surface/15 bg-surface/[0.08] p-2 shadow-[0_20px_60px_-20px_rgb(0_0_0/1)] backdrop-blur-md backdrop-saturate-150 lg:h-full lg:flex-col lg:rounded-[2rem] lg:bg-surface/[0.04] lg:px-0 lg:py-5">
           <Link href="/" aria-label="FormSender, home" className="hidden rounded-full p-2 transition-opacity duration-300 hover:opacity-80 lg:mb-4 lg:mt-1 lg:block">
             <LogoMark className="size-8" />
           </Link>
 
           <NavRail />
 
-          <UserMenu />
+          <div className="hidden lg:block">
+            <UserMenu placement="rail" />
+          </div>
         </div>
       </aside>
 
-      <main className="min-w-0 px-4 pb-32 pt-2 sm:px-8 lg:px-10 lg:py-10">
+      <main className="min-w-0 px-4 pb-32 pt-[calc(4rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
     </div>

@@ -13,7 +13,7 @@ type ModalProps = {
   size?: "md" | "lg";
 };
 
-/** A dialog on desktop, a bottom sheet on phones. Escape and the backdrop close it. */
+/** A dialog on desktop, a full screen of its own on phones. Escape and the backdrop close it. */
 export function Modal({ open, title, onClose, children, busy = false, size = "md" }: ModalProps) {
   const panel = useRef<HTMLDivElement>(null);
 
@@ -39,7 +39,7 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-6" role="presentation">
+    <div className="fixed inset-0 z-[60] flex items-stretch justify-center sm:items-center sm:p-6" role="presentation">
       <div className="absolute inset-0 animate-fade-in bg-black/60 backdrop-blur-sm" onClick={() => !busy && onClose()} />
 
       <div
@@ -47,11 +47,11 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className={`relative flex max-h-[92dvh] w-full animate-sheet-up flex-col rounded-t-card border border-surface/10 bg-[#0e0e1a] shadow-[0_40px_100px_-30px_rgb(0_0_0/1)] sm:animate-pop sm:rounded-card ${
+        className={`relative flex h-dvh w-full animate-sheet-up flex-col bg-[#0e0e1a] sm:h-auto sm:max-h-[92dvh] sm:animate-pop sm:rounded-card sm:border sm:border-surface/10 sm:shadow-[0_40px_100px_-30px_rgb(0_0_0/1)] ${
           size === "lg" ? "sm:max-w-2xl" : "sm:max-w-lg"
         }`}
       >
-        <header className="flex items-center justify-between gap-4 border-b border-surface/10 px-6 py-4">
+        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-surface/10 px-6 pb-4 pt-[max(1rem,env(safe-area-inset-top))] sm:py-4">
           <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
           <button
             type="button"
@@ -64,7 +64,7 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
           </button>
         </header>
 
-        <div className="overflow-y-auto px-6 py-6">{children}</div>
+        <div className="flex-1 overflow-y-auto px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-6 sm:flex-none">{children}</div>
       </div>
     </div>
   );

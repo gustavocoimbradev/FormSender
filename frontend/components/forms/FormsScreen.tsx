@@ -5,7 +5,7 @@ import { useState } from "react";
 import { listForms, type Form } from "@/lib/api";
 import { formatDate, plural } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
-import { ActionLink } from "../Button";
+import { ActionLink, PhoneLabel } from "../Button";
 import { CardUnreachable } from "../CardStates";
 import { FormsIcon, PlusIcon } from "../icons";
 import { Card } from "../ui/Card";
@@ -33,8 +33,8 @@ export function FormsScreen() {
   const { data, loading, error, reload } = useResource(() => listForms(page), [page]);
 
   const newForm = (
-    <ActionLink href="/forms/new">
-      <PlusIcon /> New form
+    <ActionLink href="/forms/new" roundOnPhone>
+      <PlusIcon /> <PhoneLabel>New form</PhoneLabel>
     </ActionLink>
   );
 

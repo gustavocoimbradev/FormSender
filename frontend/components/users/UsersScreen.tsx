@@ -5,7 +5,7 @@ import { ApiError, deleteUser, listUsers, type ManagedUser } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { canDeleteUser, canEditUser, roleLabel } from "@/lib/permissions";
-import { ActionButton } from "../Button";
+import { ActionButton, PhoneLabel } from "../Button";
 import { CardUnreachable } from "../CardStates";
 import { PencilIcon, PlusIcon, TrashIcon, UsersIcon } from "../icons";
 import { useSession } from "../panel/PanelFrame";
@@ -82,8 +82,8 @@ export function UsersScreen() {
   ];
 
   const newUser = (
-    <ActionButton type="button" onClick={() => setEditing("new")}>
-      <PlusIcon /> New user
+    <ActionButton type="button" onClick={() => setEditing("new")} roundOnPhone>
+      <PlusIcon /> <PhoneLabel>New user</PhoneLabel>
     </ActionButton>
   );
 
