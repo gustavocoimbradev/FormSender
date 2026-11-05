@@ -48,7 +48,7 @@ Form backend as a service. Create a form, drop its endpoint on any website, and 
 Requires Docker.
 
 ```bash
-make up      # picks free ports, starts everything, runs migrations and seeders
+make up      # picks free ports and starts everything; Ctrl+C stops it
 make urls    # prints the links again
 ```
 
@@ -69,6 +69,7 @@ Ports are chosen automatically (`scripts/free-ports.sh`) so the stack never coll
 
 | Command | |
 |---|---|
+| `make start` | Same as `up`, but in the background (`make down` stops it) |
 | `make test` | Run the test suite |
 | `make migrate` / `make seed` | Run migrations / seeders |
 | `make status` / `make down` | Container status / stop |
