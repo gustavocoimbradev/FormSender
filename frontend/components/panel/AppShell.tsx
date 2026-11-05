@@ -38,7 +38,7 @@ function Tooltip({ children }: { children: ReactNode }) {
 
 function Avatar({ name }: { name: string }) {
   return (
-    <span className="grid size-12 place-items-center rounded-full bg-gradient-to-br from-accent to-accent-2 text-lg font-semibold text-bg">
+    <span className="grid size-12 place-items-center rounded-full bg-gradient-to-br from-accent to-[#6f8cff] text-lg font-semibold text-bg">
       {(name.trim()[0] ?? "?").toUpperCase()}
     </span>
   );

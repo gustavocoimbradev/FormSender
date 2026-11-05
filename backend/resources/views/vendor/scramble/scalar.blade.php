@@ -6,7 +6,7 @@
     <meta name="color-scheme" content="dark">
     <meta name="theme-color" content="#07070d">
     <title>{{ $config->get('ui.title') ?? config('app.name') . ' - API Docs' }}</title>
-    <link rel="icon" href="data:image/svg+xml,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="g" x1="4" y1="20" x2="36" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#8b6bff"/><stop offset="1" stop-color="#3dd6f5"/></linearGradient></defs><path d="M35 20 7 7l8 13-8 13Z" fill="url(#g)" stroke="url(#g)" stroke-width="3" stroke-linejoin="round"/></svg>') }}">
+    <link rel="icon" href="data:image/svg+xml,{{ rawurlencode('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none"><defs><linearGradient id="g" x1="4" y1="20" x2="36" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#8b6bff"/><stop offset="1" stop-color="#6f8cff"/></linearGradient></defs><path d="M35 20 7 7l8 13-8 13Z" fill="url(#g)" stroke="url(#g)" stroke-width="3" stroke-linejoin="round"/></svg>') }}">
     @include('scramble::dev-tools', ['renderer' => 'scalar'])
 
     {{-- The look of the dashboard: dark surfaces, violet accent, the same radius and fonts. --}}
@@ -145,7 +145,7 @@
             <defs>
                 <linearGradient id="fs-gradient" x1="4" y1="20" x2="36" y2="20" gradientUnits="userSpaceOnUse">
                     <stop stop-color="#8b6bff"/>
-                    <stop offset="1" stop-color="#3dd6f5"/>
+                    <stop offset="1" stop-color="#6f8cff"/>
                 </linearGradient>
             </defs>
             <path d="M35 20 7 7l8 13-8 13Z" fill="url(#fs-gradient)" stroke="url(#fs-gradient)" stroke-width="3" stroke-linejoin="round"/>

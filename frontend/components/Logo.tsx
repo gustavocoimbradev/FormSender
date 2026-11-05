@@ -9,7 +9,7 @@ export function LogoMark({ className = "size-9" }: { className?: string }) {
       <defs>
         <linearGradient id={gradient} x1="4" y1="20" x2="36" y2="20" gradientUnits="userSpaceOnUse">
           <stop stopColor="rgb(var(--accent))" />
-          <stop offset="1" stopColor="rgb(var(--accent-2))" />
+          <stop offset="1" stopColor="#6f8cff" />
         </linearGradient>
       </defs>
       <path d="M35 20 7 7l8 13-8 13Z" fill={`url(#${gradient})`} stroke={`url(#${gradient})`} strokeWidth="3" strokeLinejoin="round" />
