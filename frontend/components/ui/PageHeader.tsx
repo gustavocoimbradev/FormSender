@@ -36,8 +36,8 @@ export function PageHeader({ title, children, back }: { title: string; children?
         {slot &&
           createPortal(
             <>
-              <h1 className="truncate text-xl font-semibold tracking-tight">{title}</h1>
-              {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
+              <h1 className="relative col-start-2 row-start-1 max-w-[calc(100vw-10rem)] truncate text-center text-xl font-semibold tracking-tight">{title}</h1>
+              {children && <div className="relative col-start-3 row-start-1 flex items-center gap-2 justify-self-end">{children}</div>}
             </>,
             slot,
           )}

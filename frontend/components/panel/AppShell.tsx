@@ -204,7 +204,7 @@ function NavRail() {
         ref={indicator}
         aria-hidden="true"
         data-testid="nav-indicator"
-        className="pointer-events-none absolute left-0 top-0 size-12 rounded-full bg-accent opacity-0 shadow-[0_10px_30px_-8px_rgb(var(--accent)/0.8)]"
+        className="pointer-events-none absolute left-0 top-0 size-12 rounded-full bg-surface/[0.14] opacity-0 lg:bg-accent lg:shadow-[0_10px_30px_-8px_rgb(var(--accent)/0.8)]"
       />
 
       {visible.map((item) => {
@@ -238,15 +238,19 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Phone header: fixed, with a subtle dark fade and a progressive blur (stacked layers, each blurrier and
           shorter than the last). The glass is its own layer, so the fade never clips the user menu. */}
-      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-40 grid min-h-12 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.25rem)]">
           <div className="absolute inset-0 backdrop-blur-[2px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
           <div className="absolute inset-0 backdrop-blur-[5px] [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)]" />
           <div className="absolute inset-0 backdrop-blur-[10px] [mask-image:linear-gradient(to_bottom,black_10%,transparent_55%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/20 to-transparent" />
         </div>
-        {/* The current screen puts its title and its main action here (see PageHeader). */}
-        <div id={PHONE_HEADER_SLOT} className="relative flex min-h-12 min-w-0 flex-1 items-center justify-between gap-3" />
+        <Link href="/" aria-label="FormSender, home" className="relative col-start-1 row-start-1 grid size-11 place-items-center justify-self-start rounded-full transition-opacity duration-300 hover:opacity-80">
+          <LogoMark className="size-8" />
+        </Link>
+
+        {/* The current screen puts its title (centered) and its main action (right) here: see PageHeader. */}
+        <div id={PHONE_HEADER_SLOT} className="contents" />
       </header>
 
 
