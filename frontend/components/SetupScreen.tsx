@@ -6,7 +6,7 @@ import { ApiError, createInitialAdmin, getSetupStatus } from "@/lib/api";
 import { DEFAULT_SMTP } from "@/lib/defaults";
 import { isValidEmail, isValidHost, isValidPassword, isValidPort, normalizeEmail, securityForPort, type Security } from "@/lib/validation";
 import { AuthShell } from "./AuthShell";
-import { Button, GhostButton, LinkButton } from "./Button";
+import { Button, LinkButton } from "./Button";
 import { CardSkeleton, CardUnreachable } from "./CardStates";
 import { Field } from "./Field";
 import { PasswordField } from "./PasswordField";
@@ -179,7 +179,7 @@ export function SetupScreen() {
 
       {phase === "pending" && (
         <form onSubmit={handleSubmit} noValidate aria-label="Criar conta">
-          <SetupSteps step={stage} />
+          <SetupSteps step={stage} onBack={submitting ? undefined : () => setStage(1)} />
 
           {stage === 1 && (
             <div key="admin" className="animate-fade-up">
@@ -326,10 +326,7 @@ export function SetupScreen() {
                 {errors.form && <p className="mb-3 animate-fade-in rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-danger">{errors.form}</p>}
               </div>
 
-              <div className="mt-1 grid grid-cols-[auto_1fr] gap-3">
-                <GhostButton type="button" onClick={() => setStage(1)} disabled={submitting} className="w-auto">
-                  Voltar
-                </GhostButton>
+              <div className="mt-1">
                 <Button type="submit" disabled={!canSubmit} loading={submitting} loadingLabel="Criando conta…">
                   Criar conta
                 </Button>
