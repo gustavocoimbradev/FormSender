@@ -62,22 +62,6 @@ is_wsl() { grep -qi microsoft /proc/version 2>/dev/null; }
 
 value() { grep -E "^$1=" .env 2>/dev/null | cut -d= -f2; }
 
-# The address other devices on the same network can use to reach this machine.
-lan_ip() {
-    local ip=""
-
-    if is_wsl && command -v powershell.exe >/dev/null 2>&1; then
-        # Docker Desktop publishes the ports on the Windows host, so the Windows address is the one that works.
-        ip="$(powershell.exe -NoProfile -NonInteractive -Command "(Get-NetIPConfiguration | Where-Object { \$_.IPv4DefaultGateway -ne \$null -and \$_.NetAdapter.Status -eq 'Up' } | Select-Object -First 1).IPv4Address.IPAddress" 2>/dev/null | tr -d '\r' | head -1)"
-    elif command -v ipconfig >/dev/null 2>&1; then
-        ip="$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null)"
-    elif command -v hostname >/dev/null 2>&1; then
-        ip="$(hostname -I 2>/dev/null | tr ' ' '\n' | grep -E '^(192\.168|10\.|172\.(1[6-9]|2[0-9]|3[01]))\.' | head -1)"
-    fi
-
-    printf '%s' "$ip" | grep -E '^(192\.168|10\.|172\.(1[6-9]|2[0-9]|3[01]))\.' || true
-}
-
 preflight() {
     command -v docker >/dev/null 2>&1 || {
         if is_wsl; then
@@ -158,17 +142,14 @@ check_panel() {
 }
 
 summary() {
-    local front api mailpit ip
+    local front api mailpit
     front="$(value FRONTEND_PORT)"
     api="$(value APP_PORT)"
     mailpit="$(value MAILPIT_UI_PORT)"
-    ip="$(lan_ip)"
-
     printf '\n%s%s✔ FormSender no ar!%s\n\n' "$G" "$B" "$N"
     printf '  Frontend   %s%s%s\n' "$B" "http://localhost:$front" "$N"
     printf '  API        %s%s%s\n' "$B" "http://localhost:$api" "$N"
     printf '  Mailpit    %s%s%s\n' "$B" "http://localhost:$mailpit" "$N"
-    [ -n "$ip" ] && printf '  Na rede    %s%s%s %s(frontend)%s\n' "$B" "http://$ip:$front" "$N" "$D" "$N"
 
     printf '\n  %sPressione Ctrl+C para parar tudo.%s\n' "$D" "$N"
 }
