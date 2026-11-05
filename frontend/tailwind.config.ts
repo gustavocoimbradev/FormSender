@@ -65,6 +65,18 @@ const config: Config = {
           "100%": { left: "94%", opacity: "0" },
         },
         draw: { to: { strokeDashoffset: "0" } },
+        pop: {
+          from: { opacity: "0", transform: "scale(0.97) translateY(8px)" },
+          to: { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        "slide-in": {
+          from: { opacity: "0", transform: "translateX(24px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
+        "sheet-up": {
+          from: { opacity: "0", transform: "translateY(32px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
         ring: {
           from: { transform: "scale(0.6)", opacity: "0.7" },
           to: { transform: "scale(1.9)", opacity: "0" },
@@ -79,6 +91,9 @@ const config: Config = {
         drift: "drift 16s ease-in-out infinite",
         travel: "travel 3.2s ease-in-out infinite",
         draw: "draw 520ms var(--ease-out) 180ms forwards",
+        pop: "pop 280ms var(--ease-out) both",
+        "slide-in": "slide-in 360ms var(--ease-out) both",
+        "sheet-up": "sheet-up 320ms var(--ease-out) both",
         ring: "ring 1.4s var(--ease-out) 120ms both",
       },
     },

@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 type Option<T extends string> = { value: T; label: string };
 
 type SegmentedProps<T extends string> = {
@@ -15,18 +17,19 @@ const GAP = 4; // px between options (and the padding of the track)
  * element that slides to the chosen option, so it never disappears and reappears.
  */
 export function Segmented<T extends string>({ label, value, options, onChange, disabled }: SegmentedProps<T>) {
+  const labelId = useId();
   const count = options.length;
   const index = Math.max(0, options.findIndex((option) => option.value === value));
 
   return (
     <div className="mb-4">
-      <span id="segmented-label" className="mb-2 block text-base font-medium text-text/90">
+      <span id={labelId} className="mb-2 block text-base font-medium text-text/90">
         {label}
       </span>
 
       <div
         role="radiogroup"
-        aria-labelledby="segmented-label"
+        aria-labelledby={labelId}
         className="relative grid h-14 grid-flow-col auto-cols-fr rounded-control border border-surface/10 bg-surface/[0.04]"
         style={{ padding: GAP, gap: GAP }}
       >

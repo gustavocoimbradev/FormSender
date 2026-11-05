@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "react";
 import { ApiError, getCurrentUser, getSetupStatus, login } from "@/lib/api";
-import { clearToken, getToken, saveToken } from "@/lib/session";
+import { clearToken, getToken, saveToken, saveUser } from "@/lib/session";
 import { isValidEmail, normalizeEmail } from "@/lib/validation";
 import { AuthShell } from "./AuthShell";
 import { Button } from "./Button";
@@ -50,7 +50,8 @@ export function LoginScreen() {
           router.replace("/");
           return;
         } catch (failure) {
-          if (failure instanceof ApiError && failure.status === 0) throw failure;
+          // Only a refused token is thrown away; any other problem is a connection problem.
+          if (!(failure instanceof ApiError && failure.status === 401)) throw failure;
           clearToken();
         }
       }
@@ -77,6 +78,7 @@ export function LoginScreen() {
     try {
       const session = await login({ email: normalizeEmail(email), password });
       saveToken(session.token);
+      saveUser(session.user);
       router.replace("/");
     } catch (failure) {
       setError(toMessage(failure));

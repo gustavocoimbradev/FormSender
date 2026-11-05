@@ -43,3 +43,44 @@ export function GhostButton({ className = "", ...props }: ButtonHTMLAttributes<H
     />
   );
 }
+
+const ACTION = "inline-flex h-11 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-control px-5 text-base font-medium transition duration-300 ease-out disabled:cursor-not-allowed disabled:opacity-40";
+
+const VARIANTS = {
+  primary: "bg-gradient-to-r from-accent to-[#6f8cff] font-semibold text-white hover:brightness-110",
+  ghost: "border border-surface/15 text-text hover:bg-surface/[0.06]",
+  danger: "border border-danger/40 text-danger hover:bg-danger/10",
+} as const;
+
+type Variant = keyof typeof VARIANTS;
+
+/** A compact action for page headers, tables and dialogs. */
+export function ActionButton({
+  variant = "primary",
+  loading = false,
+  disabled,
+  className = "",
+  children,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; loading?: boolean }) {
+  return (
+    <button {...props} disabled={disabled || loading} aria-busy={loading} className={`${ACTION} ${VARIANTS[variant]} ${className}`}>
+      {loading && <Spinner className="size-4" />}
+      {children}
+    </button>
+  );
+}
+
+export function ActionLink({ href, variant = "primary", children, target, rel }: { href: string; variant?: Variant; children: ReactNode; target?: string; rel?: string }) {
+  const classes = `${ACTION} ${VARIANTS[variant]}`;
+
+  return target ? (
+    <a href={href} target={target} rel={rel} className={classes}>
+      {children}
+    </a>
+  ) : (
+    <Link href={href} className={classes}>
+      {children}
+    </Link>
+  );
+}

@@ -24,6 +24,9 @@
     font-size: 16px;
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
+    /* The vertical scrollbar is always there (just a quiet gutter when nothing scrolls), so pages never jump sideways. */
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -57,6 +60,39 @@
   input:autofill {
     background-color: transparent;
     color: rgb(var(--text));
+  }
+
+  /*
+   * Scrollbars (the page's included): thin, with a track that disappears and a
+   * thumb that carries the same violet-to-cyan gradient as the rest of the design.
+   */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgb(var(--accent) / 0.55), rgb(var(--accent-2) / 0.4)) padding-box;
+    transition: background 0.3s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgb(var(--accent) / 0.9), rgb(var(--accent-2) / 0.75)) padding-box;
+  }
+
+  /* Firefox has no gradient thumb: thin, with the accent color. */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgb(var(--accent) / 0.55) transparent;
+    }
   }
 }
 

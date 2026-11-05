@@ -1,0 +1,438 @@
+import type { Form, FormField } from "@/lib/api";
+
+export type Target = {
+  id: string;
+  label: string;
+  code: (form: Form, endpoint: string) => string;
+};
+
+const FALLBACK: FormField = { name: "mensagem", label: "Mensagem", type: "textarea", required: true };
+
+const fieldsOf = (form: Form): FormField[] => (form.fields.length > 0 ? form.fields : [FALLBACK]);
+
+const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+const INPUT_TYPES: Record<string, string> = { text: "text", email: "email", phone: "tel", number: "number", date: "date" };
+
+const indent = (text: string, spaces: number) =>
+  text
+    .split("\n")
+    .map((line) => (line ? " ".repeat(spaces) + line : line))
+    .join("\n");
+
+const EMPTY_VALUE = (field: FormField) => (field.type === "checkbox" ? "false" : '""');
+
+/** What the page sends for a field, given how to read its current value. */
+function payloadValue(field: FormField, read: string): string {
+  if (field.type === "number") return `${read} === "" || ${read} === null ? null : Number(${read})`;
+  return read;
+}
+
+const OK = "Mensagem enviada!";
+const FAIL = "Não foi possível enviar. Tente de novo.";
+
+/** A site only reaches FormSender if it is on the allowed list; server code must say which site it speaks for. */
+function serverOrigin(form: Form): string | null {
+  const first = form.allowed_domains[0];
+  if (!first) return null;
+  return `https://${first.startsWith("*.") ? `www.${first.slice(2)}` : first}`;
+}
+
+/** The JSON the form is sent as: every accepted field with an example value. */
+export function sample(form: Form): Record<string, unknown> {
+  return Object.fromEntries(
+    fieldsOf(form).map((field) => [field.name, field.type === "checkbox" ? true : field.type === "number" ? 1 : field.type === "email" ? "pessoa@exemplo.com" : "..."]),
+  );
+}
+
+// ------------------------------------------------------------------ plain HTML
+
+function htmlControl(field: FormField): string {
+  const name = escapeHtml(field.name);
+  const required = field.required ? " required" : "";
+
+  if (field.type === "textarea") return `<textarea name="${name}" rows="4"${required}></textarea>`;
+
+  if (field.type === "select") {
+    const options = (field.options ?? []).map((option) => `      <option>${escapeHtml(option)}</option>`).join("\n");
+    return `<select name="${name}"${required}>\n      <option value="">Selecione</option>\n${options}\n    </select>`;
+  }
+
+  if (field.type === "checkbox") return `<input type="checkbox" name="${name}"${required}>`;
+
+  return `<input type="${INPUT_TYPES[field.type] ?? "text"}" name="${name}"${required}>`;
+}
+
+/** A complete form, with a script that sends it. Ready to paste into any page. */
+export function htmlSnippet(form: Form, endpoint: string): string {
+  const fields = fieldsOf(form);
+
+  const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
+  const data = fields.map((field) => `          ${field.name}: ${payloadValue(field, `form.elements["${field.name}"]${field.type === "checkbox" ? ".checked" : ".value"}`)},`).join("\n");
+
+  return `<form id="formsender">
+${rows}
+
+  <button type="submit">Enviar</button>
+  <p id="formsender-status" role="status"></p>
+</form>
+
+<script>
+  const form = document.getElementById("formsender");
+  const status = document.getElementById("formsender-status");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+${data}
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      form.reset();
+      status.textContent = "${OK}";
+    } catch {
+      status.textContent = "${FAIL}";
+    }
+  });
+</script>`;
+}
+
+// ------------------------------------------------------------------ JavaScript
+
+function javascriptSnippet(form: Form, endpoint: string): string {
+  return `await fetch("${endpoint}", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(${indent(JSON.stringify(sample(form), null, 2), 2).trimStart()}),
+});`;
+}
+
+// ------------------------------------------------------------------ React and Next.js
+
+function jsxControl(field: FormField, extra: string): string {
+  const name = field.name;
+  const required = field.required ? " required" : "";
+  const value = `values.${name}`;
+
+  if (field.type === "textarea") return `<textarea name="${name}" rows={4} value={${value}} onChange={change}${required}${extra} />`;
+
+  if (field.type === "select") {
+    const options = (field.options ?? []).map((option) => `            <option>${escapeHtml(option)}</option>`).join("\n");
+    return `<select name="${name}" value={${value}} onChange={change}${required}>\n            <option value="">Selecione</option>\n${options}\n          </select>`;
+  }
+
+  if (field.type === "checkbox") return `<input type="checkbox" name="${name}" checked={${value}} onChange={change}${required} />`;
+
+  return `<input type="${INPUT_TYPES[field.type] ?? "text"}" name="${name}" value={${value}} onChange={change}${required} />`;
+}
+
+function reactSnippet(form: Form, endpoint: string, directive = ""): string {
+  const fields = fieldsOf(form);
+  const empty = fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`).join(", ");
+  const payload = fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`).join("\n");
+  const rows = fields.map((field) => `      <label>\n        ${escapeHtml(field.label)}\n        ${jsxControl(field, "")}\n      </label>`).join("\n");
+
+  return `${directive}import { useState } from "react";
+
+const empty = { ${empty} };
+
+export default function ContactForm() {
+  const [values, setValues] = useState(empty);
+  const [status, setStatus] = useState("");
+
+  function change(event) {
+    const { name, type, value, checked } = event.target;
+    setValues((current) => ({ ...current, [name]: type === "checkbox" ? checked : value }));
+  }
+
+  async function submit(event) {
+    event.preventDefault();
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+${payload}
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      setValues(empty);
+      setStatus("${OK}");
+    } catch {
+      setStatus("${FAIL}");
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+${rows}
+
+      <button type="submit">Enviar</button>
+      <p role="status">{status}</p>
+    </form>
+  );
+}`;
+}
+
+// ------------------------------------------------------------------ Vue
+
+function vueControl(field: FormField): string {
+  const model = `v-model="values.${field.name}"`;
+  const required = field.required ? " required" : "";
+
+  if (field.type === "textarea") return `<textarea ${model} rows="4"${required}></textarea>`;
+
+  if (field.type === "select") {
+    const options = (field.options ?? []).map((option) => `        <option>${escapeHtml(option)}</option>`).join("\n");
+    return `<select ${model}${required}>\n        <option value="">Selecione</option>\n${options}\n      </select>`;
+  }
+
+  return `<input ${model} type="${field.type === "checkbox" ? "checkbox" : (INPUT_TYPES[field.type] ?? "text")}"${required} />`;
+}
+
+function vueSnippet(form: Form, endpoint: string): string {
+  const fields = fieldsOf(form);
+  const empty = fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`).join(", ");
+  const payload = fields.map((field) => `        ${field.name}: ${payloadValue(field, `values.${field.name}`)},`).join("\n");
+  const rows = fields.map((field) => `    <label>\n      ${escapeHtml(field.label)}\n      ${vueControl(field)}\n    </label>`).join("\n");
+
+  return `<script setup>
+import { reactive, ref } from "vue";
+
+const empty = () => ({ ${empty} });
+const values = reactive(empty());
+const status = ref("");
+
+async function submit() {
+  try {
+    const response = await fetch("${endpoint}", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+${payload}
+      }),
+    });
+
+    if (!response.ok) throw new Error();
+
+    Object.assign(values, empty());
+    status.value = "${OK}";
+  } catch {
+    status.value = "${FAIL}";
+  }
+}
+</script>
+
+<template>
+  <form @submit.prevent="submit">
+${rows}
+
+    <button type="submit">Enviar</button>
+    <p role="status">{{ status }}</p>
+  </form>
+</template>`;
+}
+
+// ------------------------------------------------------------------ Svelte
+
+function svelteControl(field: FormField): string {
+  const required = field.required ? " required" : "";
+  const value = `values.${field.name}`;
+
+  if (field.type === "textarea") return `<textarea bind:value={${value}} rows="4"${required}></textarea>`;
+
+  if (field.type === "select") {
+    const options = (field.options ?? []).map((option) => `      <option>${escapeHtml(option)}</option>`).join("\n");
+    return `<select bind:value={${value}}${required}>\n      <option value="">Selecione</option>\n${options}\n    </select>`;
+  }
+
+  if (field.type === "checkbox") return `<input type="checkbox" bind:checked={${value}}${required} />`;
+
+  return `<input type="${INPUT_TYPES[field.type] ?? "text"}" bind:value={${value}}${required} />`;
+}
+
+function svelteSnippet(form: Form, endpoint: string): string {
+  const fields = fieldsOf(form);
+  const empty = fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`).join(", ");
+  const payload = fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`).join("\n");
+  const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${svelteControl(field)}\n  </label>`).join("\n");
+
+  return `<script>
+  const empty = () => ({ ${empty} });
+  let values = empty();
+  let status = "";
+
+  async function submit() {
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+${payload}
+        }),
+      });
+
+      if (!response.ok) throw new Error();
+
+      values = empty();
+      status = "${OK}";
+    } catch {
+      status = "${FAIL}";
+    }
+  }
+</script>
+
+<form on:submit={(event) => { event.preventDefault(); submit(); }}>
+${rows}
+
+  <button type="submit">Enviar</button>
+  <p role="status">{status}</p>
+</form>`;
+}
+
+// ------------------------------------------------------------------ Astro
+
+function astroSnippet(form: Form, endpoint: string): string {
+  return `---
+// src/components/ContactForm.astro
+---
+
+${htmlSnippet(form, endpoint)}`;
+}
+
+// ------------------------------------------------------------------ server side (PHP, Laravel, WordPress, Node.js, Python)
+
+function phpPayload(form: Form, read: (field: FormField) => string): string {
+  return fieldsOf(form)
+    .map((field) => `    '${field.name}' => ${read(field)},`)
+    .join("\n");
+}
+
+function phpSnippet(form: Form, endpoint: string): string {
+  const origin = serverOrigin(form);
+  const payload = phpPayload(form, (field) => {
+    const input = `$_POST['${field.name}'] ?? ''`;
+    if (field.type === "checkbox") return `isset($_POST['${field.name}'])`;
+    if (field.type === "number") return `(${input}) === '' ? null : (float) $_POST['${field.name}']`;
+    return input;
+  });
+
+  return `<?php
+// Receives your form (method="post") and passes it on to FormSender.
+$payload = [
+${payload}
+];
+
+$curl = curl_init('${endpoint}');
+
+curl_setopt_array($curl, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Content-Type: application/json',${origin ? `\n        'Origin: ${origin}', // the site must be in "Sites permitidos"` : ""}
+    ],
+    CURLOPT_POSTFIELDS => json_encode($payload),
+]);
+
+curl_exec($curl);
+$sent = curl_getinfo($curl, CURLINFO_HTTP_CODE) === 202;
+curl_close($curl);
+
+echo $sent ? '${OK}' : '${FAIL}';`;
+}
+
+function laravelSnippet(form: Form, endpoint: string): string {
+  const origin = serverOrigin(form);
+  const payload = fieldsOf(form)
+    .map((field) => {
+      if (field.type === "checkbox") return `        '${field.name}' => $request->boolean('${field.name}'),`;
+      if (field.type === "number") return `        '${field.name}' => $request->filled('${field.name}') ? (float) $request->input('${field.name}') : null,`;
+      return `        '${field.name}' => $request->input('${field.name}'),`;
+    })
+    .join("\n");
+
+  return `<?php
+// routes/web.php
+use Illuminate\\Http\\Request;
+use Illuminate\\Support\\Facades\\Http;
+use Illuminate\\Support\\Facades\\Route;
+
+Route::post('/contato', function (Request $request) {
+    $response = Http::${origin ? `withHeaders(['Origin' => '${origin}'])->` : ""}post('${endpoint}', [
+${payload}
+    ]);
+
+    return back()->with('status', $response->successful() ? '${OK}' : '${FAIL}');
+});`;
+}
+
+function wordpressSnippet(form: Form, endpoint: string): string {
+  return `<?php
+// functions.php (or a small plugin). Then put [formsender] in any page or post.
+add_shortcode('formsender', function () {
+    ob_start();
+    ?>
+${indent(htmlSnippet(form, endpoint), 4)}
+    <?php
+    return ob_get_clean();
+});`;
+}
+
+function nodeSnippet(form: Form, endpoint: string): string {
+  const origin = serverOrigin(form);
+
+  return `// Node.js 18 or newer, on your server
+const response = await fetch("${endpoint}", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",${origin ? `\n    Origin: "${origin}", // the site must be in "Sites permitidos"` : ""}
+  },
+  body: JSON.stringify(${indent(JSON.stringify(sample(form), null, 2), 2).trimStart()}),
+});
+
+console.log(response.status); // 202`;
+}
+
+function pythonSnippet(form: Form, endpoint: string): string {
+  const origin = serverOrigin(form);
+  const items = Object.entries(sample(form))
+    .map(([name, value]) => `        "${name}": ${typeof value === "boolean" ? (value ? "True" : "False") : typeof value === "number" ? value : JSON.stringify(value)},`)
+    .join("\n");
+
+  return `import requests
+
+response = requests.post(
+    "${endpoint}",
+    json={
+${items}
+    },${origin ? `\n    headers={"Origin": "${origin}"},  # the site must be in "Sites permitidos"` : ""}
+    timeout=10,
+)
+
+print(response.status_code)  # 202`;
+}
+
+export const TARGETS: Target[] = [
+  { id: "html", label: "HTML", code: htmlSnippet },
+  { id: "javascript", label: "JavaScript", code: javascriptSnippet },
+  { id: "react", label: "React", code: (form, endpoint) => reactSnippet(form, endpoint) },
+  { id: "next", label: "Next.js", code: (form, endpoint) => reactSnippet(form, endpoint, '"use client";\n\n') },
+  { id: "vue", label: "Vue", code: vueSnippet },
+  { id: "svelte", label: "Svelte", code: svelteSnippet },
+  { id: "astro", label: "Astro", code: astroSnippet },
+  { id: "php", label: "PHP", code: phpSnippet },
+  { id: "laravel", label: "Laravel", code: laravelSnippet },
+  { id: "wordpress", label: "WordPress", code: wordpressSnippet },
+  { id: "node", label: "Node.js", code: nodeSnippet },
+  { id: "python", label: "Python", code: pythonSnippet },
+];
