@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { apiPublicUrl, mailpitPublicUrl } from "@/lib/config";
 import { isAdmin, roleLabel } from "@/lib/permissions";
 import { AmbientBackground } from "../AmbientBackground";
-import { BookIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon, TemplateIcon, UsersIcon } from "../icons";
+import { BookIcon, ChevronIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon, TemplateIcon, UsersIcon } from "../icons";
 import { LogoMark } from "../Logo";
-import { PHONE_HEADER_SLOT } from "../ui/PageHeader";
+import { PHONE_HEADER_SLOT, usePhoneLayout } from "../ui/PageHeader";
 import { Spinner } from "../Spinner";
 import { useSession } from "./PanelFrame";
 
@@ -53,6 +54,7 @@ function UserMenu() {
   const [docsUrl, setDocsUrl] = useState("/");
   const [mailpitUrl, setMailpitUrl] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const phone = usePhoneLayout();
 
   useEffect(() => {
     setDocsUrl(`${apiPublicUrl()}/`);
@@ -62,7 +64,8 @@ function UserMenu() {
   useEffect(() => {
     if (!open) return;
 
-    const away = (event: MouseEvent) => !box.current?.contains(event.target as Node) && setOpen(false);
+    // On phones the menu is a centered sheet with its own backdrop, which closes it.
+    const away = (event: MouseEvent) => !phone && !box.current?.contains(event.target as Node) && setOpen(false);
     const onKey = (event: KeyboardEvent) => event.key === "Escape" && setOpen(false);
     document.addEventListener("mousedown", away);
     window.addEventListener("keydown", onKey);
@@ -70,7 +73,7 @@ function UserMenu() {
       document.removeEventListener("mousedown", away);
       window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, phone]);
 
   return (
     <div ref={box} className="relative">
@@ -85,10 +88,57 @@ function UserMenu() {
         <Avatar name={user.name || user.email} />
       </button>
 
-      {open && (
+      {open && phone &&
+        createPortal(
+          <div className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-6 backdrop-blur-sm" onClick={() => setOpen(false)}>
+            <div
+              role="menu"
+              onClick={(event) => event.stopPropagation()}
+              className="w-full max-w-xs animate-pop rounded-card border border-surface/15 bg-[#12121f] p-5 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)]"
+            >
+              <p className="truncate text-base font-semibold" title={user.name}>
+                {user.name}
+              </p>
+              <p className="truncate text-base text-muted" title={user.email}>
+                {user.email}
+              </p>
+              <p className="mt-1 text-base text-accent">{roleLabel(user)}</p>
+
+              <div className="mt-3 border-t border-surface/10 pt-2">
+                <a href={docsUrl} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_LINK}>
+                  <BookIcon /> Documentation <ExternalIcon className="ml-auto size-4 text-muted" />
+                </a>
+                {/* The local inbox, for developers: it shows every email the system sends, so only administrators get it. */}
+                {mailpitUrl && isAdmin(user) && (
+                  <a href={mailpitUrl} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_LINK}>
+                    <InboxIcon /> Mailpit <ExternalIcon className="ml-auto size-4 text-muted" />
+                  </a>
+                )}
+              </div>
+
+              <button
+                type="button"
+                role="menuitem"
+                disabled={signingOut}
+                aria-busy={signingOut}
+                onClick={() => {
+                  setSigningOut(true);
+                  void signOut();
+                }}
+                className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 rounded-control bg-surface/10 text-base font-medium text-text transition-colors duration-300 hover:bg-surface/[0.16] disabled:cursor-wait disabled:opacity-70 disabled:hover:bg-surface/10"
+              >
+                {signingOut ? <Spinner /> : <LogoutIcon />}
+                {signingOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {open && !phone && (
         <div
           role="menu"
-          className="absolute bottom-full right-0 z-50 mb-4 w-64 animate-pop rounded-card border border-surface/15 bg-[#12121f] p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)] lg:bottom-0 lg:left-full lg:right-auto lg:mb-0 lg:ml-5"
+          className="absolute bottom-0 left-full z-50 ml-5 w-64 animate-pop rounded-card border border-surface/15 bg-[#12121f] p-4 shadow-[0_30px_80px_-20px_rgb(0_0_0/1)]"
         >
           <p className="truncate text-base font-semibold" title={user.name}>
             {user.name}
@@ -232,6 +282,11 @@ function NavRail() {
 
 /** A slim rail of round icons on large screens, a bottom bar on phones. */
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const [section, ...rest] = pathname.split("/").filter(Boolean);
+  /** /forms/new, /forms/abc... go back to /forms. Top-level screens have nowhere to go back to. */
+  const backHref = section && rest.length > 0 ? `/${section}` : null;
+
   return (
     <div className="relative min-h-dvh lg:grid lg:grid-cols-[6.5rem_1fr]">
       <AmbientBackground />
@@ -245,9 +300,16 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="absolute inset-0 backdrop-blur-[10px] [mask-image:linear-gradient(to_bottom,black_10%,transparent_55%)]" />
           <div className="absolute inset-0 bg-gradient-to-b from-bg/55 via-bg/20 to-transparent" />
         </div>
-        <Link href="/" aria-label="FormSender, home" className="relative col-start-1 row-start-1 grid size-11 place-items-center justify-self-start rounded-full transition-opacity duration-300 hover:opacity-80">
-          <LogoMark className="size-8" />
-        </Link>
+        {/* Left: a way back when the screen is a sub screen (not in the bottom bar), otherwise the brand. */}
+        {backHref ? (
+          <Link href={backHref} aria-label="Back" className="relative col-start-1 row-start-1 grid size-11 place-items-center justify-self-start rounded-full text-text transition-colors duration-300 hover:bg-surface/10">
+            <ChevronIcon className="size-6 rotate-180" />
+          </Link>
+        ) : (
+          <Link href="/" aria-label="FormSender, home" className="relative col-start-1 row-start-1 grid size-11 place-items-center justify-self-start rounded-full transition-opacity duration-300 hover:opacity-80">
+            <LogoMark className="size-8" />
+          </Link>
+        )}
 
         {/* The current screen puts its title (centered) and its main action (right) here: see PageHeader. */}
         <div id={PHONE_HEADER_SLOT} className="contents" />

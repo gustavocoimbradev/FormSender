@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 export const PHONE_HEADER_SLOT = "phone-header-slot";
 
 /** True below the width where the navigation becomes a bottom bar and the header takes over the title. */
-function usePhoneLayout(): boolean {
+export function usePhoneLayout(): boolean {
   const [phone, setPhone] = useState(false);
 
   useEffect(() => {
@@ -32,7 +32,6 @@ export function PageHeader({ title, children, back }: { title: string; children?
   if (phone) {
     return (
       <>
-        {back && <div className="mb-2 animate-fade-up">{back}</div>}
         {slot &&
           createPortal(
             <>

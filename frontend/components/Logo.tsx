@@ -21,7 +21,7 @@ export function Logo({ className = "", size = "md" }: { className?: string; size
   return (
     <span className={`inline-flex items-center ${size === "sm" ? "gap-2" : "gap-3"} ${className}`}>
       <LogoMark className={size === "sm" ? "size-7" : "size-9"} />
-      <span className={`${size === "sm" ? "text-lg" : "text-2xl"} font-semibold tracking-tight`}>FormSender</span>
+      <span className={`${size === "sm" ? "text-lg" : "text-2xl"} font-semibold tracking-tight`}>Form Sender</span>
     </span>
   );
 }
