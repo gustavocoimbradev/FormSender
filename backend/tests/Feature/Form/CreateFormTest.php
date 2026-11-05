@@ -1,8 +1,6 @@
 <?php
 
-declare(strict_types=1);
-
-it('creates a form with a name', function (): void {
+it('creates a form with a name', function () {
     $response = $this->postJson('/api/forms', ['name' => 'Contact']);
 
     $response
