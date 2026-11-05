@@ -5,33 +5,49 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\FormSubmission;
+use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * @mixin FormSubmission
  */
+#[SchemaName('Submission')]
 class FormSubmissionResource extends JsonResource
 {
     /**
-     * @return array<string, mixed>
+     * @return array{id: int, form_id: int|null, form_name: string, status: string, values: array<string, mixed>, destinations: list<string>, deliveries: list<array{destination: string, status: string, error: string|null, sent_at: string|null}>, attempts: int, error: string|null, ip: string|null, origin: string|null, user_agent: string|null, created_at: string|null, processed_at: string|null}
      */
     public function toArray(Request $request): array
     {
         return [
+            /** Identifier of the submission. */
             'id' => $this->id,
+            /** The form it was sent to. Empty if the form was deleted later. */
             'form_id' => $this->form_id,
+            /** Name of the form when the message was received. */
             'form_name' => $this->form_name,
+            /** Where it is in the delivery: `pending`, `processing`, `sent`, `partial` (some destinations failed) or `failed`. */
             'status' => $this->status->value,
+            /** What the visitor filled in, by field name. */
             'values' => $this->data,
+            /** Email addresses it had to be delivered to. */
             'destinations' => $this->destinations,
+            /** Delivery result for each destination. */
             'deliveries' => $this->deliveries,
+            /** How many times delivery was tried. */
             'attempts' => $this->attempts,
+            /** Why delivery failed, when it did. */
             'error' => $this->error,
+            /** IP address of the visitor. */
             'ip' => $this->ip,
+            /** Website the visitor was on. */
             'origin' => $this->origin,
+            /** Browser of the visitor. */
             'user_agent' => $this->user_agent,
+            /** When the message was received. */
             'created_at' => $this->created_at,
+            /** When delivery finished. Empty while it is still going. */
             'processed_at' => $this->processed_at,
         ];
     }
