@@ -8,6 +8,9 @@ set -uo pipefail
 
 cd "$(dirname "$0")/.."
 
+# shellcheck source=lib/brand.sh
+source scripts/lib/brand.sh
+
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
     G=$'\033[32m'; R=$'\033[31m'; Y=$'\033[33m'; D=$'\033[2m'; B=$'\033[1m'; N=$'\033[0m'
 else
@@ -29,7 +32,9 @@ docker info >/dev/null 2>&1 || fail "O Docker não está em execução." "Abra o
 [ -n "$(docker compose ps -q app 2>/dev/null)" ] \
     || fail "O projeto não está no ar." "Suba com make up (ou make start) e rode make reset de novo."
 
-printf '\n%sFormSender%s\n\n' "$B" "$N"
+printf '\n'
+brand_title
+printf '\n\n'
 printf '%s!%s Isto apaga %stodos os dados%s: usuários, formulários, mensagens recebidas e configurações.\n' "$Y" "$N" "$B" "$N"
 printf '  O banco volta ao estado inicial e você precisará criar o administrador de novo.\n\n'
 

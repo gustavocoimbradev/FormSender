@@ -30,6 +30,7 @@ services:
     environment:
       <<: *backend-env
       RUN_MIGRATIONS: "true"
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-3000}
       RUN_SEED: "true"
     ports:
       - "${APP_PORT:-8000}:8000"
@@ -65,6 +66,10 @@ services:
     environment:
       # Server-side target of the /api proxy; the browser only talks to the frontend.
       API_URL: http://app:8000
+      # Where the browser reaches the API (the docs live at its root).
+      NEXT_PUBLIC_API_PORT: ${APP_PORT:-8000}
+      # Where the browser reaches Mailpit (the panel links to it for administrators).
+      NEXT_PUBLIC_MAILPIT_PORT: ${MAILPIT_UI_PORT:-8025}
     depends_on:
       app:
         condition: service_healthy

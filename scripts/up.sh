@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
-# FormSender launcher (used by `make up`).
+# Form Sender launcher (used by `make up`).
 #   scripts/up.sh          quiet: short, friendly messages; Ctrl+C stops everything
 #   scripts/up.sh --logs   streams every log; Ctrl+C stops everything
 set -uo pipefail
 
 cd "$(dirname "$0")/.."
+
+# shellcheck source=lib/brand.sh
+source scripts/lib/brand.sh
 
 MODE="quiet"
 [ "${1:-}" = "--logs" ] && MODE="logs"
@@ -146,7 +149,7 @@ summary() {
     front="$(value FRONTEND_PORT)"
     api="$(value APP_PORT)"
     mailpit="$(value MAILPIT_UI_PORT)"
-    printf '\n%s%s✔ FormSender no ar!%s\n\n' "$G" "$B" "$N"
+    printf '\n%s%s✔ Form Sender no ar!%s\n\n' "$G" "$B" "$N"
     printf '  Frontend   %s%s%s\n' "$B" "http://localhost:$front" "$N"
     printf '  API        %s%s%s\n' "$B" "http://localhost:$api" "$N"
     printf '  Mailpit    %s%s%s\n' "$B" "http://localhost:$mailpit" "$N"
@@ -170,7 +173,9 @@ if [ "$MODE" = "after" ]; then
     exit 0
 fi
 
-printf '\n%sFormSender%s\n\n' "$B" "$N"
+printf '\n'
+brand_title
+printf '\n\n'
 preflight
 choose_ports
 
