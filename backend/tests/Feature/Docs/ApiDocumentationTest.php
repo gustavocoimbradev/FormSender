@@ -26,6 +26,7 @@ it('documents every api route', function (string $path, string $method): void {
     expect(openApi()['paths'])->toHaveKey($path)
         ->and(openApi()['paths'][$path])->toHaveKey($method);
 })->with([
+    ['/setup', 'get'],
     ['/setup', 'post'],
     ['/auth/login', 'post'],
     ['/auth/logout', 'post'],
@@ -59,7 +60,7 @@ it('declares bearer authentication for protected routes only', function (): void
         expect($document['paths'][$path][$method]['security'] ?? null)->not->toBe([], "{$method} {$path} must be protected");
     }
 
-    foreach ([['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post']] as [$path, $method]) {
+    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->toBe([], "{$method} {$path} must be public");
     }
 });
@@ -128,7 +129,7 @@ describe('friendly documentation', function (): void {
         }
 
         expect($ids)->toBe(array_values(array_unique($ids)))
-            ->and($ids)->toContain('createForm', 'listForms', 'submitForm', 'logIn', 'saveSettings', 'listSubmissions');
+            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'logIn', 'saveSettings', 'listSubmissions');
     });
 
     it('names schemas after business concepts', function (): void {

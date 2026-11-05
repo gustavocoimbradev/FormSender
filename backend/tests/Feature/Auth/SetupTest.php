@@ -78,3 +78,29 @@ it('validates the setup payload', function (array $overrides, string $errorKey):
     'missing password' => [['password' => null], 'password'],
     'short password' => [['password' => 'short'], 'password'],
 ]);
+
+it('reports that the setup is still pending', function (): void {
+    $this->getJson('/api/setup')
+        ->assertOk()
+        ->assertExactJson(['data' => ['completed' => false]]);
+});
+
+it('reports that the setup is done once an admin exists', function (): void {
+    User::factory()->admin()->create();
+
+    $this->getJson('/api/setup')
+        ->assertOk()
+        ->assertExactJson(['data' => ['completed' => true]]);
+});
+
+it('does not treat regular users as a finished setup', function (): void {
+    User::factory()->create();
+
+    $this->getJson('/api/setup')->assertJsonPath('data.completed', false);
+});
+
+it('exposes nothing but the setup status', function (): void {
+    User::factory()->owner()->create(['email' => 'owner@example.com']);
+
+    expect($this->getJson('/api/setup')->getContent())->not->toContain('owner@example.com');
+});
