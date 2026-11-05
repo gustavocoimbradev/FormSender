@@ -1,24 +1,25 @@
 # FormSender
 
-[![CI](https://github.com/gustavocoimbradev/FormSender/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavocoimbradev/FormSender/actions/workflows/ci.yml)
+[![CI](https://github.com/gustavocoimbradev/form-sender/actions/workflows/ci.yml/badge.svg)](https://github.com/gustavocoimbradev/form-sender/actions/workflows/ci.yml)
 
 Form backend as a service. Create a form, drop its endpoint on any website, and every submission is saved and delivered by email to the destinations you choose.
 
-> **Status:** the API (`/backend`) is complete and tested. The dashboard (`/frontend`, Next.js) has the first-run setup (two steps) and login so far; the panel comes next.
+> **Status:** the API (`/backend`) is complete and tested. The dashboard (`/frontend`, Next.js) covers setup, login, forms, templates, users and SMTP.
 
 ## How it works
 
 1. An admin logs in and creates a **form**: accepted fields, destination emails, allowed websites.
-2. The form gets its own secret **token**.
-3. A website sends `POST /api/forms/{id}/submit` with that token.
+2. The form gets a unique, random **code** (never the numeric id).
+3. A website sends `POST /api/forms/{code}/submit` straight from the page: no backend, no token.
 4. The API validates the data, **saves it**, and answers `202` immediately.
 5. A **queue worker** delivers the email through the configured SMTP. Every destination keeps its own delivery status for auditing.
 
 ## Highlights
 
 - **Instant responses.** Emails never block a request: Redis queue, retries with backoff, per-destination status (`pending`, `sent`, `partial`, `failed`).
+- **Email templates.** Each form can use its own email: a subject and HTML written for email clients, with variables (`{{form_name}}`, `{{fields}}`, `{{field.NAME}}`…). The panel has a code editor (autocomplete, a checker for what email clients ignore) and a live preview rendered by the same code that sends the email. A default template that matches the panel's look always exists.
 - **Audit trail.** Submissions are stored with a snapshot of the form and are kept even if the form is deleted.
-- **Per-form token and domain allow-list.** Constant-time token check, dynamic CORS per form, `*.example.com` wildcards.
+- **No backend for the visitor.** Sending is controlled by each form's **allowed sites** (checked on `Origin`/`Referer`, dynamic CORS per form, `*.example.com` wildcards), the form's unguessable code and rate limiting. Forms are addressed by code everywhere, so ids cannot be walked.
 - **Roles and ownership.** `admin` and `user`; only the initial admin (the *owner*) can change or remove other admins.
 - **SMTP configured at runtime** through the API, stored encrypted. Mailpit is the local default, so development never sends a real email.
 - **Auth.** Sanctum bearer tokens with expiry, one-time `/setup` for the first admin, password reset by a hashed emailed code (cool-down, throttling, attempt lock), login throttling without account enumeration.
@@ -82,9 +83,10 @@ Ports are chosen automatically (`scripts/free-ports.sh`) so the stack never coll
 |---|---|
 | Setup and auth | `POST /setup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me` |
 | Password reset | `POST /auth/forgot-password`, `POST /auth/reset-password` |
-| Forms | CRUD on `/forms`, `POST /forms/{id}/token` (regenerate) |
-| Submitting | `POST /forms/{id}/submit` (form token, no login) |
-| Submissions | `GET /forms/{id}/submissions`, `GET /forms/{id}/submissions/{id}` |
+| Forms | CRUD on `/forms/{code}` |
+| Templates | CRUD on `/templates/{code}`, `POST /templates/preview` |
+| Submitting | `POST /forms/{code}/submit` (no login, no token: allowed sites) |
+| Submissions | `GET /forms/{code}/submissions`, `GET /forms/{code}/submissions/{id}` |
 | Users (admin) | CRUD on `/users` |
 | Settings (admin) | `GET` and `PUT /settings` (SMTP) |
 
