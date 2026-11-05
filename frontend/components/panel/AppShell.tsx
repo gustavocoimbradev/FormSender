@@ -316,7 +316,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
 
-      <aside className="fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4">
+      <aside className={`fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md ${backHref ? "max-lg:hidden" : ""} lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4`}>
         <div className="flex items-center gap-2 rounded-full border border-surface/15 bg-surface/[0.08] p-2 shadow-[0_20px_60px_-20px_rgb(0_0_0/1)] backdrop-blur-md backdrop-saturate-150 lg:h-full lg:flex-col lg:rounded-[2rem] lg:bg-surface/[0.04] lg:px-0 lg:py-5">
           <Link href="/" aria-label="FormSender, home" className="hidden rounded-full p-2 transition-opacity duration-300 hover:opacity-80 lg:mb-4 lg:mt-1 lg:block">
             <LogoMark className="size-8" />
@@ -328,7 +328,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="min-w-0 px-4 pb-32 pt-[calc(5.25rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10">
+      <main className={`min-w-0 px-4 ${backHref ? "pb-[max(2rem,env(safe-area-inset-bottom))]" : "pb-32"} pt-[calc(5.25rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10`}>
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
     </div>
