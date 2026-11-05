@@ -31,7 +31,7 @@ pest()->extend(TestCase::class)
 |
 */
 
-expect()->extend('toBeOne', function () {
+expect()->extend('toBeOne', function (): Pest\Expectation {
     return $this->toBe(1);
 });
 
@@ -46,7 +46,7 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function something(): void
 {
     // ..
 }
@@ -74,3 +74,41 @@ function actingAsOwner(?App\Models\User $owner = null): App\Models\User
 
     return $owner;
 }
+
+function configureSmtp(): void
+{
+    App\Models\Setting::create(['key' => 'smtp', 'value' => [
+        'host' => 'smtp.example.com',
+        'port' => 465,
+        'username' => 'user',
+        'password' => 'secret',
+        'encryption' => 'ssl',
+        'from_address' => 'no-reply@example.com',
+        'from_name' => 'FormSender',
+    ]]);
+}
+
+function contactForm(array $overrides = []): App\Models\Form
+{
+    return App\Models\Form::factory()->create([
+        'name' => 'Contact',
+        'fields' => [
+            ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
+            ['name' => 'email', 'label' => 'Email', 'type' => 'email', 'required' => true],
+            ['name' => 'message', 'label' => 'Message', 'type' => 'textarea', 'required' => false],
+            ['name' => 'topic', 'label' => 'Topic', 'type' => 'select', 'required' => false, 'options' => ['Sales', 'Support']],
+            ['name' => 'age', 'label' => 'Age', 'type' => 'number', 'required' => false],
+            ['name' => 'newsletter', 'label' => 'Newsletter', 'type' => 'checkbox', 'required' => false],
+            ['name' => 'birthday', 'label' => 'Birthday', 'type' => 'date', 'required' => false],
+        ],
+        'destinations' => ['sales@example.com', 'support@example.com'],
+        'allowed_domains' => [],
+        ...$overrides,
+    ]);
+}
+
+function validSubmission(array $overrides = []): array
+{
+    return ['name' => 'Jane', 'email' => 'jane@example.com', ...$overrides];
+}
+

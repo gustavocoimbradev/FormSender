@@ -12,6 +12,8 @@ x-backend: &backend
     DB_PASSWORD: ${DB_PASSWORD:-secret}
     REDIS_HOST: redis
     REDIS_PORT: 6379
+    QUEUE_CONNECTION: redis
+    CACHE_STORE: redis
     CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-3000}
   depends_on:
     postgres:
@@ -37,7 +39,7 @@ services:
 
   queue:
     <<: *backend
-    command: php artisan queue:work --tries=3
+    command: php artisan queue:work --sleep=1 --max-time=3600
     depends_on:
       app:
         condition: service_healthy

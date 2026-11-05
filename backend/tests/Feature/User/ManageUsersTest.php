@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Role;
 use App\Models\User;
 
@@ -13,7 +15,7 @@ function userPayload(array $overrides = []): array
     ];
 }
 
-it('lets an admin create a user, defaulting the role to user', function () {
+it('lets an admin create a user, defaulting the role to user', function (): void {
     actingAsAdmin();
 
     $this->postJson('/api/users', userPayload())
@@ -26,7 +28,7 @@ it('lets an admin create a user, defaulting the role to user', function () {
     expect(User::where('email', 'jane@example.com')->first()->password)->not->toBe('strong-pass-123');
 });
 
-it('lets an admin create another admin', function () {
+it('lets an admin create another admin', function (): void {
     actingAsAdmin();
 
     $this->postJson('/api/users', userPayload(['role' => 'admin']))
@@ -35,7 +37,7 @@ it('lets an admin create another admin', function () {
         ->assertJsonPath('data.is_owner', false);
 });
 
-it('validates the user payload on create', function (array $overrides, string $errorKey) {
+it('validates the user payload on create', function (array $overrides, string $errorKey): void {
     actingAsAdmin();
     User::factory()->create(['email' => 'taken@example.com']);
 
@@ -51,7 +53,7 @@ it('validates the user payload on create', function (array $overrides, string $e
     'invalid role' => [['role' => 'root'], 'role'],
 ]);
 
-it('forbids regular users from managing users', function () {
+it('forbids regular users from managing users', function (): void {
     actingAsUser();
     $target = User::factory()->create();
 
@@ -61,7 +63,7 @@ it('forbids regular users from managing users', function () {
     $this->deleteJson("/api/users/{$target->id}")->assertForbidden();
 });
 
-it('shows a user and returns 404 for unknown ones', function () {
+it('shows a user and returns 404 for unknown ones', function (): void {
     actingAsAdmin();
     $target = User::factory()->create();
 
@@ -69,7 +71,7 @@ it('shows a user and returns 404 for unknown ones', function () {
     $this->getJson('/api/users/999999')->assertNotFound();
 });
 
-it('lets an admin update a user and revoke tokens when the password changes', function () {
+it('lets an admin update a user and revoke tokens when the password changes', function (): void {
     actingAsAdmin();
     $target = User::factory()->create(['email' => 'old@example.com']);
     $target->createToken('api');
@@ -86,7 +88,7 @@ it('lets an admin update a user and revoke tokens when the password changes', fu
         ->and($target->tokens()->count())->toBe(0);
 });
 
-it('lets an admin promote a user to admin', function () {
+it('lets an admin promote a user to admin', function (): void {
     actingAsAdmin();
     $target = User::factory()->create();
 
@@ -95,7 +97,7 @@ it('lets an admin promote a user to admin', function () {
         ->assertJsonPath('data.role', 'admin');
 });
 
-it('does not let an admin change the role of another admin', function () {
+it('does not let an admin change the role of another admin', function (): void {
     actingAsAdmin();
     $otherAdmin = User::factory()->admin()->create();
 
@@ -104,7 +106,7 @@ it('does not let an admin change the role of another admin', function () {
     expect($otherAdmin->fresh()->role)->toBe(Role::Admin);
 });
 
-it('lets the owner demote another admin back to user', function () {
+it('lets the owner demote another admin back to user', function (): void {
     actingAsOwner();
     $otherAdmin = User::factory()->admin()->create();
 
@@ -113,7 +115,7 @@ it('lets the owner demote another admin back to user', function () {
         ->assertJsonPath('data.role', 'user');
 });
 
-it('does not let anyone change the role of the owner', function () {
+it('does not let anyone change the role of the owner', function (): void {
     $owner = User::factory()->owner()->create();
     actingAsAdmin();
 
@@ -125,19 +127,19 @@ it('does not let anyone change the role of the owner', function () {
     expect($owner->fresh()->role)->toBe(Role::Admin);
 });
 
-it('does not let an admin change their own role', function () {
+it('does not let an admin change their own role', function (): void {
     $admin = actingAsAdmin();
 
     $this->patchJson("/api/users/{$admin->id}", ['role' => 'user'])->assertForbidden();
 });
 
-it('accepts an unchanged role in the payload', function () {
+it('accepts an unchanged role in the payload', function (): void {
     $admin = actingAsAdmin();
 
     $this->putJson("/api/users/{$admin->id}", ['name' => 'Me', 'role' => 'admin'])->assertOk();
 });
 
-it('lets an admin edit their own account but not other admins or the owner', function () {
+it('lets an admin edit their own account but not other admins or the owner', function (): void {
     $admin = actingAsAdmin();
     $otherAdmin = User::factory()->admin()->create();
     $owner = User::factory()->owner()->create();
@@ -147,14 +149,14 @@ it('lets an admin edit their own account but not other admins or the owner', fun
     $this->patchJson("/api/users/{$owner->id}", ['name' => 'X'])->assertForbidden();
 });
 
-it('lets the owner edit other admins', function () {
+it('lets the owner edit other admins', function (): void {
     actingAsOwner();
     $otherAdmin = User::factory()->admin()->create();
 
     $this->patchJson("/api/users/{$otherAdmin->id}", ['name' => 'Changed'])->assertOk();
 });
 
-it('lets an admin delete a regular user and revokes their tokens', function () {
+it('lets an admin delete a regular user and revokes their tokens', function (): void {
     actingAsAdmin();
     $target = User::factory()->create();
     $target->createToken('api');
@@ -165,7 +167,7 @@ it('lets an admin delete a regular user and revokes their tokens', function () {
     $this->assertDatabaseCount('personal_access_tokens', 0);
 });
 
-it('does not let an admin delete themselves, other admins or the owner', function () {
+it('does not let an admin delete themselves, other admins or the owner', function (): void {
     $admin = actingAsAdmin();
     $otherAdmin = User::factory()->admin()->create();
     $owner = User::factory()->owner()->create();
@@ -175,7 +177,7 @@ it('does not let an admin delete themselves, other admins or the owner', functio
     $this->deleteJson("/api/users/{$owner->id}")->assertForbidden();
 });
 
-it('lets the owner delete other admins but never themselves', function () {
+it('lets the owner delete other admins but never themselves', function (): void {
     $owner = actingAsOwner();
     $otherAdmin = User::factory()->admin()->create();
 

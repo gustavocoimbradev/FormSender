@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Role;
 use App\Models\User;
 
@@ -13,7 +15,7 @@ function setupPayload(array $overrides = []): array
     ];
 }
 
-it('creates the initial admin account', function () {
+it('creates the initial admin account', function (): void {
     $this->postJson('/api/setup', setupPayload())
         ->assertCreated()
         ->assertJsonPath('data.email', 'owner@example.com')
@@ -27,7 +29,7 @@ it('creates the initial admin account', function () {
         ->and($admin->password)->not->toBe('strong-pass-123');
 });
 
-it('lets the created admin log in', function () {
+it('lets the created admin log in', function (): void {
     $this->postJson('/api/setup', setupPayload())->assertCreated();
 
     $this->postJson('/api/auth/login', ['email' => 'owner@example.com', 'password' => 'strong-pass-123'])
@@ -35,13 +37,13 @@ it('lets the created admin log in', function () {
         ->assertJsonPath('data.role', 'admin');
 });
 
-it('defaults the admin name when none is sent', function () {
+it('defaults the admin name when none is sent', function (): void {
     $this->postJson('/api/setup', setupPayload(['name' => null]))
         ->assertCreated()
         ->assertJsonPath('data.name', 'Admin');
 });
 
-it('cannot be used once an admin exists', function () {
+it('cannot be used once an admin exists', function (): void {
     User::factory()->admin()->create();
 
     $this->postJson('/api/setup', setupPayload())->assertForbidden();
@@ -49,14 +51,14 @@ it('cannot be used once an admin exists', function () {
     expect(User::count())->toBe(1);
 });
 
-it('cannot be used twice', function () {
+it('cannot be used twice', function (): void {
     $this->postJson('/api/setup', setupPayload())->assertCreated();
     $this->postJson('/api/setup', setupPayload(['email' => 'other@example.com']))->assertForbidden();
 
     expect(User::count())->toBe(1);
 });
 
-it('can still be used when only regular users exist', function () {
+it('can still be used when only regular users exist', function (): void {
     User::factory()->create();
 
     $this->postJson('/api/setup', setupPayload())->assertCreated();
@@ -64,7 +66,7 @@ it('can still be used when only regular users exist', function () {
     expect(User::where('role', Role::Admin)->count())->toBe(1);
 });
 
-it('validates the setup payload', function (array $overrides, string $errorKey) {
+it('validates the setup payload', function (array $overrides, string $errorKey): void {
     $this->postJson('/api/setup', setupPayload($overrides))
         ->assertUnprocessable()
         ->assertJsonValidationErrors($errorKey);

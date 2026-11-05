@@ -1,6 +1,8 @@
 <?php
 
-it('sends security headers on api responses', function () {
+declare(strict_types=1);
+
+it('sends security headers on api responses', function (): void {
     $this->getJson('/api/auth/me')
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('X-Frame-Options', 'DENY')
@@ -8,7 +10,7 @@ it('sends security headers on api responses', function () {
         ->assertHeader('Cache-Control', 'no-store, private');
 });
 
-it('answers cross-origin preflight only for the configured origin', function () {
+it('answers cross-origin preflight only for the configured origin', function (): void {
     config(['cors.allowed_origins' => ['http://localhost:3000']]);
 
     $response = $this->call('OPTIONS', '/api/auth/login', server: [
@@ -19,7 +21,7 @@ it('answers cross-origin preflight only for the configured origin', function () 
     expect($response->headers->get('Access-Control-Allow-Origin'))->toBe('http://localhost:3000');
 });
 
-it('does not allow credentials on cross-origin calls', function () {
+it('does not allow credentials on cross-origin calls', function (): void {
     config(['cors.allowed_origins' => ['http://localhost:3000']]);
 
     $response = $this->call('OPTIONS', '/api/auth/login', server: [

@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Form;
 
-it('requires authentication on every protected route', function (string $method, string $uri) {
+it('requires authentication on every protected route', function (string $method, string $uri): void {
     $form = Form::factory()->create();
 
     $this->json($method, str_replace('{form}', (string) $form->id, $uri))->assertUnauthorized();
@@ -12,6 +14,9 @@ it('requires authentication on every protected route', function (string $method,
     ['GET', '/api/forms/{form}'],
     ['PUT', '/api/forms/{form}'],
     ['DELETE', '/api/forms/{form}'],
+    ['POST', '/api/forms/{form}/token'],
+    ['GET', '/api/forms/{form}/submissions'],
+    ['GET', '/api/forms/{form}/submissions/1'],
     ['GET', '/api/settings'],
     ['PUT', '/api/settings'],
     ['GET', '/api/users'],
@@ -19,7 +24,7 @@ it('requires authentication on every protected route', function (string $method,
     ['POST', '/api/auth/logout'],
 ]);
 
-it('lets regular users manage forms', function () {
+it('lets regular users manage forms', function (): void {
     actingAsUser();
     $form = Form::factory()->create();
 
@@ -29,14 +34,14 @@ it('lets regular users manage forms', function () {
     $this->deleteJson("/api/forms/{$form->id}")->assertNoContent();
 });
 
-it('forbids regular users from reading and changing settings', function () {
+it('forbids regular users from reading and changing settings', function (): void {
     actingAsUser();
 
     $this->getJson('/api/settings')->assertForbidden();
     $this->putJson('/api/settings', [])->assertForbidden();
 });
 
-it('lets admins manage forms and settings', function () {
+it('lets admins manage forms and settings', function (): void {
     actingAsAdmin();
 
     $this->getJson('/api/forms')->assertOk();

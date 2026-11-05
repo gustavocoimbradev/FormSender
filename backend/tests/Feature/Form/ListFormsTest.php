@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 beforeEach(fn () => actingAsUser());
 
 use App\Models\Form;
 
-it('lists forms paginated, newest first', function () {
+it('lists forms paginated, newest first', function (): void {
     $older = Form::factory()->create(['name' => 'Older']);
     $newer = Form::factory()->create(['name' => 'Newer']);
 
@@ -16,7 +18,7 @@ it('lists forms paginated, newest first', function () {
         ->assertJsonStructure(['data', 'links', 'meta']);
 });
 
-it('returns an empty list when there are no forms', function () {
+it('returns an empty list when there are no forms', function (): void {
     $this->getJson('/api/forms')
         ->assertOk()
         ->assertJsonCount(0, 'data');

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Role;
 use App\Models\User;
 
-it('creates a user with the given role from the command line', function () {
+it('creates a user with the given role from the command line', function (): void {
     $this->artisan('user:create', [
         'email' => 'new@example.com',
         '--name' => 'New',
@@ -14,7 +16,7 @@ it('creates a user with the given role from the command line', function () {
     expect(User::where('email', 'new@example.com')->first()->role)->toBe(Role::Admin);
 });
 
-it('rejects an invalid role', function () {
+it('rejects an invalid role', function (): void {
     $this->artisan('user:create', [
         'email' => 'new@example.com',
         '--role' => 'root',

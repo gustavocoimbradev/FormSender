@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Models\User;
@@ -18,14 +20,20 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Gate::define('manage-settings', fn (User $user) => $user->isAdmin());
+        Gate::define('manage-settings', fn (User $user): bool => $user->isAdmin());
 
-        RateLimiter::for('api', fn (Request $request) => Limit::perMinute(60)
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(60)
             ->by($request->user()?->id ?: $request->ip()));
 
-        RateLimiter::for('login', fn (Request $request) => Limit::perMinute(5)
+        RateLimiter::for('login', fn (Request $request): Limit => Limit::perMinute(5)
             ->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
 
-        RateLimiter::for('setup', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+        RateLimiter::for('form-submit', function (Request $request): Limit {
+            $form = $request->route('form');
+
+            return Limit::perMinute(20)->by((is_object($form) ? $form->getKey() : $form).'|'.$request->ip());
+        });
+
+        RateLimiter::for('setup', fn (Request $request): Limit => Limit::perMinute(5)->by($request->ip()));
     }
 }

@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 beforeEach(fn () => actingAsUser());
 
 use App\Models\Form;
 
-it('updates a form name', function () {
+it('updates a form name', function (): void {
     $form = Form::factory()->create(['name' => 'Old']);
 
     $this->putJson("/api/forms/{$form->id}", ['name' => 'New'])
@@ -14,7 +16,7 @@ it('updates a form name', function () {
     $this->assertDatabaseHas('forms', ['id' => $form->id, 'name' => 'New']);
 });
 
-it('requires a name to update a form', function () {
+it('requires a name to update a form', function (): void {
     $form = Form::factory()->create();
 
     $this->putJson("/api/forms/{$form->id}", [])
@@ -22,6 +24,6 @@ it('requires a name to update a form', function () {
         ->assertJsonValidationErrors('name');
 });
 
-it('returns 404 when updating a form that does not exist', function () {
+it('returns 404 when updating a form that does not exist', function (): void {
     $this->putJson('/api/forms/999', ['name' => 'New'])->assertNotFound();
 });

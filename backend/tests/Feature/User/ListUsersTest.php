@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\User;
 
-it('lists users for an admin, paginated and without passwords', function () {
+it('lists users for an admin, paginated and without passwords', function (): void {
     actingAsAdmin();
     User::factory()->count(2)->create();
 
@@ -13,12 +15,12 @@ it('lists users for an admin, paginated and without passwords', function () {
         ->assertJsonMissingPath('data.0.password');
 });
 
-it('forbids regular users from listing users', function () {
+it('forbids regular users from listing users', function (): void {
     actingAsUser();
 
     $this->getJson('/api/users')->assertForbidden();
 });
 
-it('requires authentication to list users', function () {
+it('requires authentication to list users', function (): void {
     $this->getJson('/api/users')->assertUnauthorized();
 });

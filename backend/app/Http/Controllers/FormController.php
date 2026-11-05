@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreFormRequest;
@@ -38,5 +40,16 @@ class FormController extends Controller
         $form->delete();
 
         return response()->noContent();
+    }
+
+    /**
+     * Replaces the form's token with a new unique one; the old token stops working.
+     */
+    public function regenerateToken(Form $form): FormResource
+    {
+        $form->regenerateToken();
+        $form->save();
+
+        return new FormResource($form);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 beforeEach(fn () => actingAsAdmin());
 
 use App\Models\Setting;
@@ -20,13 +22,13 @@ function smtpPayload(array $overrides = []): array
     ];
 }
 
-it('returns null smtp when it was never configured', function () {
+it('returns null smtp when it was never configured', function (): void {
     $this->getJson('/api/settings')
         ->assertOk()
         ->assertJsonPath('data.smtp', null);
 });
 
-it('saves the smtp settings and returns them, password included', function () {
+it('saves the smtp settings and returns them, password included', function (): void {
     $this->putJson('/api/settings', smtpPayload())
         ->assertOk()
         ->assertJsonPath('data.smtp.host', 'smtp.example.com')
@@ -37,7 +39,7 @@ it('saves the smtp settings and returns them, password included', function () {
         ->assertJsonPath('data.smtp.password', 'secret-pass');
 });
 
-it('returns the saved smtp settings', function () {
+it('returns the saved smtp settings', function (): void {
     $this->putJson('/api/settings', smtpPayload())->assertOk();
 
     $this->getJson('/api/settings')
@@ -46,7 +48,7 @@ it('returns the saved smtp settings', function () {
         ->assertJsonPath('data.smtp.password', 'secret-pass');
 });
 
-it('stores the smtp settings encrypted', function () {
+it('stores the smtp settings encrypted', function (): void {
     $this->putJson('/api/settings', smtpPayload())->assertOk();
 
     $raw = \Illuminate\Support\Facades\DB::table('settings')->where('key', 'smtp')->value('value');
@@ -55,7 +57,7 @@ it('stores the smtp settings encrypted', function () {
     expect(Setting::where('key', 'smtp')->first()->value['password'])->toBe('secret-pass');
 });
 
-it('updates the existing smtp settings instead of creating another row', function () {
+it('updates the existing smtp settings instead of creating another row', function (): void {
     $this->putJson('/api/settings', smtpPayload())->assertOk();
     $this->putJson('/api/settings', smtpPayload(['host' => 'smtp.other.com']))->assertOk();
 
@@ -63,20 +65,20 @@ it('updates the existing smtp settings instead of creating another row', functio
     $this->getJson('/api/settings')->assertJsonPath('data.smtp.host', 'smtp.other.com');
 });
 
-it('keeps the current password when none is sent', function () {
+it('keeps the current password when none is sent', function (): void {
     $this->putJson('/api/settings', smtpPayload())->assertOk();
     $this->putJson('/api/settings', smtpPayload(['host' => 'smtp.other.com', 'password' => null]))->assertOk();
 
     expect(Setting::where('key', 'smtp')->first()->value['password'])->toBe('secret-pass');
 });
 
-it('accepts smtp settings without authentication or encryption', function () {
+it('accepts smtp settings without authentication or encryption', function (): void {
     $this->putJson('/api/settings', smtpPayload(['username' => null, 'password' => null, 'encryption' => null]))
         ->assertOk()
         ->assertJsonPath('data.smtp.password', null);
 });
 
-it('validates the smtp settings', function (array $payload, string $errorKey) {
+it('validates the smtp settings', function (array $payload, string $errorKey): void {
     $this->putJson('/api/settings', $payload)
         ->assertUnprocessable()
         ->assertJsonValidationErrors($errorKey);

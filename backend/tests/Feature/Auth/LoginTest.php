@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\User;
 use Illuminate\Support\Facades\RateLimiter;
 
-it('logs in and returns a token and the user', function () {
+it('logs in and returns a token and the user', function (): void {
     $user = User::factory()->create(['email' => 'a@example.com', 'password' => 'secret-123']);
 
     $this->postJson('/api/auth/login', ['email' => 'a@example.com', 'password' => 'secret-123'])
@@ -15,7 +17,7 @@ it('logs in and returns a token and the user', function () {
     expect($user->tokens()->count())->toBe(1);
 });
 
-it('uses the issued token to access protected routes', function () {
+it('uses the issued token to access protected routes', function (): void {
     User::factory()->create(['email' => 'a@example.com', 'password' => 'secret-123']);
 
     $token = $this->postJson('/api/auth/login', ['email' => 'a@example.com', 'password' => 'secret-123'])
@@ -26,7 +28,7 @@ it('uses the issued token to access protected routes', function () {
         ->assertJsonPath('data.email', 'a@example.com');
 });
 
-it('rejects wrong credentials with the same message for unknown emails and wrong passwords', function () {
+it('rejects wrong credentials with the same message for unknown emails and wrong passwords', function (): void {
     User::factory()->create(['email' => 'a@example.com', 'password' => 'secret-123']);
 
     $wrongPassword = $this->postJson('/api/auth/login', ['email' => 'a@example.com', 'password' => 'nope-nope'])
@@ -40,7 +42,7 @@ it('rejects wrong credentials with the same message for unknown emails and wrong
     expect($wrongPassword->json('errors.email'))->toBe($unknownEmail->json('errors.email'));
 });
 
-it('validates the login payload', function (array $payload, string $errorKey) {
+it('validates the login payload', function (array $payload, string $errorKey): void {
     $this->postJson('/api/auth/login', $payload)
         ->assertUnprocessable()
         ->assertJsonValidationErrors($errorKey);
@@ -50,7 +52,7 @@ it('validates the login payload', function (array $payload, string $errorKey) {
     'missing password' => [['email' => 'a@example.com'], 'password'],
 ]);
 
-it('throttles repeated failed login attempts', function () {
+it('throttles repeated failed login attempts', function (): void {
     RateLimiter::clear('a@example.com|127.0.0.1');
 
     foreach (range(1, 5) as $attempt) {

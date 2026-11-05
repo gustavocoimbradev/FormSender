@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\User;
 
-it('returns the authenticated user', function () {
+it('returns the authenticated user', function (): void {
     $user = actingAsUser();
 
     $this->getJson('/api/auth/me')
@@ -12,11 +14,11 @@ it('returns the authenticated user', function () {
         ->assertJsonMissingPath('data.password');
 });
 
-it('requires authentication to read the current user', function () {
+it('requires authentication to read the current user', function (): void {
     $this->getJson('/api/auth/me')->assertUnauthorized();
 });
 
-it('revokes only the current token on logout', function () {
+it('revokes only the current token on logout', function (): void {
     $user = User::factory()->create();
     $current = $user->createToken('current')->plainTextToken;
     $user->createToken('other');
@@ -27,7 +29,7 @@ it('revokes only the current token on logout', function () {
     expect($user->tokens()->first()->name)->toBe('other');
 });
 
-it('rejects a token after logout', function () {
+it('rejects a token after logout', function (): void {
     $user = User::factory()->create();
     $token = $user->createToken('current')->plainTextToken;
 
@@ -38,7 +40,7 @@ it('rejects a token after logout', function () {
     $this->withToken($token)->getJson('/api/auth/me')->assertUnauthorized();
 });
 
-it('rejects an expired token', function () {
+it('rejects an expired token', function (): void {
     $user = User::factory()->create();
     $token = $user->createToken('api')->plainTextToken;
 
