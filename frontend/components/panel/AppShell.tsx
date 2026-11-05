@@ -293,7 +293,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       {/* Phone header: fixed, with a subtle dark fade and a progressive blur (stacked layers, each blurrier and
           shorter than the last). The glass is its own layer, so the fade never clips the user menu. */}
-      <header className="fixed inset-x-0 top-0 z-40 grid min-h-12 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden">
+      <header className="fixed inset-x-0 top-0 z-40 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] grid-rows-[3rem] items-center px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:hidden">
         <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[calc(100%+1.25rem)]">
           <div className="absolute inset-0 backdrop-blur-[2px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
           <div className="absolute inset-0 backdrop-blur-[5px] [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)]" />
@@ -312,7 +312,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
 
 
-      <aside className={`fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md ${backHref ? "max-lg:hidden" : ""} lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4`}>
+      <aside
+        aria-hidden={backHref ? true : undefined}
+        {...(backHref ? ({ inert: "" } as Record<string, string>) : {})}
+        className={`fixed inset-x-4 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-md transition-[transform,opacity] duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          backHref ? "max-lg:pointer-events-none max-lg:translate-y-[calc(100%+2rem)] max-lg:opacity-0" : "max-lg:translate-y-0 max-lg:opacity-100"
+        } lg:sticky lg:inset-auto lg:bottom-auto lg:top-0 lg:mx-0 lg:h-dvh lg:max-w-none lg:p-4`}>
         <div className="flex items-center gap-2 rounded-full border border-surface/15 bg-surface/[0.08] p-2 shadow-[0_20px_60px_-20px_rgb(0_0_0/1)] backdrop-blur-md backdrop-saturate-150 lg:h-full lg:flex-col lg:rounded-[2rem] lg:bg-surface/[0.04] lg:px-0 lg:py-5">
           <Link href="/" aria-label="FormSender, home" className="hidden rounded-full p-2 transition-opacity duration-300 hover:opacity-80 lg:mb-4 lg:mt-1 lg:block">
             <LogoMark className="size-8" />
@@ -324,7 +329,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className={`min-w-0 px-4 ${backHref ? "pb-[max(2rem,env(safe-area-inset-bottom))]" : "pb-32"} pt-[calc(5.25rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10`}>
+      <main className={`min-w-0 px-4 transition-[padding] duration-[380ms] ease-out ${backHref ? "pb-[max(2rem,env(safe-area-inset-bottom))]" : "pb-32"} pt-[calc(5.25rem+env(safe-area-inset-top))] sm:px-8 lg:px-10 lg:py-10`}>
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
     </div>

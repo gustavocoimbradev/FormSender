@@ -118,6 +118,7 @@ export function UsersScreen() {
                 </div>
               )}
               loading={loading && !data}
+              skeletonAvatar
               empty={<EmptyState icon={<UsersIcon />} title="No users" action={newUser} />}
             />
             {data && <Pagination meta={data.meta} onPage={setPage} />}

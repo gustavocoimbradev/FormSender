@@ -123,7 +123,9 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
             autoFocus={!form}
             autoComplete="off"
           />
-          <Select id="form-template" label="Email template" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
+          <div className="mb-4">
+            <Select id="form-template" label="Email template" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
+          </div>
         </div>
       </Card>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { ChevronIcon } from "../icons";
 
 type Pill<T extends string> = { id: T; label: string };
@@ -12,90 +12,63 @@ type PillsProps<T extends string> = {
   onChange: (value: T) => void;
 };
 
-const ARROW =
-  "absolute inset-y-1 z-20 grid w-9 place-items-center rounded-full bg-bg/80 text-text backdrop-blur-md transition-colors duration-300 hover:bg-bg";
+/** Bare arrows: no background, they sit over the faded edge of the tabs. */
+const ARROW = "absolute inset-y-0 z-20 grid w-8 place-items-center text-muted transition-[color,opacity] duration-300 hover:text-text";
+
+/** Width left clear for an arrow, and the width over which the tabs then fade in. */
+const ARROW_ZONE = 30;
+const FADE_WIDTH = 34;
 
 /**
  * Tabs as pills. The highlight is a single element that slides to the chosen pill.
- * When the tabs do not fit, the box stays contained: no scrollbar, drag or swipe to move, and arrows
- * (shown only on the side that has more) scroll it by click.
+ * When the tabs do not fit, the box stays contained: no scrollbar and no swiping. The arrows (shown only on a
+ * side that has another tab) choose the previous or next tab, and the chosen tab is always brought into view.
  */
 export function Pills<T extends string>({ label, value, options, onChange }: PillsProps<T>) {
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const scroller = useRef<HTMLDivElement>(null);
-  const drag = useRef({ active: false, moved: false, startX: 0, startScroll: 0 });
   const [box, setBox] = useState<{ left: number; width: number }>();
-  const [edges, setEdges] = useState({ start: false, end: false });
+  const [overflowing, setOverflowing] = useState(false);
 
-  const updateEdges = useCallback(() => {
-    const element = scroller.current;
-    if (!element) return;
-    setEdges({ start: element.scrollLeft > 2, end: element.scrollLeft + element.clientWidth < element.scrollWidth - 2 });
-  }, []);
+  const index = options.findIndex((option) => option.id === value);
+  const hasPrevious = overflowing && index > 0;
+  const hasNext = overflowing && index < options.length - 1;
 
   useLayoutEffect(() => {
     const measure = () => {
+      const element = scroller.current;
       const active = refs.current.get(value);
       if (active) setBox({ left: active.offsetLeft, width: active.offsetWidth });
-      updateEdges();
+      if (element) setOverflowing(element.scrollWidth > element.clientWidth + 2);
     };
 
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [value, options, updateEdges]);
+  }, [value, options]);
 
-  // The chosen tab is brought to the middle of the box.
-  useEffect(() => {
+  // The chosen tab is brought to the middle of the box (the box itself is never scrolled by hand).
+  useLayoutEffect(() => {
     const element = scroller.current;
     const active = refs.current.get(value);
     if (!element || !active) return;
 
     element.scrollTo({ left: active.offsetLeft - (element.clientWidth - active.offsetWidth) / 2, behavior: "smooth" });
-  }, [value]);
+  }, [value, overflowing]);
 
-  function scrollBy(direction: -1 | 1) {
-    const element = scroller.current;
-    element?.scrollBy({ left: direction * element.clientWidth * 0.6, behavior: "smooth" });
+  function go(direction: -1 | 1) {
+    const target = options[index + direction];
+    if (target) onChange(target.id);
   }
 
-  function startDrag(event: React.MouseEvent) {
-    const element = scroller.current;
-    if (!element || event.button !== 0) return;
-
-    drag.current = { active: true, moved: false, startX: event.clientX, startScroll: element.scrollLeft };
-
-    const move = (moveEvent: MouseEvent) => {
-      const distance = moveEvent.clientX - drag.current.startX;
-      if (Math.abs(distance) > 4) drag.current.moved = true;
-      element.scrollLeft = drag.current.startScroll - distance;
-    };
-    const stop = () => {
-      drag.current.active = false;
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", stop);
-    };
-
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", stop);
-  }
+  // Under an arrow the tabs are invisible, then they fade in: the arrow never competes with a tab.
+  const start = hasPrevious ? ARROW_ZONE : 0;
+  const end = hasNext ? ARROW_ZONE : 0;
+  const mask = `linear-gradient(to right, transparent 0, transparent ${start}px, black ${start ? start + FADE_WIDTH : 0}px, black calc(100% - ${end ? end + FADE_WIDTH : 0}px), transparent calc(100% - ${end}px), transparent 100%)`;
 
   return (
-    <div className="relative max-w-full sm:w-fit">
-      <div
-        ref={scroller}
-        onScroll={updateEdges}
-        onMouseDown={startDrag}
-        // A drag must not end as a click on the tab under the pointer.
-        onClickCapture={(event) => {
-          if (drag.current.moved) {
-            event.stopPropagation();
-            event.preventDefault();
-            drag.current.moved = false;
-          }
-        }}
-        className="overflow-x-auto overscroll-x-contain rounded-full border border-surface/10 bg-surface/[0.04] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
+    <div className="relative max-w-full overflow-hidden rounded-full border border-surface/10 bg-surface/[0.04] sm:w-fit">
+      <div ref={scroller} style={{ maskImage: mask, WebkitMaskImage: mask }} className="touch-pan-y overflow-x-hidden">
         <div role="tablist" aria-label={label} className="relative inline-flex min-w-full gap-1 p-1 sm:min-w-0">
           {box && (
             <span
@@ -126,16 +99,26 @@ export function Pills<T extends string>({ label, value, options, onChange }: Pil
         </div>
       </div>
 
-      {edges.start && (
-        <button type="button" aria-label="Scroll tabs left" onClick={() => scrollBy(-1)} className={`${ARROW} left-1`}>
-          <ChevronIcon className="size-5 rotate-180" />
-        </button>
-      )}
-      {edges.end && (
-        <button type="button" aria-label="Scroll tabs right" onClick={() => scrollBy(1)} className={`${ARROW} right-1`}>
-          <ChevronIcon className="size-5" />
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label="Previous tab"
+        aria-hidden={!hasPrevious}
+        tabIndex={hasPrevious ? 0 : -1}
+        onClick={() => go(-1)}
+        className={`${ARROW} left-0.5 ${hasPrevious ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      >
+        <ChevronIcon className="size-5 rotate-180" />
+      </button>
+      <button
+        type="button"
+        aria-label="Next tab"
+        aria-hidden={!hasNext}
+        tabIndex={hasNext ? 0 : -1}
+        onClick={() => go(1)}
+        className={`${ARROW} right-0.5 ${hasNext ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      >
+        <ChevronIcon className="size-5" />
+      </button>
     </div>
   );
 }

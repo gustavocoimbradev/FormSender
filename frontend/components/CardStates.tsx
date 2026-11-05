@@ -1,16 +1,15 @@
 import { Button } from "./Button";
+import { Bar, FieldSkeleton } from "./ui/Skeleton";
 
-const SHIMMER =
-  "animate-shimmer bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]";
-
-/** Placeholder while the screen finds out where the user belongs. */
+/** The inside of the sign in / setup box while it finds out where the person goes: title, fields, button. */
 export function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
-    <div className="space-y-5" role="status" aria-label="Loading">
-      <div className={`h-8 w-40 rounded-full ${SHIMMER}`} />
+    <div role="status" aria-label="Loading">
+      <Bar className="mx-auto mb-7 h-8 w-44 rounded-full" />
       {Array.from({ length: rows }, (_, index) => (
-        <div key={index} className={`h-14 rounded-control ${SHIMMER}`} />
+        <FieldSkeleton key={index} width={index % 2 === 0 ? "w-16" : "w-24"} />
       ))}
+      <Bar className="mt-2 h-14 rounded-control" />
     </div>
   );
 }

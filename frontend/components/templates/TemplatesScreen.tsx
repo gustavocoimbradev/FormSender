@@ -6,7 +6,7 @@ import { formatDate, plural } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { ActionLink, PhoneLabel } from "../Button";
 import { CardUnreachable } from "../CardStates";
-import { PlusIcon, TemplateIcon } from "../icons";
+import { ChevronIcon, PlusIcon, TemplateIcon } from "../icons";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { DataTable, type Column } from "../ui/DataTable";
@@ -55,6 +55,16 @@ export function TemplatesScreen() {
             rows={data ?? []}
             getKey={(template) => template.code}
             onRowClick={(template) => router.push(`/templates/${template.code}`)}
+            renderMobileRow={(template) => (
+              <div className="flex min-h-14 items-center gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-lg font-medium">{template.name}</p>
+                  <p className="truncate text-base text-muted">{template.subject}</p>
+                </div>
+                {template.is_default && template.name !== "Default" && <Badge tone="accent">Default</Badge>}
+                <ChevronIcon className="size-5 shrink-0 text-muted" />
+              </div>
+            )}
             loading={loading && !data}
             empty={<EmptyState icon={<TemplateIcon />} title="No templates yet" text="Create one and choose which form uses it." action={newTemplate} />}
           />

@@ -7,7 +7,7 @@ import { formatDate, plural } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { ActionLink, PhoneLabel } from "../Button";
 import { CardUnreachable } from "../CardStates";
-import { FormsIcon, PlusIcon } from "../icons";
+import { ChevronIcon, FormsIcon, PlusIcon } from "../icons";
 import { Card } from "../ui/Card";
 import { DataTable, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
@@ -54,6 +54,17 @@ export function FormsScreen() {
               rows={data?.data ?? []}
               getKey={(form) => form.code}
               onRowClick={(form) => router.push(`/forms/${form.code}`)}
+              renderMobileRow={(form) => (
+                <div className="flex min-h-14 items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-lg font-medium">{form.name}</p>
+                    <p className="truncate text-base text-muted">
+                      {plural(form.fields.length, "field", "fields")} · {plural(form.destinations.length, "destination", "destinations")}
+                    </p>
+                  </div>
+                  <ChevronIcon className="size-5 shrink-0 text-muted" />
+                </div>
+              )}
               loading={loading && !data}
               empty={<EmptyState icon={<FormsIcon />} title="No forms yet" text="Create the first one and use its address on your website." action={newForm} />}
             />

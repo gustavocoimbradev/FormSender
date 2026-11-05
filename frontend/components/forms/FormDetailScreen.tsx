@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiError, deleteForm, getForm, type Form } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
-import { CardSkeleton, CardUnreachable } from "../CardStates";
+import { CardUnreachable } from "../CardStates";
+import { ListSkeleton } from "../ui/DataTable";
+import { Bar, FieldSkeleton, FormCardSkeleton, PillsSkeleton } from "../ui/Skeleton";
 import { ChevronIcon } from "../icons";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
@@ -33,6 +35,66 @@ export const BackLink = () => (
     <ChevronIcon className="size-5 rotate-180" /> Forms
   </Link>
 );
+
+/** What the opened tab looks like, so the page does not change shape when the form arrives. */
+function TabSkeleton({ tab }: { tab: Tab }) {
+  return (
+    <div role="status" aria-label="Loading" className="space-y-6">
+      {tab === "config" && (
+        <>
+          <FormCardSkeleton>
+            <FieldSkeleton />
+            <FieldSkeleton />
+          </FormCardSkeleton>
+          <FormCardSkeleton>
+            <Bar className="mb-5 h-6 w-3/4 rounded-full" />
+          </FormCardSkeleton>
+          <FormCardSkeleton>
+            <FieldSkeleton />
+            <FieldSkeleton />
+          </FormCardSkeleton>
+        </>
+      )}
+
+      {tab === "integration" && (
+        <FormCardSkeleton>
+          <Bar className="mb-5 h-[3.125rem] rounded-control" />
+          <Bar className="mb-2 h-6 w-40 rounded-full" />
+          <Bar className="mb-5 h-40 rounded-control" />
+          <FieldSkeleton width="w-24" />
+          <Bar className="mb-5 h-72 rounded-control" />
+        </FormCardSkeleton>
+      )}
+
+      {tab === "messages" && (
+        <>
+          <div className="max-w-xs">
+            <FieldSkeleton width="w-14" />
+          </div>
+          <Card className="overflow-hidden">
+            <ListSkeleton
+              columns={[
+                { id: "received", header: "Received", className: "whitespace-nowrap" },
+                { id: "status", header: "Status", className: "whitespace-nowrap" },
+                { id: "summary", header: "Message" },
+                { id: "deliveries", header: "Deliveries", className: "whitespace-nowrap" },
+              ]}
+            />
+          </Card>
+        </>
+      )}
+
+      {tab === "test" && (
+        <FormCardSkeleton>
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <Bar className="mb-4 h-14 rounded-control" />
+        </FormCardSkeleton>
+      )}
+    </div>
+  );
+}
 
 export function FormDetailScreen({ code, initialTab }: { code: string; initialTab: Tab }) {
   const router = useRouter();
@@ -73,10 +135,9 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
   if (loading && !current) {
     return (
       <>
-        <BackLink />
-        <Card className="p-8">
-          <CardSkeleton rows={3} />
-        </Card>
+        <PageHeader title={null} back={<BackLink />} />
+        <PillsSkeleton />
+        <TabSkeleton tab={tab} />
       </>
     );
   }

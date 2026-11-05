@@ -5,7 +5,7 @@ import { listSubmissions, type Form, type Submission, type SubmissionStatus } fr
 import { formatDateTime } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { CardUnreachable } from "../CardStates";
-import { InboxIcon } from "../icons";
+import { ChevronIcon, InboxIcon } from "../icons";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { DataTable, type Column } from "../ui/DataTable";
@@ -98,6 +98,16 @@ export function SubmissionsPanel({ form }: { form: Form }) {
               rows={data?.data ?? []}
               getKey={(item) => item.id}
               onRowClick={setOpen}
+              renderMobileRow={(item) => (
+                <div className="flex min-h-14 items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-lg font-medium">{summary(item)}</p>
+                    <p className="truncate text-base text-muted">{formatDateTime(item.created_at)}</p>
+                  </div>
+                  <StatusBadge status={item.status} />
+                  <ChevronIcon className="size-5 shrink-0 text-muted" />
+                </div>
+              )}
               loading={loading && !data}
               empty={<EmptyState icon={<InboxIcon />} title="No messages" text={filter === "all" ? "When someone submits this form, the message shows up here." : "No messages with this status."} />}
             />

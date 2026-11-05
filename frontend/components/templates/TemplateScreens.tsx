@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ApiError, deleteTemplate, getTemplate, listTemplates, type Template } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
-import { CardSkeleton, CardUnreachable } from "../CardStates";
+import { CardUnreachable } from "../CardStates";
+import { Bar, FieldsRow, FormCardSkeleton } from "../ui/Skeleton";
 import { ChevronIcon, TemplateIcon } from "../icons";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
@@ -13,6 +14,32 @@ import { EmptyState } from "../ui/EmptyState";
 import { PageHeader } from "../ui/PageHeader";
 import { useToast } from "../ui/Toast";
 import { TemplateEditor } from "./TemplateEditor";
+
+/** The template editor while it loads: the general card, then the code box next to the preview. */
+function EditorSkeleton() {
+  return (
+    <div role="status" aria-label="Loading" className="space-y-6">
+      <FormCardSkeleton>
+        <FieldsRow count={2} grid="sm:grid-cols-2" />
+      </FormCardSkeleton>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
+        <FormCardSkeleton>
+          <div className="mb-3 flex flex-wrap gap-2">
+            {Array.from({ length: 7 }, (_, index) => (
+              <Bar key={index} className="h-11 w-28 rounded-full" />
+            ))}
+          </div>
+          <Bar className="mb-4 h-[34rem] rounded-control" />
+        </FormCardSkeleton>
+        <FormCardSkeleton>
+          <Bar className="mb-4 h-11 w-52 rounded-full" />
+          <Bar className="mb-3 h-5 w-2/3 rounded-full" />
+          <Bar className="mb-4 h-[34rem] rounded-control" />
+        </FormCardSkeleton>
+      </div>
+    </div>
+  );
+}
 
 const BackLink = () => (
   <Link href="/templates" className="mb-2 inline-flex min-h-11 items-center gap-1 text-base text-muted transition-colors duration-300 hover:text-text">
@@ -34,9 +61,7 @@ export function NewTemplateScreen() {
           <CardUnreachable onRetry={reload} />
         </Card>
       ) : loading || !base ? (
-        <Card className="p-8">
-          <CardSkeleton rows={3} />
-        </Card>
+        <EditorSkeleton />
       ) : (
         <TemplateEditor initial={{ subject: base.subject, html: base.html }} onSaved={(template) => router.push(`/templates/${template.code}`)} />
       )}
@@ -81,10 +106,8 @@ export function TemplateDetailScreen({ code }: { code: string }) {
   if (loading && !current) {
     return (
       <>
-        <BackLink />
-        <Card className="p-8">
-          <CardSkeleton rows={3} />
-        </Card>
+        <PageHeader title={null} back={<BackLink />} />
+        <EditorSkeleton />
       </>
     );
   }

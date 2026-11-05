@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Bar } from "./Skeleton";
 
 export type Column<T> = {
   id: string;
@@ -20,22 +21,13 @@ type DataTableProps<T> = {
   empty?: ReactNode;
   /** A compact row for phones. Without it, phones get a card listing every column. */
   renderMobileRow?: (row: T) => ReactNode;
+  /** Phone placeholder: a leading avatar circle, for lists whose compact row has one. */
+  skeletonAvatar?: boolean;
 };
 
-const SHIMMER =
-  "animate-shimmer rounded-full bg-[linear-gradient(90deg,rgb(var(--surface)/0.04),rgb(var(--surface)/0.12),rgb(var(--surface)/0.04))] [background-size:200%_100%]";
-
 /** A table on desktop, a list of cards on phones. */
-export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = false, empty, renderMobileRow }: DataTableProps<T>) {
-  if (loading) {
-    return (
-      <div role="status" aria-label="Loading" className="space-y-1 p-4">
-        {Array.from({ length: 4 }, (_, index) => (
-          <div key={index} className={`h-14 rounded-control ${SHIMMER}`} style={{ animationDelay: `${index * 120}ms` }} />
-        ))}
-      </div>
-    );
-  }
+export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = false, empty, renderMobileRow, skeletonAvatar = false }: DataTableProps<T>) {
+  if (loading) return <ListSkeleton columns={columns} avatar={skeletonAvatar} />;
 
   if (rows.length === 0) return <>{empty}</>;
 
@@ -102,4 +94,53 @@ export function DataTable<T>({ columns, rows, getKey, onRowClick, loading = fals
       </ul>
     </>
   );
+}
+
+/** The placeholder of a list: on desktop the real header row with shimmering cells, on phones the compact rows. */
+export function ListSkeleton({ columns, avatar = false }: { columns: { id: string; header: string; className?: string }[]; avatar?: boolean }) {
+    const widths = ["w-2/3", "w-1/2", "w-4/5", "w-1/3", "w-3/5"];
+
+    return (
+      <div role="status" aria-label="Loading">
+        {/* Desktop: the real header row, then rows with the same cell paddings. */}
+        <table className="hidden w-full border-separate border-spacing-0 text-left md:table" aria-hidden="true">
+          <thead>
+            <tr>
+              {columns.map((column) => (
+                <th key={column.id} scope="col" className={`bg-surface/[0.03] px-5 py-3 text-base font-medium text-muted first:rounded-tl-control last:rounded-tr-control ${column.className ?? ""}`}>
+                  {column.header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 4 }, (_, row) => (
+              <tr key={row}>
+                {columns.map((column, index) => (
+                  <td key={column.id} className={`border-t border-surface/10 px-5 py-4 align-middle ${column.className ?? ""}`}>
+                    <Bar className={`h-6 rounded-full ${widths[(row + index) % widths.length]}`} delay={row * 120} />
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* Phones: the compact rows (optional avatar, two lines, chevron). */}
+        <ul className="divide-y divide-surface/10 md:hidden" aria-hidden="true">
+          {Array.from({ length: 4 }, (_, row) => (
+            <li key={row} className="px-4 py-3">
+              <div className="flex min-h-14 items-center gap-3">
+                {avatar && <Bar className="size-11 shrink-0 rounded-full" delay={row * 120} />}
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Bar className={`h-5 rounded-full ${widths[row % widths.length]}`} delay={row * 120} />
+                  <Bar className="h-4 w-3/4 rounded-full" delay={row * 120} />
+                </div>
+                <Bar className="size-5 shrink-0 rounded-full" delay={row * 120} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
 }

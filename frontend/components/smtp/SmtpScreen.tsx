@@ -5,7 +5,8 @@ import { ApiError, getSmtp, saveSmtp } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
 import { defaultSmtpDraft, draftFromSettings, isSmtpReady, settingsFromDraft, smtpErrorsFromApi, type SmtpDraft, type SmtpErrors } from "@/lib/smtp";
 import { ActionButton } from "../Button";
-import { CardSkeleton, CardUnreachable } from "../CardStates";
+import { CardUnreachable } from "../CardStates";
+import { Bar, FieldsRow } from "../ui/Skeleton";
 import { SmtpFields } from "../SmtpFields";
 import { Card, CardHeader } from "../ui/Card";
 import { PageHeader } from "../ui/PageHeader";
@@ -62,7 +63,18 @@ export function SmtpScreen() {
           {error ? (
             <CardUnreachable onRetry={reload} />
           ) : !loaded ? (
-            <CardSkeleton rows={4} />
+            <div role="status" aria-label="Loading">
+              <FieldsRow count={2} grid="sm:grid-cols-[1fr_9rem]" />
+              <div className="mb-4">
+                <Bar className="mb-2 h-5 w-20 rounded-full" />
+                <Bar className="h-14 rounded-control" />
+              </div>
+              <FieldsRow count={2} grid="sm:grid-cols-2" />
+              <FieldsRow count={2} grid="sm:grid-cols-2" />
+              <div className="mt-2 flex justify-end">
+                <Bar className="h-14 w-full rounded-control sm:w-32" />
+              </div>
+            </div>
           ) : (
             <form onSubmit={submit} noValidate>
               <SmtpFields draft={draft} onChange={setDraft} errors={errors} disabled={saving} />
