@@ -48,7 +48,7 @@ Form backend as a service. Create a form, drop its endpoint on any website, and 
 Requires Docker.
 
 ```bash
-make up      # checks Docker, starts everything, prints the panel URL and a QR code; Ctrl+C stops it
+make up      # checks Docker, starts everything, prints the Frontend, API and Mailpit URLs; Ctrl+C stops it
 make up logs # same, streaming every log
 make urls    # lists every URL (panel, API docs, Mailpit)
 ```

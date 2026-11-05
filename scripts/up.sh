@@ -158,19 +158,17 @@ check_panel() {
 }
 
 summary() {
-    local port ip
-    port="$(value FRONTEND_PORT)"
+    local front api mailpit ip
+    front="$(value FRONTEND_PORT)"
+    api="$(value APP_PORT)"
+    mailpit="$(value MAILPIT_UI_PORT)"
     ip="$(lan_ip)"
 
     printf '\n%s%s✔ FormSender no ar!%s\n\n' "$G" "$B" "$N"
-    printf '  Abra no navegador   %s%s%s\n' "$B" "http://localhost:$port" "$N"
-
-    if [ -n "$ip" ]; then
-        printf '  Na sua rede         %s%s%s\n\n' "$B" "http://$ip:$port" "$N"
-        ./scripts/qr.sh "http://$ip:$port"
-    else
-        printf '\n'
-    fi
+    printf '  Frontend   %s%s%s\n' "$B" "http://localhost:$front" "$N"
+    printf '  API        %s%s%s\n' "$B" "http://localhost:$api" "$N"
+    printf '  Mailpit    %s%s%s\n' "$B" "http://localhost:$mailpit" "$N"
+    [ -n "$ip" ] && printf '  Na rede    %s%s%s %s(frontend)%s\n' "$B" "http://$ip:$front" "$N" "$D" "$N"
 
     printf '\n  %sPressione Ctrl+C para parar tudo.%s\n' "$D" "$N"
 }
