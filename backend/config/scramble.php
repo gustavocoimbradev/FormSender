@@ -61,7 +61,7 @@ REST API of FormSender: create forms, receive their submissions from any website
 ## Authentication
 
 - **Dashboard users** log in with `POST /auth/login` and send the returned token as `Authorization: Bearer <token>`. Tokens expire after 8 hours. The first admin is created once with `POST /setup`.
-- **Website visitors** submit a form with `POST /forms/{form}/submit`, authenticated by that form's own bearer token (shown in the form, regenerable). When the form lists allowed domains, the request's `Origin` (or `Referer`) must match one of them.
+- **Website visitors** submit a form with `POST /forms/{code}/submit`, straight from the page: no login and no token. The form is found by its unique public code, and when it lists allowed domains the request's `Origin` (or `Referer`) must match one of them (an empty list lets any site send it).
 
 ## Roles
 
@@ -109,10 +109,13 @@ MD,
         'scalar' => [
             'view' => 'scramble::scalar',
             'cdn' => 'https://cdn.jsdelivr.net/npm/@scalar/api-reference',
-            'theme' => 'purple',
+            // Colors come from the panel's design (see resources/views/vendor/scramble/scalar.blade.php).
+            'theme' => 'none',
             'layout' => 'modern',
             'darkMode' => true,
-            'hideDarkModeToggle' => false,
+            'forceDarkModeState' => 'dark',
+            'hideDarkModeToggle' => true,
+            'withDefaultFonts' => false,
             'hideDownloadButton' => false,
             'defaultHttpClient' => ['targetKey' => 'shell', 'clientKey' => 'curl'],
             'hiddenClients' => ['unirest', 'httpie', 'wget', 'native', 'nsurlsession', 'okhttp', 'restsharp', 'asynchttp', 'httpclient', 'curl-library', 'reqwest'],

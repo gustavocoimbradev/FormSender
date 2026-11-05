@@ -66,7 +66,7 @@ it('validates fields, destinations and allowed domains', function (array $overri
 it('updates fields, destinations and allowed domains', function (): void {
     $form = Form::factory()->create();
 
-    $this->putJson("/api/forms/{$form->id}", deliveryPayload(['destinations' => ['new@example.com'], 'allowed_domains' => []]))
+    $this->putJson("/api/forms/{$form->code}", deliveryPayload(['destinations' => ['new@example.com'], 'allowed_domains' => []]))
         ->assertOk()
         ->assertJsonPath('data.destinations', ['new@example.com'])
         ->assertJsonPath('data.allowed_domains', [])
@@ -76,7 +76,7 @@ it('updates fields, destinations and allowed domains', function (): void {
 it('updates only the sent attributes on a partial update', function (): void {
     $form = Form::factory()->create(['destinations' => ['keep@example.com']]);
 
-    $this->patchJson("/api/forms/{$form->id}", ['allowed_domains' => ['example.com']])
+    $this->patchJson("/api/forms/{$form->code}", ['allowed_domains' => ['example.com']])
         ->assertOk()
         ->assertJsonPath('data.destinations', ['keep@example.com'])
         ->assertJsonPath('data.allowed_domains', ['example.com']);

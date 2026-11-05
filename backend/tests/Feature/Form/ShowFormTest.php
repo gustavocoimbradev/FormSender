@@ -9,9 +9,9 @@ use App\Models\Form;
 it('shows a form', function (): void {
     $form = Form::factory()->create(['name' => 'Contact']);
 
-    $this->getJson("/api/forms/{$form->id}")
+    $this->getJson("/api/forms/{$form->code}")
         ->assertOk()
-        ->assertJsonPath('data.id', $form->id)
+        ->assertJsonPath('data.code', $form->code)->assertJsonMissingPath('data.id')
         ->assertJsonPath('data.name', 'Contact');
 });
 

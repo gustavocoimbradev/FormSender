@@ -10,26 +10,17 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class AuthorizeFormSubmission
+class EnsureAllowedDomain
 {
     /**
-     * A submission needs the form's own bearer token and, when the form
-     * restricts domains, a matching Origin/Referer.
+     * When the form lists allowed domains, the page that sends it (Origin, or
+     * Referer when there is no Origin) must be one of them. An empty list lets any site through.
      */
     public function handle(Request $request, Closure $next): Response
     {
         $form = $request->route('form');
 
         if ($form instanceof Form) {
-            $provided = (string) $request->bearerToken();
-
-            abort_if(
-                $provided === '' || ! hash_equals((string) $form->token, $provided),
-                401,
-                'Invalid or missing form token.',
-                ['WWW-Authenticate' => 'Bearer'],
-            );
-
             abort_unless($form->allowsHost(RequestHost::from($request)), 403, 'This domain is not allowed to submit this form.');
         }
 

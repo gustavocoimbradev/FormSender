@@ -9,7 +9,7 @@ use App\Models\Form;
 it('deletes a form', function (): void {
     $form = Form::factory()->create();
 
-    $this->deleteJson("/api/forms/{$form->id}")->assertNoContent();
+    $this->deleteJson("/api/forms/{$form->code}")->assertNoContent();
 
     $this->assertDatabaseMissing('forms', ['id' => $form->id]);
 });

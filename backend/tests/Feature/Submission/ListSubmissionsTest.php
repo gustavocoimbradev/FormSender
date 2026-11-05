@@ -26,7 +26,7 @@ it('lists the submissions of a form, newest first, with their processing status'
     $older = submissionFor($form, ['status' => 'sent']);
     $newer = submissionFor($form, ['status' => 'failed', 'error' => 'SMTP down']);
 
-    $this->getJson("/api/forms/{$form->id}/submissions")
+    $this->getJson("/api/forms/{$form->code}/submissions")
         ->assertOk()
         ->assertJsonCount(2, 'data')
         ->assertJsonPath('data.0.id', $newer->id)
@@ -44,7 +44,7 @@ it('only lists the submissions of the requested form', function (): void {
     submissionFor($form);
     submissionFor($other);
 
-    $this->getJson("/api/forms/{$form->id}/submissions")->assertJsonCount(1, 'data');
+    $this->getJson("/api/forms/{$form->code}/submissions")->assertJsonCount(1, 'data');
 });
 
 it('filters submissions by status', function (): void {
@@ -52,7 +52,7 @@ it('filters submissions by status', function (): void {
     submissionFor($form, ['status' => 'sent']);
     submissionFor($form, ['status' => 'failed']);
 
-    $this->getJson("/api/forms/{$form->id}/submissions?status=failed")
+    $this->getJson("/api/forms/{$form->code}/submissions?status=failed")
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.status', 'failed');
@@ -61,7 +61,7 @@ it('filters submissions by status', function (): void {
 it('rejects an unknown status filter', function (): void {
     $form = Form::factory()->create();
 
-    $this->getJson("/api/forms/{$form->id}/submissions?status=nope")
+    $this->getJson("/api/forms/{$form->code}/submissions?status=nope")
         ->assertUnprocessable()
         ->assertJsonValidationErrors('status');
 });
@@ -70,7 +70,7 @@ it('shows one submission of the form', function (): void {
     $form = Form::factory()->create();
     $submission = submissionFor($form);
 
-    $this->getJson("/api/forms/{$form->id}/submissions/{$submission->id}")
+    $this->getJson("/api/forms/{$form->code}/submissions/{$submission->id}")
         ->assertOk()
         ->assertJsonPath('data.id', $submission->id)
         ->assertJsonPath('data.form_name', $form->name);
@@ -81,14 +81,14 @@ it('does not show a submission through another form', function (): void {
     $other = Form::factory()->create();
     $submission = submissionFor($other);
 
-    $this->getJson("/api/forms/{$form->id}/submissions/{$submission->id}")->assertNotFound();
+    $this->getJson("/api/forms/{$form->code}/submissions/{$submission->id}")->assertNotFound();
 });
 
 it('keeps the submissions as an audit trail when the form is deleted', function (): void {
     $form = Form::factory()->create(['name' => 'Gone']);
     $submission = submissionFor($form, ['status' => 'sent']);
 
-    $this->deleteJson("/api/forms/{$form->id}")->assertNoContent();
+    $this->deleteJson("/api/forms/{$form->code}")->assertNoContent();
 
     $kept = $submission->fresh();
 
@@ -102,6 +102,6 @@ it('offers no way to change or delete a submission', function (): void {
     $form = Form::factory()->create();
     $submission = submissionFor($form);
 
-    $this->deleteJson("/api/forms/{$form->id}/submissions/{$submission->id}")->assertStatus(405);
-    $this->putJson("/api/forms/{$form->id}/submissions/{$submission->id}", [])->assertStatus(405);
+    $this->deleteJson("/api/forms/{$form->code}/submissions/{$submission->id}")->assertStatus(405);
+    $this->putJson("/api/forms/{$form->code}/submissions/{$submission->id}", [])->assertStatus(405);
 });

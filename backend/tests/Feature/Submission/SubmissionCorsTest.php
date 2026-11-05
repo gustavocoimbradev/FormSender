@@ -6,7 +6,7 @@ use App\Models\Form;
 
 function preflight($test, Form $form, string $origin)
 {
-    return $test->call('OPTIONS', "/api/forms/{$form->id}/submit", server: [
+    return $test->call('OPTIONS', "/api/forms/{$form->code}/submit", server: [
         'HTTP_ORIGIN' => $origin,
         'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST',
         'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'authorization,content-type',
@@ -44,7 +44,7 @@ it('adds the cors header to the actual submission response of an allowed origin'
     configureSmtp();
     $form = contactForm(['allowed_domains' => ['example.com']]);
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(), ['Origin' => 'https://example.com'])
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), ['Origin' => 'https://example.com'])
         ->assertStatus(202)
         ->assertHeader('Access-Control-Allow-Origin', 'https://example.com');
 });
@@ -52,7 +52,7 @@ it('adds the cors header to the actual submission response of an allowed origin'
 it('does not add the cors header for an origin that is not allowed', function (): void {
     $form = contactForm(['allowed_domains' => ['example.com']]);
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(), ['Origin' => 'https://evil.test'])
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), ['Origin' => 'https://evil.test'])
         ->assertForbidden()
         ->assertHeaderMissing('Access-Control-Allow-Origin');
 });

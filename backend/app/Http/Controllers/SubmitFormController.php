@@ -15,15 +15,16 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-#[Group('Submitting a form', description: 'The endpoint your website calls when a visitor sends the form. It uses the form token, not a user login.', weight: 5)]
+#[Group('Submitting a form', description: 'The endpoint your website calls when a visitor sends the form. No login and no token: only the sites allowed on the form can send it.', weight: 5)]
 class SubmitFormController extends Controller
 {
     /**
      * Submit a form.
      *
-     * Called by the visitor's browser or by any server. Authenticate with the **form's own token**:
-     * `Authorization: Bearer <form token>`. When the form lists allowed domains, the `Origin` (or
-     * `Referer`) header must match one of them, otherwise the answer is 403.
+     * Called straight from the website's page: no login and no token. The form is found by its public
+     * `code` (the numeric id does not work). When the form lists allowed domains, the `Origin` (or
+     * `Referer`) of the request must match one of them, otherwise the answer is 403; an empty list
+     * lets any site send the form.
      *
      * Only the fields the form accepts are validated and kept. The submission is saved and queued, and
      * the answer is an instant `202`; the email delivery happens in the background. Limited to 20

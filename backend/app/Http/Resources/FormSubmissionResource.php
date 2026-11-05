@@ -16,15 +16,13 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FormSubmissionResource extends JsonResource
 {
     /**
-     * @return array{id: int, form_id: int|null, form_name: string, status: string, values: array<string, mixed>, destinations: list<string>, deliveries: list<array{destination: string, status: string, error: string|null, sent_at: string|null}>, attempts: int, error: string|null, ip: string|null, origin: string|null, user_agent: string|null, created_at: string|null, processed_at: string|null}
+     * @return array{id: int, form_name: string, status: string, values: array<string, mixed>, destinations: list<string>, deliveries: list<array{destination: string, status: string, error: string|null, sent_at: string|null}>, attempts: int, error: string|null, ip: string|null, origin: string|null, user_agent: string|null, created_at: string|null, processed_at: string|null}
      */
     public function toArray(Request $request): array
     {
         return [
             /** Identifier of the submission. */
             'id' => $this->id,
-            /** The form it was sent to. Empty if the form was deleted later. */
-            'form_id' => $this->form_id,
             /** Name of the form when the message was received. */
             'form_name' => $this->form_name,
             /** Where it is in the delivery: `pending`, `processing`, `sent`, `partial` (some destinations failed) or `failed`. */

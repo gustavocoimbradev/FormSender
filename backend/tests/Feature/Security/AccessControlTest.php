@@ -7,14 +7,13 @@ use App\Models\Form;
 it('requires authentication on every protected route', function (string $method, string $uri): void {
     $form = Form::factory()->create();
 
-    $this->json($method, str_replace('{form}', (string) $form->id, $uri))->assertUnauthorized();
+    $this->json($method, str_replace('{form}', $form->code, $uri))->assertUnauthorized();
 })->with([
     ['GET', '/api/forms'],
     ['POST', '/api/forms'],
     ['GET', '/api/forms/{form}'],
     ['PUT', '/api/forms/{form}'],
     ['DELETE', '/api/forms/{form}'],
-    ['POST', '/api/forms/{form}/token'],
     ['GET', '/api/forms/{form}/submissions'],
     ['GET', '/api/forms/{form}/submissions/1'],
     ['GET', '/api/settings'],
@@ -30,8 +29,8 @@ it('lets regular users manage forms', function (): void {
 
     $this->getJson('/api/forms')->assertOk();
     $this->postJson('/api/forms', ['name' => 'New'])->assertCreated();
-    $this->putJson("/api/forms/{$form->id}", ['name' => 'Changed'])->assertOk();
-    $this->deleteJson("/api/forms/{$form->id}")->assertNoContent();
+    $this->putJson("/api/forms/{$form->code}", ['name' => 'Changed'])->assertOk();
+    $this->deleteJson("/api/forms/{$form->code}")->assertNoContent();
 });
 
 it('forbids regular users from reading and changing settings', function (): void {

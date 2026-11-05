@@ -10,13 +10,13 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SubmitFormController;
 use App\Http\Controllers\UserController;
-use App\Http\Middleware\AuthorizeFormSubmission;
+use App\Http\Middleware\EnsureAllowedDomain;
 use Illuminate\Support\Facades\Route;
 
 Route::get('setup', [SetupController::class, 'status']);
 Route::post('setup', SetupController::class)->middleware('throttle:setup');
-Route::post('forms/{form}/submit', SubmitFormController::class)
-    ->middleware(['throttle:form-submit', AuthorizeFormSubmission::class]);
+Route::post('forms/{form:code}/submit', SubmitFormController::class)
+    ->middleware(['throttle:form-submit', EnsureAllowedDomain::class]);
 
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('auth/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
@@ -27,7 +27,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
 
     Route::apiResource('forms', FormController::class);
-    Route::post('forms/{form}/token', [FormController::class, 'regenerateToken']);
     Route::apiResource('forms.submissions', FormSubmissionController::class)->only(['index', 'show'])->scoped();
 
     Route::apiResource('users', UserController::class);

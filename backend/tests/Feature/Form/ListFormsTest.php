@@ -13,8 +13,8 @@ it('lists forms paginated, newest first', function (): void {
     $this->getJson('/api/forms')
         ->assertOk()
         ->assertJsonCount(2, 'data')
-        ->assertJsonPath('data.0.id', $newer->id)
-        ->assertJsonPath('data.1.id', $older->id)
+        ->assertJsonPath('data.0.code', $newer->code)
+        ->assertJsonPath('data.1.code', $older->code)
         ->assertJsonStructure(['data', 'links', 'meta']);
 });
 

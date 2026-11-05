@@ -13,7 +13,7 @@ use App\Models\Form;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 
-#[Group('Forms', description: 'A form defines which fields it accepts, where its messages are delivered (destinations), which websites may send it and its own secret token.', weight: 4)]
+#[Group('Forms', description: 'A form defines which fields it accepts, where its messages are delivered (destinations), which websites may send it and its own public code.', weight: 4)]
 class FormController extends Controller
 {
     /**
@@ -31,8 +31,8 @@ class FormController extends Controller
      * Create a form.
      *
      * Defines the accepted `fields`, the email `destinations` (up to 20) and the `allowed_domains`
-     * (hosts such as `example.com` or `*.example.com`; empty means any domain). A unique bearer
-     * `token` is generated automatically. Domains are normalized: scheme, path, port and case are removed.
+     * (hosts such as `example.com` or `*.example.com`; empty means any domain). A unique public
+     * `code` is generated automatically. Domains are normalized: scheme, path, port and case are removed.
      */
     #[Endpoint(operationId: 'createForm')]
     public function store(StoreFormRequest $request): FormResource
@@ -43,7 +43,7 @@ class FormController extends Controller
     /**
      * Get a form.
      *
-     * Includes its bearer token.
+     * Includes its public code.
      */
     #[Endpoint(operationId: 'getForm')]
     public function show(Form $form): FormResource
@@ -54,7 +54,7 @@ class FormController extends Controller
     /**
      * Update a form.
      *
-     * `PUT` replaces the form; `PATCH` changes only the attributes sent. The token is never changed here.
+     * `PUT` replaces the form; `PATCH` changes only the attributes sent.
      */
     #[Endpoint(operationId: 'updateForm')]
     public function update(UpdateFormRequest $request, Form $form): FormResource
@@ -75,19 +75,5 @@ class FormController extends Controller
         $form->delete();
 
         return response()->noContent();
-    }
-
-    /**
-     * Regenerate the form token.
-     *
-     * Generates a new unique token; the old one stops working immediately.
-     */
-    #[Endpoint(operationId: 'regenerateFormToken')]
-    public function regenerateToken(Form $form): FormResource
-    {
-        $form->regenerateToken();
-        $form->save();
-
-        return new FormResource($form);
     }
 }

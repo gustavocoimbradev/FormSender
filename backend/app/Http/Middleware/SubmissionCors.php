@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SubmissionCors
 {
-    private const PATTERN = '#^api/forms/(\d+)/submit$#';
+    private const PATTERN = '#^api/forms/([a-z0-9]+)/submit$#';
 
     /**
      * The submit endpoint is called from other people's websites, so CORS is
@@ -26,7 +26,7 @@ class SubmissionCors
             return $next($request);
         }
 
-        $form = Form::find((int) $matches[1]);
+        $form = Form::where('code', $matches[1])->first();
         $host = parse_url($origin, PHP_URL_HOST);
         $allowed = $form !== null && $form->allowsHost(is_string($host) ? strtolower($host) : null);
 

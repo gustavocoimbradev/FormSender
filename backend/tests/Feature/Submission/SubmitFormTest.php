@@ -17,7 +17,7 @@ beforeEach(function (): void {
 it('accepts a submission, saves it and queues the delivery', function (): void {
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(['message' => 'Hello']), [
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['message' => 'Hello']), [
         'Origin' => 'https://site.test',
         'User-Agent' => 'TestBrowser/1.0',
     ])
@@ -48,7 +48,7 @@ it('answers without sending any email during the request', function (): void {
     Mail::fake();
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertStatus(202);
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertStatus(202);
 
     Mail::assertNothingSent();
     Queue::assertPushed(SendFormSubmission::class, 1);
@@ -57,60 +57,40 @@ it('answers without sending any email during the request', function (): void {
 it('drops fields the form does not accept', function (): void {
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(['is_admin' => true, 'extra' => 'x']))
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['is_admin' => true, 'extra' => 'x']))
         ->assertStatus(202);
 
     expect(FormSubmission::sole()->data)->toBe(['name' => 'Jane', 'email' => 'jane@example.com']);
 });
 
-it('does not need a logged in user', function (): void {
+it('does not need any token or login: the form code in the address is enough', function (): void {
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertStatus(202);
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertStatus(202);
 });
 
-it('rejects a missing, wrong or foreign token', function (?string $token): void {
+it('ignores an Authorization header, it is not used anymore', function (): void {
     $form = contactForm();
-    $other = contactForm();
 
-    $request = $token === null ? $this : $this->withToken($token === 'other' ? $other->token : $token);
+    $this->withToken('anything')->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertStatus(202);
+});
 
-    $request->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertUnauthorized();
+it('does not accept the numeric id of the form in the address', function (): void {
+    $form = contactForm();
 
-    Queue::assertNothingPushed();
+    $this->postJson('/api/forms/'.$form->id.'/submit', validSubmission())->assertNotFound();
+
     expect(FormSubmission::count())->toBe(0);
-})->with([
-    'missing' => [null],
-    'wrong' => ['fs_wrong'],
-    'from another form' => ['other'],
-]);
-
-it('rejects a user api token as the form token', function (): void {
-    $form = contactForm();
-    $userToken = App\Models\User::factory()->create()->createToken('api')->plainTextToken;
-
-    $this->withToken($userToken)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertUnauthorized();
 });
 
-it('rejects the old token after it was rotated', function (): void {
-    $form = contactForm();
-    $old = $form->token;
-
-    actingAsUser();
-    $this->postJson("/api/forms/{$form->id}/token")->assertOk();
-    app('auth')->forgetGuards();
-
-    $this->withToken($old)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertUnauthorized();
-});
-
-it('returns 404 for an unknown form', function (): void {
-    $this->withToken('fs_x')->postJson('/api/forms/999/submit', validSubmission())->assertNotFound();
+it('returns 404 for an unknown code', function (): void {
+    $this->postJson('/api/forms/doesnotexist0000000000/submit', validSubmission())->assertNotFound();
 });
 
 it('validates the submission against the accepted fields', function (array $overrides, string $errorKey): void {
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission($overrides))
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission($overrides))
         ->assertUnprocessable()
         ->assertJsonValidationErrors($errorKey);
 
@@ -129,7 +109,7 @@ it('validates the submission against the accepted fields', function (array $over
 it('accepts optional fields of every type', function (): void {
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission([
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission([
         'topic' => 'Sales', 'age' => 30, 'newsletter' => true, 'birthday' => '1990-05-20', 'message' => 'Hi',
     ]))->assertStatus(202);
 });
@@ -137,7 +117,7 @@ it('accepts optional fields of every type', function (): void {
 it('refuses submissions when the form has no destinations', function (): void {
     $form = contactForm(['destinations' => []]);
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertUnprocessable();
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertUnprocessable();
 
     Queue::assertNothingPushed();
     expect(FormSubmission::count())->toBe(0);
@@ -147,7 +127,7 @@ it('refuses submissions when smtp is not configured', function (): void {
     Setting::where('key', 'smtp')->delete();
     $form = contactForm();
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertStatus(503);
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertStatus(503);
 
     Queue::assertNothingPushed();
     expect(FormSubmission::count())->toBe(0);
@@ -157,39 +137,39 @@ it('throttles submissions per form and ip', function (): void {
     $form = contactForm();
 
     foreach (range(1, 20) as $attempt) {
-        $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertStatus(202);
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertStatus(202);
     }
 
-    $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission())->assertStatus(429);
+    $this->postJson("/api/forms/{$form->code}/submit", validSubmission())->assertStatus(429);
 });
 
 describe('allowed domains', function (): void {
     it('lets any origin, or none, submit when the list is empty', function (): void {
         $form = contactForm(['allowed_domains' => []]);
-        $url = "/api/forms/{$form->id}/submit";
+        $url = "/api/forms/{$form->code}/submit";
 
-        $this->withToken($form->token)->postJson($url, validSubmission())->assertStatus(202);
-        $this->withToken($form->token)->postJson($url, validSubmission(), ['Origin' => 'https://anything.test'])->assertStatus(202);
+        $this->postJson($url, validSubmission())->assertStatus(202);
+        $this->postJson($url, validSubmission(), ['Origin' => 'https://anything.test'])->assertStatus(202);
     });
 
     it('accepts an allowed origin, ignoring scheme, port and case', function (string $origin): void {
         $form = contactForm(['allowed_domains' => ['example.com']]);
 
-        $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(), ['Origin' => $origin])
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), ['Origin' => $origin])
             ->assertStatus(202);
     })->with(['https://example.com', 'http://example.com:8080', 'https://EXAMPLE.com']);
 
     it('falls back to the referer when there is no origin', function (): void {
         $form = contactForm(['allowed_domains' => ['example.com']]);
 
-        $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(), ['Referer' => 'https://example.com/contact?x=1'])
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), ['Referer' => 'https://example.com/contact?x=1'])
             ->assertStatus(202);
     });
 
     it('matches subdomains with a wildcard, but not the apex or lookalikes', function (string $origin, int $status): void {
         $form = contactForm(['allowed_domains' => ['*.example.com']]);
 
-        $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(), ['Origin' => $origin])
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), ['Origin' => $origin])
             ->assertStatus($status);
     })->with([
         'subdomain' => ['https://www.example.com', 202],
@@ -202,7 +182,7 @@ describe('allowed domains', function (): void {
     it('rejects other origins and requests without origin or referer', function (array $headers): void {
         $form = contactForm(['allowed_domains' => ['example.com']]);
 
-        $this->withToken($form->token)->postJson("/api/forms/{$form->id}/submit", validSubmission(), $headers)
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), $headers)
             ->assertForbidden();
 
         Queue::assertNothingPushed();
@@ -213,11 +193,4 @@ describe('allowed domains', function (): void {
         'other referer' => [['Referer' => 'https://evil.test/x']],
         'no headers' => [[]],
     ]);
-
-    it('checks the token before the domain', function (): void {
-        $form = contactForm(['allowed_domains' => ['example.com']]);
-
-        $this->withToken('fs_wrong')->postJson("/api/forms/{$form->id}/submit", validSubmission(), ['Origin' => 'https://evil.test'])
-            ->assertUnauthorized();
-    });
 });

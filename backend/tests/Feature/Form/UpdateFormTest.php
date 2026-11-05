@@ -9,7 +9,7 @@ use App\Models\Form;
 it('updates a form name', function (): void {
     $form = Form::factory()->create(['name' => 'Old']);
 
-    $this->putJson("/api/forms/{$form->id}", ['name' => 'New'])
+    $this->putJson("/api/forms/{$form->code}", ['name' => 'New'])
         ->assertOk()
         ->assertJsonPath('data.name', 'New');
 
@@ -19,7 +19,7 @@ it('updates a form name', function (): void {
 it('requires a name to update a form', function (): void {
     $form = Form::factory()->create();
 
-    $this->putJson("/api/forms/{$form->id}", [])
+    $this->putJson("/api/forms/{$form->code}", [])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('name');
 });

@@ -22,8 +22,6 @@ class Form extends Model
 
     protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains'];
 
-    protected $hidden = ['token_hash'];
-
     protected $attributes = [
         'fields' => '[]',
         'destinations' => '[]',
@@ -33,8 +31,16 @@ class Form extends Model
     protected static function booted(): void
     {
         static::creating(function (Form $form): void {
-            $form->regenerateToken();
+            $form->code ??= static::newCode();
         });
+    }
+
+    /**
+     * Forms are addressed by their code everywhere, never by the numeric id.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'code';
     }
 
     /**
@@ -46,7 +52,6 @@ class Form extends Model
             'fields' => 'array',
             'destinations' => 'array',
             'allowed_domains' => 'array',
-            'token' => 'encrypted',
         ];
     }
 
@@ -59,18 +64,16 @@ class Form extends Model
     }
 
     /**
-     * Replaces the token with a new random one that no other form uses.
-     * The caller is responsible for saving the model.
+     * The public code websites send the form to. Random and not tied to the id,
+     * so nobody can walk through the forms by counting.
      */
-    public function regenerateToken(): void
+    public static function newCode(): string
     {
         do {
-            $token = 'fs_'.Str::random(48);
-            $hash = hash('sha256', $token);
-        } while (static::where('token_hash', $hash)->exists());
+            $code = strtolower(Str::random(20));
+        } while (static::where('code', $code)->exists());
 
-        $this->token = $token;
-        $this->token_hash = $hash;
+        return $code;
     }
 
     /**

@@ -38,7 +38,6 @@ it('documents every api route', function (string $path, string $method): void {
     ['/forms/{form}', 'get'],
     ['/forms/{form}', 'put'],
     ['/forms/{form}', 'delete'],
-    ['/forms/{form}/token', 'post'],
     ['/forms/{form}/submit', 'post'],
     ['/forms/{form}/submissions', 'get'],
     ['/forms/{form}/submissions/{submission}', 'get'],
@@ -56,20 +55,21 @@ it('declares bearer authentication for protected routes only', function (): void
     expect($document['components']['securitySchemes'])->toHaveKey('http');
     expect($document['components']['securitySchemes']['http'])->toMatchArray(['type' => 'http', 'scheme' => 'bearer']);
 
-    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get'], ['/forms/{form}/token', 'post']] as [$path, $method]) {
+    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->not->toBe([], "{$method} {$path} must be protected");
     }
 
-    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post']] as [$path, $method]) {
+    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post'], ['/forms/{form}/submit', 'post']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->toBe([], "{$method} {$path} must be public");
     }
 });
 
-it('describes the form token authentication of the submit endpoint', function (): void {
+it('explains that the submit endpoint is controlled by the allowed sites, with no token', function (): void {
     $operation = openApi()['paths']['/forms/{form}/submit']['post'];
 
-    expect($operation['description'] ?? '')->toContain('token')->toContain('allowed domains');
+    expect($operation['description'] ?? '')->toContain('allowed domains')->toContain('code')->not->toContain('Bearer');
 });
+
 
 it('has a summary for every operation', function (): void {
     foreach (openApi()['paths'] as $path => $operations) {
@@ -181,4 +181,38 @@ describe('friendly documentation', function (): void {
         ['NewUser', 'email'],
         ['SettingsChanges', 'smtp'],
     ]);
+});
+
+describe('docs design', function (): void {
+    it('shows the FormSender brand at the top of the docs', function (): void {
+        $this->get('/')
+            ->assertOk()
+            ->assertSee('FormSender')
+            ->assertSee('class="fs-brand"', false)
+            ->assertSee('<svg', false);
+    });
+
+    it('uses the same colors as the dashboard', function (): void {
+        $this->get('/')
+            ->assertSee('--scalar-color-accent: #8b6bff', false)
+            ->assertSee('--scalar-background-1: #07070d', false);
+    });
+
+    it('does not offer a light mode, to stay uniform with the dashboard', function (): void {
+        $this->get('/')
+            ->assertSee('"forceDarkModeState":"dark"', false)
+            ->assertSee('"hideDarkModeToggle":true', false);
+    });
+
+    it('links back to the dashboard when its address is known', function (): void {
+        config(['app.frontend_url' => 'http://localhost:3000']);
+
+        $this->get('/')->assertSee('href="http://localhost:3000"', false)->assertSee('Abrir painel');
+    });
+
+    it('does not show a dead link to the dashboard when its address is unknown', function (): void {
+        config(['app.frontend_url' => null]);
+
+        $this->get('/')->assertDontSee('Abrir painel');
+    });
 });
