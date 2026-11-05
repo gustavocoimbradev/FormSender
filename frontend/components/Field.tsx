@@ -1,0 +1,63 @@
+import type { InputHTMLAttributes, ReactNode } from "react";
+
+type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
+  id: string;
+  label: string;
+  hint?: ReactNode;
+  error?: string;
+  icon?: ReactNode;
+  trailing?: ReactNode;
+  /** Rendered between the input and the message (e.g. a strength meter). */
+  footer?: ReactNode;
+};
+
+/** Labelled input with an animated focus glow and an inline error that announces itself. */
+export function Field({ id, label, hint, error, icon, trailing, footer, className = "", ...input }: FieldProps) {
+  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+
+  return (
+    <div className="mb-3">
+      <label htmlFor={id} className="mb-2 block text-base font-medium text-text/90">
+        {label}
+      </label>
+
+      {/* Remounted on a new error so the shake plays each time. */}
+      <div
+        key={error ?? "ok"}
+        className={`group relative flex items-center rounded-control border bg-surface/[0.04] transition duration-300 ease-out focus-within:bg-surface/[0.07] focus-within:ring-4 ${
+          error
+            ? "animate-shake border-danger/70 focus-within:border-danger focus-within:ring-danger/20"
+            : "border-surface/10 hover:border-surface/20 focus-within:border-accent focus-within:ring-accent/20"
+        }`}
+      >
+        {icon && (
+          <span className="pointer-events-none pl-4 text-muted transition-colors duration-300 group-focus-within:text-accent">
+            {icon}
+          </span>
+        )}
+        <input
+          id={id}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy}
+          className={`h-14 w-full min-w-0 bg-transparent text-base text-text placeholder:text-muted/60 focus:outline-none focus-visible:ring-0 ${icon ? "pl-3 pr-4" : "px-4"} ${className}`}
+          {...input}
+        />
+        {trailing && <span className="pr-1.5">{trailing}</span>}
+      </div>
+
+      {footer && <div className="mt-3">{footer}</div>}
+
+      <div aria-live="polite" className="mt-2 min-h-6 text-base leading-6">
+        {error ? (
+          <p id={`${id}-error`} className="animate-fade-in text-danger">
+            {error}
+          </p>
+        ) : hint ? (
+          <p id={`${id}-hint`} className="text-muted">
+            {hint}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}

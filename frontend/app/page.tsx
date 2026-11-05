@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+
+// The first screen of a fresh install is the setup.
 export default function Home() {
-  return <main className="w-full p-8 text-base">FormSender</main>;
+  redirect("/setup");
 }

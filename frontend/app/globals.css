@@ -2,6 +2,58 @@
 @tailwind components;
 @tailwind utilities;
 
-html {
-  font-size: 16px;
+/* Design tokens. Colors are "R G B" triplets so Tailwind can add opacity. */
+:root {
+  --bg: 7 7 13;
+  --bg-soft: 14 14 26;
+  --surface: 255 255 255;
+  --text: 244 244 251;
+  --muted: 163 163 186;
+  --accent: 139 107 255;
+  --accent-2: 61 214 245;
+  --danger: 255 107 129;
+  --success: 61 220 151;
+
+  --radius-card: 1.5rem;
+  --radius-control: 0.875rem;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply min-h-dvh bg-bg font-sans text-base text-text antialiased;
+  }
+
+  ::selection {
+    @apply bg-accent/40 text-text;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-4 ring-accent/40;
+  }
+}
+
+/* Delay each entrance by its position: style={{ "--i": 2 }} */
+@layer utilities {
+  .stagger {
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+}
+
+/* Respect people who ask for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

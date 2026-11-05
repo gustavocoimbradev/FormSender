@@ -63,7 +63,11 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:${APP_PORT:-8000}
+      # Server-side target of the /api proxy; the browser only talks to the frontend.
+      API_URL: http://app:8000
+    depends_on:
+      app:
+        condition: service_healthy
 
   postgres:
     image: postgres:16
