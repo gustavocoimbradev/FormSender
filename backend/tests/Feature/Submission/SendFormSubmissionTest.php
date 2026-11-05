@@ -103,7 +103,7 @@ it('falls back to the default template when the form has none, or was deleted', 
     Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('New message: Contact') && str_contains($mail->render(), 'Form Sender'));
 });
 
-it('lists the submitted values by field label, in the form order, and escapes html', function (): void {
+it('shows the sender up front, the other values by field label, and escapes html', function (): void {
     Mail::fake();
 
     (new SendFormSubmission(makeSubmission([
@@ -115,11 +115,10 @@ it('lists the submitted values by field label, in the form order, and escapes ht
     Mail::assertSent(FormSubmissionMail::class, function ($mail): bool {
         $html = $mail->render();
 
-        return str_contains($html, 'Name')
-            && str_contains($html, '&lt;script&gt;alert(1)&lt;/script&gt;')
+        return str_contains($html, '&lt;script&gt;alert(1)&lt;/script&gt;')
             && ! str_contains($html, '<script>')
-            && str_contains($html, 'Newsletter')
-            && strpos($html, 'Name') < strpos($html, 'Email');
+            && str_contains($html, 'jane@example.com')
+            && str_contains($html, 'Newsletter');
     });
 });
 

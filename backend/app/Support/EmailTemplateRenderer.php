@@ -12,9 +12,16 @@ use App\Models\Template;
  * preview in the panel, so what people see while editing is what is delivered.
  *
  * Variables: {{form_name}} {{date}} {{origin}} {{ip}} {{fields}} {{field.NAME}} {{label.NAME}}
+ *
+ * {{fields}} lists the answers the template did not already place one by one with {{field.NAME}}.
+ * A block {{#field.NAME}}...{{/field.NAME}} only shows when that field has a value.
  */
 class EmailTemplateRenderer
 {
+    private const SECTION = '/\{\{#(field\.[a-z][a-z0-9_]*)\}\}(.*?)\{\{\/\1\}\}/s';
+
+    private const PLACED_FIELD = '/\{\{\s*field\.([a-z][a-z0-9_]*)\s*\}\}/';
+
     private const TOKEN = '/\{\{\s*(form_name|date|origin|ip|fields|field\.[a-z][a-z0-9_]*|label\.[a-z][a-z0-9_]*)\s*\}\}/';
 
     /**
@@ -24,9 +31,12 @@ class EmailTemplateRenderer
     {
         $subject = $this->fill($template->subject, $submission, asHtml: false);
 
+        // Answers already placed one by one in the body are not repeated by {{fields}}.
+        preg_match_all(self::PLACED_FIELD, $template->html, $placed);
+
         return [
             'subject' => trim((string) preg_replace('/\s+/u', ' ', $subject)),
-            'html' => $this->fill($template->html, $submission, asHtml: true),
+            'html' => $this->fill($template->html, $submission, asHtml: true, placed: array_unique($placed[1])),
         ];
     }
 
@@ -51,13 +61,27 @@ class EmailTemplateRenderer
         return $this->renderSubmission(new Template(['name' => 'Sample', 'subject' => $subject, 'html' => $html]), $sample);
     }
 
-    private function fill(string $text, FormSubmission $submission, bool $asHtml): string
+    /**
+     * @param  list<string>  $placed  names of the fields the template already shows by itself
+     */
+    private function fill(string $text, FormSubmission $submission, bool $asHtml, array $placed = []): string
     {
-        return (string) preg_replace_callback(self::TOKEN, function (array $match) use ($submission, $asHtml): string {
+        // Blocks first, on the template alone: a submitted value can never open or close one. Blocks may
+        // be nested, so the template is cleaned until nothing changes (a block never grows the text).
+        do {
+            $before = $text;
+            $text = (string) preg_replace_callback(
+                self::SECTION,
+                fn (array $match): string => trim((string) $this->value($match[1], $submission)) === '' ? '' : $match[2],
+                $text,
+            );
+        } while ($text !== $before);
+
+        return (string) preg_replace_callback(self::TOKEN, function (array $match) use ($submission, $asHtml, $placed): string {
             $token = $match[1];
 
             if ($token === 'fields') {
-                return $asHtml ? $this->fieldsTable($submission) : '';
+                return $asHtml ? $this->fieldsTable($submission, $placed) : '';
             }
 
             $value = $this->value($token, $submission);
@@ -101,13 +125,16 @@ class EmailTemplateRenderer
         return '';
     }
 
-    private function fieldsTable(FormSubmission $submission): string
+    /**
+     * @param  list<string>  $placed
+     */
+    private function fieldsTable(FormSubmission $submission, array $placed = []): string
     {
         $font = "font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
         $rows = '';
 
         foreach ($submission->fields as $field) {
-            if (! array_key_exists($field['name'], $submission->data)) {
+            if (! array_key_exists($field['name'], $submission->data) || in_array($field['name'], $placed, true)) {
                 continue;
             }
 
@@ -119,7 +146,7 @@ class EmailTemplateRenderer
                 .'<div style="font-size:16px;line-height:1.5;color:#f4f4fb;">'.$value.'</div></td></tr>';
         }
 
-        return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'.$rows.'</table>';
+        return $rows === '' ? '' : '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">'.$rows.'</table>';
     }
 
     private function display(string $type, mixed $value): string

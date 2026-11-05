@@ -36,7 +36,7 @@ class TemplateController extends Controller
      * Create a template.
      *
      * Variables available in the subject and the body: `{{form_name}}`, `{{date}}`, `{{origin}}`, `{{ip}}`,
-     * `{{fields}}` (every answer in a styled table, body only), `{{field.NAME}}` and `{{label.NAME}}` for a single field.
+     * `{{fields}}` (the answers not already placed one by one, in a styled table, body only), `{{field.NAME}}` and `{{label.NAME}}` for a single field. Wrap content in `{{#field.NAME}}...{{/field.NAME}}` to show it only when that field has a value.
      */
     #[Endpoint(operationId: 'createTemplate')]
     public function store(StoreTemplateRequest $request): TemplateResource

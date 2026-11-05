@@ -50,9 +50,44 @@ final class DefaultEmailTemplate
                 <tr>
                   <td style="padding:0 28px 20px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;color:#a3a3ba;">Received on {{date}}</td>
                 </tr>
+                {{#field.name}}
+                <tr>
+                  <td style="padding:0 28px 4px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;color:#7e7e96;">From</td>
+                </tr>
+                <tr>
+                  <td style="padding:0 28px 20px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:18px;line-height:1.4;font-weight:600;color:#f4f4fb;">{{field.name}}{{#field.email}} <span style="font-weight:400;font-size:16px;color:#b7a3ff;">&lt;{{field.email}}&gt;</span>{{/field.email}}</td>
+                </tr>
+                {{/field.name}}
+                {{#field.message}}
+                <tr>
+                  <td style="padding:0 28px 20px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td bgcolor="#14142a" style="background-color:#14142a;border-radius:14px;padding:18px 20px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.6;color:#f4f4fb;">
+                          <div style="font-size:14px;color:#7e7e96;padding-bottom:6px;">{{label.message}}</div>
+                          {{field.message}}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {{/field.message}}
                 <tr>
                   <td style="padding:0 28px;">{{fields}}</td>
                 </tr>
+                {{#field.email}}
+                <tr>
+                  <td style="padding:24px 28px 0;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td bgcolor="#8b6bff" style="background-color:#8b6bff;border-radius:12px;">
+                          <a href="mailto:{{field.email}}?subject=Re: {{form_name}}" style="display:inline-block;padding:14px 26px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;color:#ffffff;text-decoration:none;">Reply</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                {{/field.email}}
                 <tr>
                   <td style="padding:20px 28px 28px;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;color:#7e7e96;">Sent from {{origin}} &middot; IP {{ip}}</td>
                 </tr>

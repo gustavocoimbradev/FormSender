@@ -15,6 +15,12 @@ const SCROLLBAR_STYLE = `<style>
   @supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:rgba(139,107,255,.55) transparent}}
 </style>`;
 
+/** The email's own background (body color), so the scrollbar track inside the preview looks like part of the email. */
+function emailBackground(html: string): string {
+  const body = new DOMParser().parseFromString(html, "text/html").body;
+  return body.style.backgroundColor || body.getAttribute("bgcolor") || "#ffffff";
+}
+
 const WIDTHS: { id: Width; label: string }[] = [
   { id: "desktop", label: "Desktop" },
   { id: "mobile", label: "Phone" },
@@ -64,7 +70,8 @@ export function TemplatePreview({ subject, html }: { subject: string; html: stri
           title="Email preview"
           sandbox=""
           srcDoc={rendered ? SCROLLBAR_STYLE + rendered.html : ""}
-          className={`mx-auto block h-[34rem] border-0 bg-white transition-[width] duration-300 ease-out ${width === "mobile" ? "w-[390px] max-w-full" : "w-full"}`}
+          style={{ backgroundColor: rendered ? emailBackground(rendered.html) : undefined }}
+          className={`mx-auto block h-[34rem] border-0 transition-[width] duration-300 ease-out ${width === "mobile" ? "w-[390px] max-w-full" : "w-full"}`}
         />
       </div>
     </div>

@@ -16,7 +16,7 @@ const RULES: Rule[] = [
 ];
 
 const VARIABLE = /\{\{\s*([^{}]*?)\s*\}\}/g;
-const KNOWN = /^(?:form_name|date|origin|ip|fields|field\.[a-z][a-z0-9_]*|label\.[a-z][a-z0-9_]*)$/;
+const KNOWN = /^(?:form_name|date|origin|ip|fields|[#/]?field\.[a-z][a-z0-9_]*|label\.[a-z][a-z0-9_]*)$/;
 
 export function lintEmail(view: EditorView): Diagnostic[] {
   const text = view.state.doc.toString();

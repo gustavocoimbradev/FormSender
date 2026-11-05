@@ -94,3 +94,62 @@ it('has a default template made only of what email clients understand', function
         ->not->toContain('display:grid')->not->toContain('<script')->not->toContain('position:')
         ->toContain('role="presentation"')->toContain('bgcolor=');
 });
+
+it('shows a block only when its field has a value', function (): void {
+    $template = '[{{#field.message}}Message: {{field.message}}{{/field.message}}]';
+
+    expect(renderWith($template, 'S', makeSubmission(['name' => 'Jane', 'email' => 'jane@example.com', 'message' => 'Hi']))['html'])->toBe('[Message: Hi]')
+        ->and(renderWith($template)['html'])->toBe('[]')
+        ->and(renderWith($template, 'S', makeSubmission(['name' => 'Jane', 'email' => 'jane@example.com', 'message' => '  ']))['html'])->toBe('[]');
+});
+
+it('never lets a submitted value open or close a block', function (): void {
+    $submission = makeSubmission(['name' => '{{/field.message}}{{#field.message}}', 'email' => 'jane@example.com', 'message' => 'x']);
+
+    expect(renderWith('{{#field.message}}{{field.name}}{{/field.message}}', 'S', $submission)['html'])
+        ->toContain('{{/field.message}}{{#field.message}}');
+});
+
+it('leaves out of {{fields}} the answers the template already placed one by one', function (): void {
+    $html = renderWith('{{field.name}}|{{fields}}')['html'];
+
+    expect(substr_count($html, 'Jane'))->toBe(1)
+        ->and($html)->toContain('jane@example.com')
+        ->not->toContain('>Name<');
+});
+
+it('renders no table at all when every answer was placed one by one', function (): void {
+    expect(renderWith('{{field.name}}{{field.email}}{{fields}}')['html'])->toBe('Janejane@example.com');
+});
+
+describe('default template', function (): void {
+    function renderDefault(array $data): array
+    {
+        return app(EmailTemplateRenderer::class)->renderSubmission(Template::defaultTemplate(), makeSubmission($data));
+    }
+
+    it('highlights the sender, the message and a reply button, and lists any other answer', function (): void {
+        $html = renderDefault(['name' => 'Jane', 'email' => 'jane@example.com', 'message' => "Hello\nthere", 'topic' => 'Sales'])['html'];
+
+        expect($html)->toContain('Jane')
+            ->toContain('href="mailto:jane@example.com')
+            ->toContain("Hello<br />\nthere")
+            ->toContain('Topic')->toContain('Sales')
+            ->not->toContain('{{');
+    });
+
+    it('drops the message block when the optional message was left empty', function (): void {
+        $html = renderDefault(['name' => 'Jane', 'email' => 'jane@example.com'])['html'];
+
+        expect($html)->toContain('Jane')->not->toContain('>Message<')->not->toContain('{{');
+    });
+
+    it('still reads well for a form that has no name, email or message', function (): void {
+        $form = App\Models\Form::factory()->create(['name' => 'Survey', 'fields' => [['name' => 'score', 'label' => 'Score', 'type' => 'number']]]);
+        $submission = app(App\Actions\Submission\StoreFormSubmissionAction::class)->execute($form, ['score' => 9]);
+
+        $html = app(EmailTemplateRenderer::class)->renderSubmission(Template::defaultTemplate(), $submission)['html'];
+
+        expect($html)->toContain('Score')->toContain('9')->not->toContain('mailto:')->not->toContain('{{');
+    });
+});

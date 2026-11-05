@@ -16,9 +16,10 @@ export const VARIABLES = [
   { label: "{{date}}", detail: "Date and time sent" },
   { label: "{{origin}}", detail: "Site it came from" },
   { label: "{{ip}}", detail: "Sender IP" },
-  { label: "{{fields}}", detail: "All answers, as a table" },
+  { label: "{{fields}}", detail: "The other answers, as a table" },
   { label: "{{field.NAME}}", detail: "Answer of one field" },
   { label: "{{label.NAME}}", detail: "Label of one field" },
+  { label: "{{#field.NAME}}{{/field.NAME}}", detail: "Show only if the field has a value" },
 ];
 
 function variableCompletions(context: CompletionContext) {
