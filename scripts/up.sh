@@ -150,7 +150,7 @@ summary() {
     api="$(value APP_PORT)"
     mailpit="$(value MAILPIT_UI_PORT)"
     printf '\n%s%s✔ Form Sender no ar!%s\n\n' "$G" "$B" "$N"
-    printf '  Frontend   %s%s%s\n' "$B" "http://localhost:$front" "$N"
+    printf '  Painel     %s%s%s\n' "$B" "http://localhost:$front" "$N"
     printf '  API        %s%s%s\n' "$B" "http://localhost:$api" "$N"
     printf '  Mailpit    %s%s%s\n' "$B" "http://localhost:$mailpit" "$N"
 
