@@ -1,7 +1,6 @@
 <?php
 
+use App\Http\Controllers\FormController;
 use Illuminate\Support\Facades\Route;
 
-use  App\Http\Controllers\FormController;
-
-Route::apiResource('/forms', FormController::class);
+Route::apiResource('forms', FormController::class);

@@ -2,19 +2,41 @@
 
 namespace App\Http\Controllers;
 
-class FormController extends Controller {
+use App\Http\Requests\StoreFormRequest;
+use App\Http\Requests\UpdateFormRequest;
+use App\Http\Resources\FormResource;
+use App\Models\Form;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 
-    public function store(\Illuminate\Http\Request $request) {
-
-        $form = new \App\Models\Form;
-        $form->name = $request->name;
-        $form->save();
-
-        return response([
-            'data' => [
-                'name' => $request->name
-            ]
-        ], 201);
+class FormController extends Controller
+{
+    public function index(): AnonymousResourceCollection
+    {
+        return FormResource::collection(Form::latest('id')->paginate());
     }
 
+    public function store(StoreFormRequest $request): FormResource
+    {
+        return new FormResource(Form::create($request->validated()));
+    }
+
+    public function show(Form $form): FormResource
+    {
+        return new FormResource($form);
+    }
+
+    public function update(UpdateFormRequest $request, Form $form): FormResource
+    {
+        $form->update($request->validated());
+
+        return new FormResource($form);
+    }
+
+    public function destroy(Form $form): Response
+    {
+        $form->delete();
+
+        return response()->noContent();
+    }
 }
