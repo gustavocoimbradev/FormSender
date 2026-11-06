@@ -336,7 +336,7 @@ export const setAllowRegistration = async (allow: boolean) =>
 export const setRetentionDays = async (days: number) =>
   (await authed<{ data: Settings }>("/settings", json("PUT", { retention_days: days }))).data.retention_days;
 
-/** The limits for every account (the administrator's included). A null limit means unlimited. */
+/** The limits for the users (the administrator has none). A null limit means unlimited. */
 export const saveQuotas = async (quotas: QuotaLimits) =>
   (await authed<{ data: Settings }>("/settings", json("PUT", { quotas }))).data.quotas;
 

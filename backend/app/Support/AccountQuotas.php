@@ -11,8 +11,8 @@ use App\Models\Setting;
 use App\Models\User;
 
 /**
- * The limits the administrator sets for every account (the administrator's own included): how many forms an account
- * can have and how many messages its forms receive in a day. A limit that is not set means unlimited.
+ * The limits the administrator sets for the other accounts: how many forms an account can have and how many messages
+ * its forms receive in a day. A limit that is not set means unlimited, and the administrator is never limited.
  */
 final class AccountQuotas
 {
@@ -30,7 +30,7 @@ final class AccountQuotas
     {
         $limit = self::maxForms();
 
-        return $limit !== null && $user->forms()->count() >= $limit;
+        return ! $user->isAdmin() && $limit !== null && $user->forms()->count() >= $limit;
     }
 
     /**
@@ -41,19 +41,19 @@ final class AccountQuotas
     {
         $limit = self::maxDailySubmissions();
 
-        return $limit !== null && self::receivedToday($form->user_id, $form->id) >= $limit;
+        return $form->user?->isAdmin() !== true && $limit !== null && self::receivedToday($form->user_id, $form->id) >= $limit;
     }
 
     /**
-     * What an account has used against each limit (`limit` is null when unlimited).
+     * What an account has used against each limit (`limit` is null when unlimited, which is always so for the administrator).
      *
      * @return array{forms: array{used: int, limit: int|null}, daily_submissions: array{used: int, limit: int|null}}
      */
     public static function usage(User $user): array
     {
         return [
-            'forms' => ['used' => $user->forms()->count(), 'limit' => self::maxForms()],
-            'daily_submissions' => ['used' => self::receivedToday($user->id), 'limit' => self::maxDailySubmissions()],
+            'forms' => ['used' => $user->forms()->count(), 'limit' => $user->isAdmin() ? null : self::maxForms()],
+            'daily_submissions' => ['used' => self::receivedToday($user->id), 'limit' => $user->isAdmin() ? null : self::maxDailySubmissions()],
         ];
     }
 

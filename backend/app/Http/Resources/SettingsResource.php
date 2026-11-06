@@ -30,7 +30,7 @@ class SettingsResource extends JsonResource
             'allow_registration' => Setting::registrationOpen(),
             /** How many days messages are kept before they are deleted, with their files. 0 keeps them forever. */
             'retention_days' => Setting::retentionDays(),
-            /** The limits for every account, the administrator's included: how many forms and how many messages a day. Empty (null) means no limit. */
+            /** The limits for the other accounts (the administrator has none): how many forms and how many messages a day. Empty (null) means no limit. */
             'quotas' => ['max_forms' => AccountQuotas::maxForms(), 'max_daily_submissions' => AccountQuotas::maxDailySubmissions()],
         ];
     }

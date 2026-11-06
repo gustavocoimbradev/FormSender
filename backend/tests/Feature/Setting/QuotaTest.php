@@ -85,12 +85,13 @@ describe('how many forms an account can have', function (): void {
         $this->postJson('/api/forms', ['name' => 'Mine'])->assertCreated();
     });
 
-    it('applies to the administrator too', function (): void {
+    it('does not apply to the administrator', function (): void {
         setQuotas(forms: 1);
         $admin = actingAsAdmin();
         Form::factory()->for($admin)->create();
 
-        $this->postJson('/api/forms', ['name' => 'Another'])->assertForbidden();
+        $this->postJson('/api/forms', ['name' => 'Another'])->assertCreated();
+        $this->postJson('/api/forms', ['name' => 'And another'])->assertCreated();
     });
 
     it('frees a place when a form is deleted, and never blocks changing a form that exists', function (): void {
@@ -146,12 +147,13 @@ describe('how many messages an account receives a day', function (): void {
         sendTo($quiet)->assertStatus(202);
     });
 
-    it('applies to the administrator too', function (): void {
+    it('does not apply to the forms of the administrator', function (): void {
         setQuotas(daily: 1);
         $form = quotaForm(User::factory()->admin()->create());
 
         sendTo($form)->assertStatus(202);
-        sendTo($form)->assertStatus(429)->assertJsonPath('code', 'daily_limit');
+        sendTo($form)->assertStatus(202);
+        sendTo($form)->assertStatus(202);
     });
 
     it('starts again the next day', function (): void {
@@ -226,13 +228,16 @@ describe('what an account has used', function (): void {
         $this->getJson('/api/quotas')->assertOk()->assertJsonPath('data.forms.limit', null)->assertJsonPath('data.daily_submissions.limit', null);
     });
 
-    it('shows the administrator their own use, against the same limits', function (): void {
-        setQuotas(forms: 2);
+    it('shows the administrator what they use, with no limits', function (): void {
+        setQuotas(forms: 2, daily: 10);
         $admin = actingAsAdmin();
         Form::factory()->for($admin)->create();
         Form::factory()->for(User::factory()->create())->create();
 
-        $this->getJson('/api/quotas')->assertJsonPath('data.forms', ['used' => 1, 'limit' => 2]);
+        $this->getJson('/api/quotas')->assertOk()->assertExactJson(['data' => [
+            'forms' => ['used' => 1, 'limit' => null],
+            'daily_submissions' => ['used' => 0, 'limit' => null],
+        ]]);
     });
 
     it('needs a login', function (): void {

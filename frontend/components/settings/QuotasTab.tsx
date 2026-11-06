@@ -56,7 +56,7 @@ export function QuotasTab({ quotas }: { quotas: QuotaLimits }) {
       <CardHeader title="Limits for each account" />
 
       <div className="px-5 pb-6 sm:px-6">
-        <p className="mb-4 text-base text-muted">They apply to every account, yours included. Leave a limit empty for no limit.</p>
+        <p className="mb-4 text-base text-muted">They apply to the users, never to you, the administrator. Leave a limit empty for no limit.</p>
 
         <form onSubmit={submit} noValidate>
           <div className="grid gap-x-4 sm:grid-cols-2">

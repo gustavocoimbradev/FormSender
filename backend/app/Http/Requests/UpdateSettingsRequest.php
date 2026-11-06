@@ -40,17 +40,17 @@ class UpdateSettingsRequest extends FormRequest
              */
             'retention_days' => ['sometimes', 'integer', 'between:0,3650'],
             /**
-             * The limits for every account, the administrator's included. Leave a limit empty for none.
+             * The limits for the accounts other than the administrator's. Leave a limit empty for none.
              */
             'quotas' => ['sometimes', 'array'],
             /**
-             * How many forms each account can have, the administrator's included. Leave empty for no limit.
+             * How many forms each account can have. The administrator is never limited. Leave empty for no limit.
              *
              * @example 5
              */
             'quotas.max_forms' => ['nullable', 'integer', 'min:1', 'max:1000000'],
             /**
-             * How many messages the forms of each account can receive in a day, the administrator's included. Leave empty for no limit.
+             * How many messages the forms of each account can receive in a day. The administrator is never limited. Leave empty for no limit.
              *
              * @example 100
              */

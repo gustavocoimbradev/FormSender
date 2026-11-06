@@ -16,8 +16,9 @@ class QuotaController extends Controller
     /**
      * Get what the account has used.
      *
-     * For the account that is logged in, administrator included: how many forms it has and how many messages its
-     * forms received today, each against the limit the administrator set (`limit` is empty when there is none).
+     * For the account that is logged in: how many forms it has and how many messages its forms received today, each
+     * against the limit the administrator set (`limit` is empty when there is none, which is always so for the
+     * administrator).
      *
      * @response array{data: array{forms: array{used: int, limit: int|null}, daily_submissions: array{used: int, limit: int|null}}}
      */
