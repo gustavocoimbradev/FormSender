@@ -177,11 +177,11 @@ export function SetupScreen() {
 
               <div className="mb-5 rounded-control border border-surface/10 p-4">
                 <Switch id="allow-registration" label="Allow new accounts" checked={allowRegistration} onChange={setAllowRegistration} />
-                <p className="mt-2 text-base text-muted">
-                  {allowRegistration
-                    ? "Anyone will be able to create an account and make their own forms here, using this same server. You see all of them; they see only theirs."
-                    : "Off: you are the only user. You can still create accounts yourself, and turn this on later."}
-                </p>
+                {allowRegistration && (
+                  <p className="mt-2 animate-fade-in text-base text-muted">
+                    Anyone will be able to create an account and make their own forms here, using this same server. You see all of them; they see only theirs.
+                  </p>
+                )}
               </div>
 
               <div className="mt-1">
