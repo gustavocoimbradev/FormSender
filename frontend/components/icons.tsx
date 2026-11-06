@@ -92,6 +92,15 @@ export const ExternalIcon = icon(
 
 export const MenuIcon = icon(<path d="M4 7h16M4 12h16M4 17h16" />);
 
+export const PaperclipIcon = icon(<path d="m21 11.500-8.800 8.800a5.500 5.500 0 0 1-7.800-7.800l8.800-8.800a3.700 3.700 0 0 1 5.200 5.200l-8.800 8.800a1.900 1.900 0 0 1-2.600-2.600l8.100-8.100" />);
+
+export const DownloadIcon = icon(
+  <>
+    <path d="M12 4v11M7 11l5 5 5-5" />
+    <path d="M5 20h14" />
+  </>,
+);
+
 export const CloseIcon = icon(<path d="M6 6l12 12M18 6 6 18" />);
 
 export const RefreshIcon = icon(

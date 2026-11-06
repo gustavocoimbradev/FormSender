@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ApiError, createForm, listTemplates, updateForm, type Form } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
-import { ActionButton, PhoneLabel } from "../Button";
+import { ActionButton } from "../Button";
 import { Field } from "../Field";
 import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
@@ -44,6 +44,8 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
   const [draft, setDraft] = useState<FormDraft>(() => (form ? draftFromForm(form) : emptyDraft()));
   const [errors, setErrors] = useState<DraftErrors>({ fields: {} });
   const [saving, setSaving] = useState(false);
+  /** The field just added: it gets the focus once, when it appears. */
+  const [lastAdded, setLastAdded] = useState<string>();
   const templates = useResource(listTemplates, []);
   const templateOptions = [
     { value: "", label: "Default" },
@@ -130,22 +132,19 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       </Card>
 
       <Card className="animate-fade-up">
-        <CardHeader title="Fields">
-          <ActionButton type="button" variant="ghost" onClick={() => patch({ fields: [...draft.fields, emptyField()] })} disabled={saving} roundOnPhone>
-            <PlusIcon /> <PhoneLabel>Add field</PhoneLabel>
-          </ActionButton>
-        </CardHeader>
+        <CardHeader title="Fields" />
 
-        <div className="space-y-4 px-5 pb-6 sm:px-6">
+        <div className="space-y-3 px-5 pb-6 sm:px-6">
           {draft.fields.length === 0 && <p className="text-base leading-relaxed text-muted">No fields yet. Add the fields the form accepts, such as name, email and message.</p>}
 
           {draft.fields.map((field, index) => {
             const row = errors.fields[field.key] ?? {};
 
             return (
-              <div key={field.key} className="animate-pop rounded-control border border-surface/10 bg-bg/40 p-4">
-                <div className="grid gap-x-4 sm:grid-cols-2">
+              <div key={field.key} className="animate-pop rounded-control border border-surface/10 bg-bg/40 p-3 sm:p-4">
+                <div className="grid grid-cols-2 gap-x-3 gap-y-3 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)_auto]">
                   <Field
+                    compact
                     id={`${field.key}-label`}
                     label="Label"
                     value={field.label}
@@ -154,8 +153,10 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
                     disabled={saving}
                     placeholder="Your email"
                     autoComplete="off"
+                    autoFocus={field.key === lastAdded}
                   />
                   <Field
+                    compact
                     id={`${field.key}-name`}
                     label="Field name"
                     value={field.name}
@@ -167,42 +168,61 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
                     autoCapitalize="none"
                     spellCheck={false}
                   />
-                </div>
 
-                <div className="grid items-end gap-x-4 gap-y-3 sm:grid-cols-[1fr_auto]">
-                  <Select id={`${field.key}-type`} label="Type" value={field.type} options={FIELD_TYPES} onChange={(type) => patchField(field.key, { type })} disabled={saving} />
-                  <Switch id={`${field.key}-required`} label="Required" checked={field.required} onChange={(required) => patchField(field.key, { required })} disabled={saving} />
-                </div>
-
-                {field.type === "select" && (
-                  <div className="mt-4">
-                    <ChipsInput
-                      id={`${field.key}-options`}
-                      label="Options"
-                      values={field.options}
-                      onChange={(options) => patchField(field.key, { options })}
-                      error={row.options}
-                      placeholder="Type an option and press Enter"
-                      disabled={saving}
-                      max={100}
-                    />
+                  <div className="col-span-2 sm:col-span-1">
+                    <Select compact id={`${field.key}-type`} label="Type" value={field.type} options={FIELD_TYPES} onChange={(type) => patchField(field.key, { type })} disabled={saving} />
                   </div>
-                )}
 
-                <div className="mt-2 flex justify-end gap-1">
-                  <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, -1)} disabled={saving || index === 0} aria-label="Move field up">
-                    <ArrowUpIcon />
-                  </button>
-                  <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, 1)} disabled={saving || index === draft.fields.length - 1} aria-label="Move field down">
-                    <ArrowDownIcon />
-                  </button>
-                  <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })} disabled={saving} aria-label="Remove field">
-                    <TrashIcon />
-                  </button>
+                  <div className="col-span-2 flex items-center justify-between gap-2 sm:col-span-1 sm:pt-7">
+                    <Switch id={`${field.key}-required`} label="Required" checked={field.required} onChange={(required) => patchField(field.key, { required })} disabled={saving} />
+
+                    <div className="flex">
+                      <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, -1)} disabled={saving || index === 0} aria-label="Move field up">
+                        <ArrowUpIcon />
+                      </button>
+                      <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, 1)} disabled={saving || index === draft.fields.length - 1} aria-label="Move field down">
+                        <ArrowDownIcon />
+                      </button>
+                      <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })} disabled={saving} aria-label="Remove field">
+                        <TrashIcon />
+                      </button>
+                    </div>
+                  </div>
+
+                  {field.type === "select" && (
+                    <div className="col-span-2 xl:col-span-4">
+                      <ChipsInput
+                        id={`${field.key}-options`}
+                        label="Options"
+                        values={field.options}
+                        onChange={(options) => patchField(field.key, { options })}
+                        error={row.options}
+                        placeholder="Type an option and press Enter"
+                        disabled={saving}
+                        max={100}
+                      />
+                    </div>
+                  )}
+
+                  {field.type === "file" && <p className="col-span-2 text-base text-muted xl:col-span-4">The visitor picks a file. It travels as an attachment on the email.</p>}
                 </div>
               </div>
             );
           })}
+
+          <ActionButton
+            type="button"
+            variant="ghost"
+            className="w-full border-dashed"
+            disabled={saving}
+            onClick={() => {
+              const added = emptyField();
+              setLastAdded(added.key);
+              patch({ fields: [...draft.fields, added] });
+            }}
+          >
+            <PlusIcon /> Add field
+          </ActionButton>
         </div>
       </Card>
 
@@ -232,6 +252,23 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
             error={errors.domains}
             disabled={saving}
           />
+          {form && (
+            <Field
+              id="redirect-url"
+              label="Thank-you page"
+              type="url"
+              inputMode="url"
+              value={draft.redirectUrl}
+              onChange={(event) => patch({ redirectUrl: event.target.value })}
+              error={errors.redirectUrl}
+              hint="Where visitors land after sending from a plain HTML page. Leave empty to skip."
+              disabled={saving}
+              placeholder="https://company.com/thanks"
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+            />
+          )}
         </div>
       </Card>
 

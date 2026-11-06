@@ -7,7 +7,7 @@ import { Card, CardHeader } from "../ui/Card";
 import { CodeBlock, CopyBox } from "../ui/CodeBlock";
 import { BrandIcon } from "../ui/BrandIcon";
 import { Select } from "../ui/Select";
-import { TARGETS, sample } from "./snippets";
+import { TARGETS, requestBody } from "./snippets";
 
 const STORAGE_KEY = "formsender.snippet";
 
@@ -37,6 +37,7 @@ export function IntegrationPanel({ form }: { form: Form }) {
   }
 
   const endpoint = `${base}/api/forms/${form.code}/submit`;
+  const body = requestBody(form);
   const target = TARGETS.find((candidate) => candidate.id === targetId) ?? TARGETS[0];
 
   return (
@@ -46,8 +47,8 @@ export function IntegrationPanel({ form }: { form: Form }) {
       <div className="px-5 pb-6 sm:px-6">
         <CopyBox id="endpoint" prefix="POST" value={endpoint} />
 
-        <span className="mb-2 mt-6 block text-base font-medium">Request body</span>
-        <CodeBlock id="request-body" language="JSON" code={JSON.stringify(sample(form), null, 2)} flush />
+        <span className="mb-2 mt-6 block text-base font-medium">{body.title}</span>
+        <CodeBlock id="request-body" language={body.language} code={body.code} flush />
 
         <div className="mt-6">
           <Select id="snippet-language" label="Language" value={targetId} options={TARGETS.map(({ id, label }) => ({ value: id, label, icon: <BrandIcon id={id} /> }))} onChange={choose} />

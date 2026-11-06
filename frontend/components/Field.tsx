@@ -11,10 +11,12 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   footer?: ReactNode;
   /** Shown on the right of the label (e.g. the password strength). */
   labelAside?: ReactNode;
+  /** A tighter version for dense rows: 44px tall, no bottom margin. */
+  compact?: boolean;
 };
 
 /** Labelled input with an animated focus glow and an inline error that announces itself. */
-export function Field({ id, label, hint, error, icon, trailing, footer, labelAside, className = "", ...input }: FieldProps) {
+export function Field({ id, label, hint, error, icon, trailing, footer, labelAside, compact = false, className = "", ...input }: FieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   const box = useRef<HTMLDivElement>(null);
 
@@ -36,9 +38,9 @@ export function Field({ id, label, hint, error, icon, trailing, footer, labelAsi
   }, [error]);
 
   return (
-    <div className="mb-4">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-base font-medium text-text/90">
+    <div className={compact ? "" : "mb-4"}>
+      <div className={`flex items-baseline justify-between gap-3 ${compact ? "mb-1" : "mb-2"}`}>
+        <label htmlFor={id} className={`text-base ${compact ? "text-muted" : "font-medium text-text/90"}`}>
           {label}
         </label>
         {labelAside}
@@ -61,7 +63,7 @@ export function Field({ id, label, hint, error, icon, trailing, footer, labelAsi
           id={id}
           aria-invalid={error ? true : undefined}
           aria-describedby={describedBy}
-          className={`h-14 w-full min-w-0 bg-transparent text-base text-text placeholder:text-muted/60 focus:outline-none focus-visible:ring-0 ${icon ? "pl-3 pr-4" : "px-4"} ${className}`}
+          className={`${compact ? "h-11" : "h-14"} w-full min-w-0 bg-transparent text-base text-text placeholder:text-muted/60 focus:outline-none focus-visible:ring-0 ${icon ? "pl-3 pr-4" : "px-4"} ${className}`}
           {...input}
         />
         {trailing && <span className="pr-1.5">{trailing}</span>}
@@ -71,7 +73,7 @@ export function Field({ id, label, hint, error, icon, trailing, footer, labelAsi
 
       <div aria-live="polite" className="text-base leading-6">
         {error ? (
-          <p id={`${id}-error`} className="mt-2 animate-fade-in text-danger">
+          <p id={`${id}-error`} className={`animate-fade-in text-danger ${compact ? "mt-1" : "mt-2"}`}>
             {error}
           </p>
         ) : hint ? (

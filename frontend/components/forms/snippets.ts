@@ -10,6 +10,11 @@ const FALLBACK: FormField = { name: "message", label: "Message", type: "textarea
 
 const fieldsOf = (form: Form): FormField[] => (form.fields.length > 0 ? form.fields : [FALLBACK]);
 
+/** A form with a file field cannot be sent as JSON: it travels as a regular multipart form. */
+const hasFiles = (form: Form) => fieldsOf(form).some((field) => field.type === "file");
+
+const FILE_EXAMPLE = (field: FormField) => `${field.name}.pdf`;
+
 const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 const INPUT_TYPES: Record<string, string> = { text: "text", email: "email", phone: "tel", number: "number", date: "date" };
@@ -51,6 +56,15 @@ export function sample(form: Form): Record<string, unknown> {
   ]);
 }
 
+/** The request body shown in the panel: JSON, or the fields of a multipart form when there is a file. */
+export function requestBody(form: Form): { language: string; title: string; code: string } {
+  if (!hasFiles(form)) return { language: "JSON", title: "Request body", code: JSON.stringify(sample(form), null, 2) };
+
+  const lines = fieldsOf(form).map((field) => (field.type === "file" ? `${field.name} = (file)` : `${field.name} = ${field.type === "checkbox" ? "1" : field.type === "number" ? "1" : field.type === "email" ? "person@example.com" : "..."}`));
+
+  return { language: "multipart/form-data", title: "Request body", code: [`${HONEYPOT} =`, ...lines].join("\n") };
+}
+
 // ------------------------------------------------------------------ plain HTML
 
 function htmlControl(field: FormField): string {
@@ -64,7 +78,9 @@ function htmlControl(field: FormField): string {
     return `<select name="${name}"${required}>\n      <option value="">Select</option>\n${options}\n    </select>`;
   }
 
-  if (field.type === "checkbox") return `<input type="checkbox" name="${name}"${required}>`;
+  if (field.type === "checkbox") return `<input type="checkbox" name="${name}" value="1"${required}>`;
+
+  if (field.type === "file") return `<input type="file" name="${name}"${required}>`;
 
   return `<input type="${INPUT_TYPES[field.type] ?? "text"}" name="${name}"${required}>`;
 }
@@ -72,6 +88,8 @@ function htmlControl(field: FormField): string {
 /** A complete form, with a script that sends it. Ready to paste into any page. */
 export function htmlSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
+
+  if (hasFiles(form)) return htmlMultipartSnippet(form, endpoint);
 
   const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
   const data = [`          ${HONEYPOT}: form.elements["${HONEYPOT}"].value,`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `form.elements["${field.name}"]${field.type === "checkbox" ? ".checked" : ".value"}`)},`)].join("\n");
@@ -112,9 +130,56 @@ ${data}
 </script>`;
 }
 
+/** The same page, for a form with files: the browser builds the multipart body from the form itself. */
+function htmlMultipartSnippet(form: Form, endpoint: string): string {
+  const rows = fieldsOf(form).map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
+
+  return `<form id="formsender" enctype="multipart/form-data">
+  <input type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}">
+
+${rows}
+
+  <button type="submit">Send</button>
+  <p id="formsender-status" role="status"></p>
+</form>
+
+<script>
+  const form = document.getElementById("formsender");
+  const status = document.getElementById("formsender-status");
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: new FormData(form),
+      });
+
+      if (!response.ok) throw new Error();
+
+      form.reset();
+      status.textContent = "${OK}";
+    } catch {
+      status.textContent = "${FAIL}";
+    }
+  });
+</script>`;
+}
+
 // ------------------------------------------------------------------ JavaScript
 
 function javascriptSnippet(form: Form, endpoint: string): string {
+  if (hasFiles(form)) {
+    return `// \`form\` is your <form enctype="multipart/form-data"> element
+await fetch("${endpoint}", {
+  method: "POST",
+  headers: { Accept: "application/json" },
+  body: new FormData(form),
+});`;
+  }
+
   return `await fetch("${endpoint}", {
   method: "POST",
   headers: { "Content-Type": "application/json" },
@@ -143,6 +208,47 @@ function jsxControl(field: FormField, extra: string): string {
 
 function reactSnippet(form: Form, endpoint: string, directive = ""): string {
   const fields = fieldsOf(form);
+
+  if (hasFiles(form)) {
+    const plainRows = fields.map((field) => `      <label>\n        ${escapeHtml(field.label)}\n        ${htmlControl(field).replace(/<input([^>]*?)>/g, "<input$1 />")}\n      </label>`).join("\n");
+
+    return `${directive}import { useState } from "react";
+
+export default function ContactForm() {
+  const [status, setStatus] = useState("");
+
+  async function submit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: new FormData(form),
+      });
+
+      if (!response.ok) throw new Error();
+
+      form.reset();
+      setStatus("${OK}");
+    } catch {
+      setStatus("${FAIL}");
+    }
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <input type="text" name="${HONEYPOT}" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px" }} />
+
+${plainRows}
+
+      <button type="submit">Send</button>
+      <p role="status">{status}</p>
+    </form>
+  );
+}`;
+  }
   const empty = [`${HONEYPOT}: ""`, ...fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`)].join(", ");
   const payload = [`          ${HONEYPOT}: values.${HONEYPOT},`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`)].join("\n");
   const rows = fields.map((field) => `      <label>\n        ${escapeHtml(field.label)}\n        ${jsxControl(field, "")}\n      </label>`).join("\n");
@@ -212,6 +318,46 @@ function vueControl(field: FormField): string {
 
 function vueSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
+
+  if (hasFiles(form)) {
+    const plainRows = fields.map((field) => `    <label>\n      ${escapeHtml(field.label)}\n      ${htmlControl(field)}\n    </label>`).join("\n");
+
+    return `<script setup>
+import { ref } from "vue";
+
+const status = ref("");
+
+async function submit(event) {
+  const form = event.target;
+
+  try {
+    const response = await fetch("${endpoint}", {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: new FormData(form),
+    });
+
+    if (!response.ok) throw new Error();
+
+    form.reset();
+    status.value = "${OK}";
+  } catch {
+    status.value = "${FAIL}";
+  }
+}
+</script>
+
+<template>
+  <form @submit.prevent="submit">
+    <input type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
+
+${plainRows}
+
+    <button type="submit">Send</button>
+    <p role="status">{{ status }}</p>
+  </form>
+</template>`;
+  }
   const empty = [`${HONEYPOT}: ""`, ...fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`)].join(", ");
   const payload = [`        ${HONEYPOT}: values.${HONEYPOT},`, ...fields.map((field) => `        ${field.name}: ${payloadValue(field, `values.${field.name}`)},`)].join("\n");
   const rows = fields.map((field) => `    <label>\n      ${escapeHtml(field.label)}\n      ${vueControl(field)}\n    </label>`).join("\n");
@@ -275,6 +421,42 @@ function svelteControl(field: FormField): string {
 
 function svelteSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
+
+  if (hasFiles(form)) {
+    const plainRows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
+
+    return `<script>
+  let status = "";
+
+  async function submit(event) {
+    const form = event.currentTarget;
+
+    try {
+      const response = await fetch("${endpoint}", {
+        method: "POST",
+        headers: { Accept: "application/json" },
+        body: new FormData(form),
+      });
+
+      if (!response.ok) throw new Error();
+
+      form.reset();
+      status = "${OK}";
+    } catch {
+      status = "${FAIL}";
+    }
+  }
+</script>
+
+<form on:submit|preventDefault={submit}>
+  <input type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}" />
+
+${plainRows}
+
+  <button type="submit">Send</button>
+  <p role="status">{status}</p>
+</form>`;
+  }
   const empty = [`${HONEYPOT}: ""`, ...fields.map((field) => `${field.name}: ${EMPTY_VALUE(field)}`)].join(", ");
   const payload = [`          ${HONEYPOT}: values.${HONEYPOT},`, ...fields.map((field) => `          ${field.name}: ${payloadValue(field, `values.${field.name}`)},`)].join("\n");
   const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${svelteControl(field)}\n  </label>`).join("\n");
@@ -334,6 +516,39 @@ function phpPayload(form: Form, read: (field: FormField) => string): string {
 
 function phpSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
+
+  if (hasFiles(form)) {
+    const fields = [`    '${HONEYPOT}' => $_POST['${HONEYPOT}'] ?? '',`, ...fieldsOf(form).filter((field) => field.type !== "file").map((field) => `    '${field.name}' => ${field.type === "checkbox" ? `isset($_POST['${field.name}']) ? '1' : '0'` : `$_POST['${field.name}'] ?? ''`},`)].join("\n");
+    const files = fieldsOf(form)
+      .filter((field) => field.type === "file")
+      .map((field) => `if (! empty($_FILES['${field.name}']['tmp_name'])) {\n    $payload['${field.name}'] = new CURLFile($_FILES['${field.name}']['tmp_name'], $_FILES['${field.name}']['type'], $_FILES['${field.name}']['name']);\n}`)
+      .join("\n");
+
+    return `<?php
+// Receives your form (method="post" enctype="multipart/form-data") and passes it on to FormSender.
+$payload = [
+${fields}
+];
+
+${files}
+
+$curl = curl_init('${endpoint}');
+
+curl_setopt_array($curl, [
+    CURLOPT_POST => true,
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => [
+        'Accept: application/json',${origin ? `\n        'Origin: ${origin}', // the site must be in "Allowed sites"` : ""}
+    ],
+    CURLOPT_POSTFIELDS => $payload, // an array with files is sent as multipart
+]);
+
+curl_exec($curl);
+$sent = curl_getinfo($curl, CURLINFO_HTTP_CODE) === 202;
+curl_close($curl);
+
+echo $sent ? '${OK}' : '${FAIL}';`;
+  }
   const honeypot = `    '${HONEYPOT}' => $_POST['${HONEYPOT}'] ?? '',\n`;
   const payload = honeypot + phpPayload(form, (field) => {
     const input = `$_POST['${field.name}'] ?? ''`;
@@ -368,6 +583,32 @@ echo $sent ? '${OK}' : '${FAIL}';`;
 
 function laravelSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
+
+  if (hasFiles(form)) {
+    const fields = [`        '${HONEYPOT}' => $request->input('${HONEYPOT}'),`, ...fieldsOf(form).filter((field) => field.type !== "file").map((field) => (field.type === "checkbox" ? `        '${field.name}' => $request->boolean('${field.name}') ? '1' : '0',` : `        '${field.name}' => $request->input('${field.name}'),`))].join("\n");
+    const files = fieldsOf(form)
+      .filter((field) => field.type === "file")
+      .map((field) => `    if ($request->hasFile('${field.name}')) {\n        $http = $http->attach('${field.name}', $request->file('${field.name}')->get(), $request->file('${field.name}')->getClientOriginalName());\n    }`)
+      .join("\n");
+
+    return `<?php
+// routes/web.php
+use Illuminate\\Http\\Request;
+use Illuminate\\Support\\Facades\\Http;
+use Illuminate\\Support\\Facades\\Route;
+
+Route::post('/contato', function (Request $request) {
+    $http = Http::${origin ? `withHeaders(['Origin' => '${origin}'])` : "withHeaders([])"};
+
+${files}
+
+    $response = $http->post('${endpoint}', [
+${fields}
+    ]);
+
+    return back()->with('status', $response->successful() ? '${OK}' : '${FAIL}');
+});`;
+  }
   const honeypot = `        '${HONEYPOT}' => $request->input('${HONEYPOT}'),\n`;
   const payload = honeypot + fieldsOf(form)
     .map((field) => {
@@ -407,6 +648,29 @@ ${indent(htmlSnippet(form, endpoint), 4)}
 function nodeSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
 
+  if (hasFiles(form)) {
+    const appended = fieldsOf(form)
+      .map((field) => (field.type === "file" ? `body.append("${field.name}", new Blob([await readFile("./${FILE_EXAMPLE(field)}")]), "${FILE_EXAMPLE(field)}");` : `body.append("${field.name}", "${field.type === "checkbox" ? "1" : field.type === "number" ? "1" : field.type === "email" ? "person@example.com" : "..."}");`))
+      .join("\n");
+
+    return `// Node.js 18 or newer, on your server
+import { readFile } from "node:fs/promises";
+
+const body = new FormData();
+body.append("${HONEYPOT}", "");
+${appended}
+
+const response = await fetch("${endpoint}", {
+  method: "POST",
+  headers: {
+    Accept: "application/json",${origin ? `\n    Origin: "${origin}", // the site must be in "Allowed sites"` : ""}
+  },
+  body,
+});
+
+console.log(response.status); // 202`;
+  }
+
   return `// Node.js 18 or newer, on your server
 const response = await fetch("${endpoint}", {
   method: "POST",
@@ -421,6 +685,30 @@ console.log(response.status); // 202`;
 
 function pythonSnippet(form: Form, endpoint: string): string {
   const origin = serverOrigin(form);
+
+  if (hasFiles(form)) {
+    const values = [`        "${HONEYPOT}": "",`, ...fieldsOf(form).filter((field) => field.type !== "file").map((field) => `        "${field.name}": "${field.type === "checkbox" ? "1" : field.type === "number" ? "1" : field.type === "email" ? "person@example.com" : "..."}",`)].join("\n");
+    const files = fieldsOf(form)
+      .filter((field) => field.type === "file")
+      .map((field) => `        "${field.name}": open("${FILE_EXAMPLE(field)}", "rb"),`)
+      .join("\n");
+
+    return `import requests
+
+response = requests.post(
+    "${endpoint}",
+    data={
+${values}
+    },
+    files={
+${files}
+    },
+    headers={"Accept": "application/json"${origin ? `, "Origin": "${origin}"` : ""}},${origin ? "  # the site must be in \"Allowed sites\"" : ""}
+    timeout=10,
+)
+
+print(response.status_code)  # 202`;
+  }
   const items = Object.entries(sample(form))
     .map(([name, value]) => `        "${name}": ${typeof value === "boolean" ? (value ? "True" : "False") : typeof value === "number" ? value : JSON.stringify(value)},`)
     .join("\n");

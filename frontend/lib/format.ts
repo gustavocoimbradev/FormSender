@@ -24,3 +24,10 @@ export function slugify(value: string): string {
 
   return /^[a-z]/.test(slug) ? slug.slice(0, 100) : slug ? `campo_${slug}`.slice(0, 100) : "";
 }
+
+/** A file size people can read: 340 KB, 2.1 MB. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}

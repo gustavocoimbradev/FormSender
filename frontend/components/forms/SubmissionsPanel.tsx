@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { listSubmissions, type Form, type Submission, type SubmissionStatus } from "@/lib/api";
-import { formatDateTime } from "@/lib/format";
+import { downloadAttachment, listSubmissions, retrySubmission, type Attachment, type Form, type Submission, type SubmissionStatus } from "@/lib/api";
+import { formatBytes, formatDateTime } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
+import { ActionButton } from "../Button";
 import { CardUnreachable } from "../CardStates";
-import { ChevronIcon, InboxIcon } from "../icons";
+import { ChevronIcon, DownloadIcon, InboxIcon, PaperclipIcon, RefreshIcon } from "../icons";
 import { Badge } from "../ui/Badge";
 import { Card } from "../ui/Card";
 import { DataTable, type Column } from "../ui/DataTable";
@@ -13,6 +14,7 @@ import { EmptyState } from "../ui/EmptyState";
 import { Modal } from "../ui/Modal";
 import { Pagination } from "../ui/Pagination";
 import { Select } from "../ui/Select";
+import { useToast } from "../ui/Toast";
 
 type Filter = "all" | SubmissionStatus;
 
@@ -54,8 +56,35 @@ function summary(submission: Submission): string {
 export function SubmissionsPanel({ form }: { form: Form }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [page, setPage] = useState(1);
+  const toast = useToast();
   const [open, setOpen] = useState<Submission>();
+  const [retrying, setRetrying] = useState(false);
+  const [downloading, setDownloading] = useState<string>();
   const { data, loading, error, reload } = useResource(() => listSubmissions(form.code, page, filter === "all" ? undefined : filter), [form.code, page, filter]);
+
+  async function retry(submission: Submission) {
+    setRetrying(true);
+    try {
+      setOpen(await retrySubmission(form.code, submission.id));
+      toast("Queued again. It will be delivered in a moment.");
+      reload();
+    } catch {
+      toast("Could not retry. Please try again.", "error");
+    } finally {
+      setRetrying(false);
+    }
+  }
+
+  async function download(submission: Submission, attachment: Attachment) {
+    setDownloading(attachment.code);
+    try {
+      await downloadAttachment(form.code, submission.id, attachment);
+    } catch {
+      toast("Could not download the file.", "error");
+    } finally {
+      setDownloading(undefined);
+    }
+  }
 
   const labels = new Map(form.fields.map((field) => [field.name, field.label]));
 
@@ -137,6 +166,28 @@ export function SubmissionsPanel({ form }: { form: Form }) {
               </dl>
             </section>
 
+            {open.attachments.length > 0 && (
+              <section>
+                <h3 className="mb-3 text-lg font-semibold">Attachments</h3>
+                <ul className="divide-y divide-surface/10 rounded-control border border-surface/10">
+                  {open.attachments.map((attachment) => (
+                    <li key={attachment.code} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <PaperclipIcon className="size-5 shrink-0 text-muted" />
+                        <div className="min-w-0">
+                          <p className="truncate text-base">{attachment.name}</p>
+                          <p className="text-base text-muted">{formatBytes(attachment.size)}</p>
+                        </div>
+                      </div>
+                      <ActionButton type="button" variant="ghost" loading={downloading === attachment.code} onClick={() => void download(open, attachment)} aria-label={`Download ${attachment.name}`}>
+                        <DownloadIcon className="size-5" /> Download
+                      </ActionButton>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
             {open.status === "spam" ? (
               <section>
                 <h3 className="mb-3 text-lg font-semibold">Delivery</h3>
@@ -161,6 +212,11 @@ export function SubmissionsPanel({ form }: { form: Form }) {
                   {open.attempts} {open.attempts === 1 ? "attempt" : "attempts"}
                   {open.error ? ` · ${open.error}` : ""}
                 </p>
+                {(open.status === "failed" || open.status === "partial") && (
+                  <ActionButton type="button" className="mt-4" loading={retrying} onClick={() => void retry(open)}>
+                    <RefreshIcon className="size-5" /> Retry delivery
+                  </ActionButton>
+                )}
               </section>
             )}
 

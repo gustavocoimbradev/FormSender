@@ -23,7 +23,7 @@ export type SmtpSettings = {
   from_name: string | null;
 };
 
-export type FieldType = "text" | "email" | "phone" | "number" | "textarea" | "select" | "checkbox" | "date";
+export type FieldType = "text" | "email" | "phone" | "number" | "textarea" | "select" | "checkbox" | "date" | "file";
 
 export type FormField = {
   name: string;
@@ -38,6 +38,8 @@ export type Form = {
   fields: FormField[];
   destinations: string[];
   allowed_domains: string[];
+  /** Where visitors of a plain HTML page land after sending the form, or null for a short confirmation. */
+  redirect_url: string | null;
   /** Code of the email template, or null when the form uses the default one. */
   template: string | null;
   /** The form's unique code: it identifies the form in every address, in the panel and on the websites that send it. */
@@ -46,7 +48,7 @@ export type Form = {
   updated_at: string | null;
 };
 
-export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains" | "template">;
+export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains" | "redirect_url" | "template">;
 
 export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed" | "spam";
 
@@ -57,11 +59,20 @@ export type Delivery = {
   sent_at: string | null;
 };
 
+export type Attachment = {
+  code: string;
+  field: string;
+  name: string;
+  size: number;
+  mime: string;
+};
+
 export type Submission = {
   id: number;
   form_name: string;
   status: SubmissionStatus;
   values: Record<string, unknown>;
+  attachments: Attachment[];
   destinations: string[];
   deliveries: Delivery[];
   attempts: number;
@@ -119,7 +130,8 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
       ...init,
       headers: {
         Accept: "application/json",
-        ...(init.body ? { "Content-Type": "application/json" } : {}),
+        // A file upload sets its own Content-Type (with the boundary), so only JSON bodies are labelled.
+        ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
@@ -212,12 +224,54 @@ export const updateForm = async (code: string, input: FormInput) =>
 
 export const deleteForm = (code: string) => authed<void>(`/forms/${code}`, { method: "DELETE" });
 
-/** Sends a test message through the form (the panel's own action: it ignores the allowed sites). */
-export const sendTestMessage = (code: string, values: Record<string, unknown>) =>
-  authed<{ message: string; data: { id: number; status: SubmissionStatus } }>(`/forms/${code}/test`, json("POST", values));
+/** Sends a test message through the form (the panel's own action: it ignores the allowed sites). Files go as a multipart upload. */
+export const sendTestMessage = (code: string, values: Record<string, unknown>) => {
+  const hasFile = Object.values(values).some((value) => value instanceof File);
+  const body = hasFile ? toFormData(values) : JSON.stringify(values);
+
+  return authed<{ message: string; data: { id: number; status: SubmissionStatus } }>(`/forms/${code}/test`, { method: "POST", body });
+};
+
+function toFormData(values: Record<string, unknown>): FormData {
+  const data = new FormData();
+
+  for (const [name, value] of Object.entries(values)) {
+    if (value instanceof File) data.append(name, value);
+    // A checkbox travels as 1 or 0: that is what the API reads as yes or no.
+    else if (typeof value === "boolean") data.append(name, value ? "1" : "0");
+    else data.append(name, String(value));
+  }
+
+  return data;
+}
 
 export const listSubmissions = (formCode: string, page = 1, status?: SubmissionStatus) =>
   authed<Page<Submission>>(`/forms/${formCode}/submissions?page=${page}${status ? `&status=${status}` : ""}`);
+
+/** Puts a message that failed back in the queue. */
+export const retrySubmission = async (formCode: string, submissionId: number) =>
+  (await authed<{ data: Submission }>(`/forms/${formCode}/submissions/${submissionId}/retry`, { method: "POST" })).data;
+
+/** Downloads a file a visitor sent. The browser cannot send the login header on a plain link, so the file is fetched and saved from here. */
+export async function downloadAttachment(formCode: string, submissionId: number, attachment: Attachment): Promise<void> {
+  const token = getToken();
+  if (!token) throw new ApiError(401, "Session ended.");
+
+  let response: Response;
+  try {
+    response = await fetch(`/api/forms/${formCode}/submissions/${submissionId}/attachments/${attachment.code}`, { headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    throw new ApiError(0, "The API did not respond.");
+  }
+  if (!response.ok) throw new ApiError(response.status, "Could not download the file.");
+
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = attachment.name;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 // ------------------------------------------------------------------ templates
 

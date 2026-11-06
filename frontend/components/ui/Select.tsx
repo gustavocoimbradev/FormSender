@@ -13,10 +13,12 @@ type SelectProps<T extends string> = {
   options: Option<T>[];
   onChange: (value: T) => void;
   disabled?: boolean;
+  /** A tighter version for dense rows: 44px tall and a quieter label. */
+  compact?: boolean;
 };
 
 /** A custom select (never the browser's) with search, keyboard support and a popover that is never clipped. */
-export function Select<T extends string>({ id, label, value, options, onChange, disabled }: SelectProps<T>) {
+export function Select<T extends string>({ id, label, value, options, onChange, disabled, compact = false }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -105,7 +107,7 @@ export function Select<T extends string>({ id, label, value, options, onChange, 
 
   return (
     <div>
-      <span id={`${id}-label`} className="mb-2 block text-base font-medium text-text/90">
+      <span id={`${id}-label`} className={`block text-base ${compact ? "mb-1 text-muted" : "mb-2 font-medium text-text/90"}`}>
         {label}
       </span>
 
@@ -118,7 +120,7 @@ export function Select<T extends string>({ id, label, value, options, onChange, 
         aria-expanded={open}
         aria-labelledby={`${id}-label ${id}`}
         onClick={() => (open ? setOpen(false) : openList())}
-        className={`flex h-14 w-full items-center justify-between gap-3 rounded-control border bg-surface/[0.04] px-4 text-left text-base transition duration-300 ease-out hover:border-surface/20 disabled:opacity-50 ${
+        className={`flex ${compact ? "h-11" : "h-14"} w-full items-center justify-between gap-3 rounded-control border bg-surface/[0.04] px-4 text-left text-base transition duration-300 ease-out hover:border-surface/20 disabled:opacity-50 ${
           open ? "border-accent ring-4 ring-accent/20" : "border-surface/10"
         }`}
       >

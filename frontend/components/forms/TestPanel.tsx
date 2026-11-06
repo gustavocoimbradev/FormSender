@@ -5,6 +5,7 @@ import { ApiError, sendTestMessage, type Form, type FormField } from "@/lib/api"
 import { isValidEmail } from "@/lib/validation";
 import { ActionButton, Button } from "../Button";
 import { Field } from "../Field";
+import { FileField } from "../FileField";
 import { FormsIcon } from "../icons";
 import { SuccessCheck } from "../SuccessCheck";
 import { TextArea } from "../TextArea";
@@ -14,12 +15,13 @@ import { Select } from "../ui/Select";
 import { Switch } from "../ui/Switch";
 import { useToast } from "../ui/Toast";
 
-type Values = Record<string, string | boolean>;
+type Value = string | boolean | File | null;
+type Values = Record<string, Value>;
 type Errors = Record<string, string>;
 
 const INPUT_TYPES: Record<string, string> = { text: "text", email: "email", phone: "tel", number: "number", date: "date" };
 
-const emptyValues = (fields: FormField[]): Values => Object.fromEntries(fields.map((field) => [field.name, field.type === "checkbox" ? false : ""]));
+const emptyValues = (fields: FormField[]): Values => Object.fromEntries(fields.map((field) => [field.name, field.type === "checkbox" ? false : field.type === "file" ? null : ""]));
 
 /** Checks what the person typed before sending, so most mistakes never leave the page. */
 function validate(fields: FormField[], values: Values): Errors {
@@ -27,7 +29,7 @@ function validate(fields: FormField[], values: Values): Errors {
 
   for (const field of fields) {
     const value = values[field.name];
-    const empty = value === "" || value === undefined;
+    const empty = value === "" || value === undefined || value === null;
 
     if (field.required && field.type !== "checkbox" && empty) errors[field.name] = "Fill in this field.";
     else if (!empty && field.type === "email" && !isValidEmail(String(value))) errors[field.name] = "Enter a valid email.";
@@ -45,7 +47,8 @@ function payload(fields: FormField[], values: Values): Record<string, unknown> {
     const value = values[field.name];
 
     if (field.type === "checkbox") body[field.name] = Boolean(value);
-    else if (value !== "" && value !== undefined) body[field.name] = field.type === "number" ? Number(value) : value;
+    else if (value instanceof File) body[field.name] = value;
+    else if (typeof value === "string" && value !== "") body[field.name] = field.type === "number" ? Number(value) : value;
   }
 
   return body;
@@ -65,7 +68,7 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const set = (name: string, value: string | boolean) => {
+  const set = (name: string, value: Value) => {
     setValues((current) => ({ ...current, [name]: value }));
     setErrors((current) => (name in current ? Object.fromEntries(Object.entries(current).filter(([key]) => key !== name)) : current));
   };
@@ -84,7 +87,9 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
       setSent(true);
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
-        const fromServer: Errors = Object.fromEntries(Object.keys(error.fieldErrors).map((name) => [name, "Invalid value."]));
+        // A file has limits people can fix (size, type), so its own message is shown; the rest is simply invalid.
+        const fileFields = new Set(form.fields.filter((field) => field.type === "file").map((field) => field.name));
+        const fromServer: Errors = Object.fromEntries(Object.entries(error.fieldErrors).map(([name, messages]) => [name, fileFields.has(name) ? (messages[0] ?? "Invalid file.") : "Invalid value."]));
 
         if (Object.keys(fromServer).length > 0) setErrors(fromServer);
         else setFormError("Add at least one destination in the Settings tab to receive messages.");
@@ -151,6 +156,10 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
           const id = `test-${field.name}`;
           const label = field.required ? `${field.label} *` : field.label;
           const value = values[field.name];
+
+          if (field.type === "file") {
+            return <FileField key={field.name} id={id} label={label} file={value instanceof File ? value : null} onChange={(next) => set(field.name, next)} error={errors[field.name]} disabled={sending} />;
+          }
 
           if (field.type === "textarea") return <TextArea key={field.name} id={id} label={label} value={String(value)} onChange={(event) => set(field.name, event.target.value)} error={errors[field.name]} disabled={sending} />;
 

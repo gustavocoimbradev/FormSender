@@ -11,6 +11,7 @@ export const FIELD_TYPES: { value: FieldType; label: string }[] = [
   { value: "select", label: "List of options" },
   { value: "checkbox", label: "Checkbox" },
   { value: "date", label: "Date" },
+  { value: "file", label: "File upload" },
 ];
 
 export type FieldDraft = {
@@ -29,6 +30,8 @@ export type FormDraft = {
   fields: FieldDraft[];
   destinations: string[];
   domains: string[];
+  /** Where visitors of a plain HTML page land after sending; empty means a short confirmation. */
+  redirectUrl: string;
   /** Code of the chosen template; empty means the default one. */
   template: string;
 };
@@ -38,6 +41,7 @@ export type DraftErrors = {
   fields: Record<string, { name?: string; label?: string; options?: string }>;
   destinations?: string;
   domains?: string;
+  redirectUrl?: string;
   general?: string;
 };
 
@@ -46,7 +50,7 @@ export const newKey = () => `field-${++counter}`;
 
 export const emptyField = (): FieldDraft => ({ key: newKey(), name: "", label: "", type: "text", required: false, options: [], nameTouched: false });
 
-export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], template: "" });
+export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], redirectUrl: "", template: "" });
 
 export function draftFromForm(form: Form): FormDraft {
   return {
@@ -62,6 +66,7 @@ export function draftFromForm(form: Form): FormDraft {
     })),
     destinations: form.destinations,
     domains: form.allowed_domains,
+    redirectUrl: form.redirect_url ?? "",
     template: form.template ?? "",
   };
 }
@@ -78,6 +83,7 @@ export function inputFromDraft(draft: FormDraft): FormInput {
     })),
     destinations: draft.destinations,
     allowed_domains: draft.domains,
+    redirect_url: draft.redirectUrl.trim() || null,
     template: draft.template || null,
   };
 }
@@ -96,6 +102,17 @@ export function normalizeDomain(value: string): string {
 }
 
 export const validateDomain = (value: string) => (DOMAIN.test(value) ? null : "Use an address like company.com or *.company.com.");
+export function validateRedirectUrl(value: string): string | undefined {
+  if (!value.trim()) return undefined;
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === "http:" || url.protocol === "https:" ? undefined : "Use an address starting with http:// or https://.";
+  } catch {
+    return "Use a full address like https://company.com/thanks.";
+  }
+}
+
 export const validateEmailChip = (value: string) => (isValidEmail(value) ? null : "Enter a valid email.");
 
 /** Client-side checks that mirror the API, so most mistakes are caught before sending. */
@@ -103,6 +120,9 @@ export function validateDraft(draft: FormDraft): DraftErrors {
   const errors: DraftErrors = { fields: {} };
 
   if (!draft.name.trim()) errors.name = "Give the form a name.";
+
+  const redirectError = validateRedirectUrl(draft.redirectUrl);
+  if (redirectError) errors.redirectUrl = redirectError;
 
   const seen = new Set<string>();
   for (const field of draft.fields) {
@@ -121,7 +141,7 @@ export function validateDraft(draft: FormDraft): DraftErrors {
   return errors;
 }
 
-export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || Object.keys(errors.fields).length > 0);
+export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.redirectUrl || Object.keys(errors.fields).length > 0);
 
 export function nameFromLabel(label: string): string {
   return slugify(label);
@@ -137,6 +157,7 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
     if (key === "name") errors.name = "Give the form a name.";
     else if (parts[0] === "destinations") errors.destinations = "Check the destination emails.";
     else if (parts[0] === "allowed_domains") errors.domains = "Check the allowed sites.";
+    else if (key === "redirect_url") errors.redirectUrl = "Use a full address like https://company.com/thanks.";
     else if (parts[0] === "fields" && parts[1] !== undefined) {
       const field = draft.fields[Number(parts[1])];
       if (!field) continue;
@@ -149,7 +170,7 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
     }
   }
 
-  if (!errors.name && !errors.destinations && !errors.domains && Object.keys(errors.fields).length === 0) {
+  if (!errors.name && !errors.destinations && !errors.domains && !errors.redirectUrl && Object.keys(errors.fields).length === 0) {
     errors.general = "Check the form details and try again.";
   }
 
