@@ -80,3 +80,35 @@ jobs:
 
       - name: Run tests
         run: ./vendor/bin/pest --ci
+
+  backend-quality:
+    name: Backend code quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo_sqlite, redis
+          coverage: none
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Check code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Static analysis (Larastan)
+        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=1G
