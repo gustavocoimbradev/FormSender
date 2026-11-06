@@ -167,7 +167,7 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
 
       <div className="mb-6 flex items-center justify-between gap-3">
         <div className={`min-w-0 ${phone ? "flex-1" : ""}`}>
-          <Pills label="Form sections" value={tab} options={TABS} onChange={setTab} />
+          <Pills label="Form sections" value={tab} options={TABS} onChange={setTab} single={phone} />
         </div>
 
         {!phone && publicPage(current.code)}

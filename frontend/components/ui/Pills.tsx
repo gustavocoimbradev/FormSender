@@ -10,10 +10,15 @@ type PillsProps<T extends string> = {
   value: T;
   options: Pill<T>[];
   onChange: (value: T) => void;
+  /** One tab at a time: the chosen one, centered, with arrows to the previous and the next (for phones). */
+  single?: boolean;
 };
 
 /** Bare arrows: no background, they sit over the faded edge of the tabs. */
 const ARROW = "absolute inset-y-0 z-20 grid w-8 place-items-center text-muted transition-[color,opacity] duration-300 hover:text-text";
+
+/** One name at a time: the edges of its window fade, so a name slides in and out softly. */
+const EDGE_FADE = "linear-gradient(to right, transparent 0, black 14%, black 86%, transparent 100%)";
 
 /** Width left clear for an arrow, and the width over which the tabs then fade in. */
 const ARROW_ZONE = 30;
@@ -24,9 +29,10 @@ const FADE_WIDTH = 34;
  * When the tabs do not fit, the box stays contained: no scrollbar and no swiping. The arrows (shown only on a
  * side that has another tab) choose the previous or next tab, and the chosen tab is always brought into view.
  */
-export function Pills<T extends string>({ label, value, options, onChange }: PillsProps<T>) {
+export function Pills<T extends string>({ label, value, options, onChange, single = false }: PillsProps<T>) {
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const scroller = useRef<HTMLDivElement>(null);
+  const swipeFrom = useRef(0);
   const [box, setBox] = useState<{ left: number; width: number }>();
   const [overflowing, setOverflowing] = useState(false);
 
@@ -59,6 +65,54 @@ export function Pills<T extends string>({ label, value, options, onChange }: Pil
   function go(direction: -1 | 1) {
     const target = options[index + direction];
     if (target) onChange(target.id);
+  }
+
+  if (single) {
+    return (
+      <div role="group" aria-label={label} className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-label="Previous tab"
+          disabled={index <= 0}
+          onClick={() => go(-1)}
+          className="grid size-11 shrink-0 place-items-center rounded-full text-muted transition-[color,opacity] duration-300 hover:text-text disabled:opacity-30"
+        >
+          <ChevronIcon className="size-5 rotate-180" />
+        </button>
+
+        {/* Just the name, centered. All the names sit side by side behind a window that shows one: choosing another slides the row, and a swipe on it does too. */}
+        <div
+          onTouchStart={(event) => (swipeFrom.current = event.touches[0].clientX)}
+          onTouchEnd={(event) => {
+            const distance = event.changedTouches[0].clientX - swipeFrom.current;
+            if (Math.abs(distance) > 40) go(distance < 0 ? 1 : -1);
+          }}
+          style={{ maskImage: EDGE_FADE, WebkitMaskImage: EDGE_FADE }}
+          className="relative h-11 min-w-0 flex-1 touch-pan-y overflow-hidden"
+        >
+          <div className="flex h-full transition-transform duration-[420ms] ease-[cubic-bezier(0.4,0,0.2,1)]" style={{ transform: `translateX(-${index * 100}%)` }}>
+            {options.map((option) => (
+              <span key={option.id} aria-hidden={option.id !== value} className="grid h-full w-full shrink-0 place-items-center truncate px-4 text-lg font-semibold tracking-tight text-text">
+                {option.label}
+              </span>
+            ))}
+          </div>
+          <span aria-live="polite" className="sr-only">
+            {options[index]?.label}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          aria-label="Next tab"
+          disabled={index >= options.length - 1}
+          onClick={() => go(1)}
+          className="grid size-11 shrink-0 place-items-center rounded-full text-muted transition-[color,opacity] duration-300 hover:text-text disabled:opacity-30"
+        >
+          <ChevronIcon className="size-5" />
+        </button>
+      </div>
+    );
   }
 
   // Under an arrow the tabs are invisible, then they fade in: the arrow never competes with a tab.
