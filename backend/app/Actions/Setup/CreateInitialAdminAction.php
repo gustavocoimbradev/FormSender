@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Setup;
 
+use App\Actions\Form\CreateContactFormAction;
 use App\Enums\Role;
 use App\Models\Setting;
 use App\Models\User;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 
 class CreateInitialAdminAction
 {
+    public function __construct(private readonly CreateContactFormAction $createContactForm) {}
+
     /**
      * Creates the owner account. Only works while no admin exists; the lock
      * stops two simultaneous requests from both creating an owner.
@@ -35,6 +38,8 @@ class CreateInitialAdminAction
                 $owner->is_owner = true;
                 $owner->email_verified_at = now();
                 $owner->save();
+
+                $this->createContactForm->execute($owner);
 
                 Setting::updateOrCreate(['key' => 'registration'], ['value' => ['open' => (bool) ($data['allow_registration'] ?? false)]]);
 

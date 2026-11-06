@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Actions\Form\CreateContactFormAction;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -32,7 +33,11 @@ class CreateUser extends Command
             'password' => $this->option('password') ?: password('Password'),
         ]);
         $user->role = $role;
+        // Whoever runs this on the server vouches for the person: no confirmation link to wait for.
+        $user->email_verified_at = now();
         $user->save();
+
+        app(CreateContactFormAction::class)->execute($user);
 
         $this->info("User {$user->email} created as {$role->value}.");
 
