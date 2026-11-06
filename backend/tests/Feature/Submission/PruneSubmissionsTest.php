@@ -36,6 +36,15 @@ it('keeps everything when the retention period is zero', function (): void {
     expect(FormSubmission::count())->toBe(1);
 });
 
+it('never deletes anything unless a retention period is set', function (): void {
+    submissionFromDaysAgo(4000);
+
+    $this->artisan('model:prune', ['--model' => FormSubmission::class])->assertSuccessful();
+
+    expect(config('formsender.submission_retention_days'))->toBe(0)
+        ->and(FormSubmission::count())->toBe(1);
+});
+
 it('deletes the attachments of a pruned submission', function (): void {
     Storage::fake('local');
     config(['formsender.submission_retention_days' => 30]);

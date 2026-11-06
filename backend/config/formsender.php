@@ -10,11 +10,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | Messages (and their attachments) older than this many days are deleted
-    | every day by `model:prune`. Use 0 to keep everything forever.
+    | every day by `model:prune`. The default, 0, keeps everything forever.
     |
     */
 
-    'submission_retention_days' => (int) env('SUBMISSION_RETENTION_DAYS', 90),
+    'submission_retention_days' => (int) env('SUBMISSION_RETENTION_DAYS', 0),
 
     /*
     |--------------------------------------------------------------------------
