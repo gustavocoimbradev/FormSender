@@ -170,7 +170,7 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
                 </div>
 
                 <div className="grid items-end gap-x-4 gap-y-3 sm:grid-cols-[1fr_auto]">
-                  <Select id={`${field.key}-type`} label="Tipo" value={field.type} options={FIELD_TYPES} onChange={(type) => patchField(field.key, { type })} disabled={saving} />
+                  <Select id={`${field.key}-type`} label="Type" value={field.type} options={FIELD_TYPES} onChange={(type) => patchField(field.key, { type })} disabled={saving} />
                   <Switch id={`${field.key}-required`} label="Required" checked={field.required} onChange={(required) => patchField(field.key, { required })} disabled={saving} />
                 </div>
 
