@@ -220,8 +220,8 @@ class Form extends Model
     }
 
     /**
-     * An empty list means any domain may submit. Entries are hosts, optionally
-     * starting with "*." to match subdomains only.
+     * An empty list means any domain may submit. An entry is a domain, which covers
+     * itself and its www version, or "*." followed by a domain to match its subdomains.
      */
     public function allowsHost(?string $host): bool
     {
@@ -247,7 +247,8 @@ class Form extends Model
                 continue;
             }
 
-            if ($host === $domain) {
+            // A domain covers itself and its www version.
+            if ($host === $domain || $host === 'www.'.$domain) {
                 return true;
             }
         }

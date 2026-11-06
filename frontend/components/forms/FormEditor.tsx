@@ -225,7 +225,8 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
               onChange={(domains) => patch({ domains })}
               validate={validateDomain}
               normalize={normalizeDomain}
-              placeholder="company.com or *.company.com"
+              placeholder="company.com"
+              hint="Just the domain. company.com also covers www.company.com; use *.company.com for every other subdomain."
               error={errors.domains}
               disabled={saving}
             />

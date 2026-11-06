@@ -13,6 +13,9 @@ use Illuminate\Validation\Rule;
 #[SchemaName('NewForm')]
 class StoreFormRequest extends FormRequest
 {
+    /** `www.company.com` (or `*.www...`) is never typed: `company.com` already covers it. */
+    private const WWW = '/^(?:\*\.)?www\./';
+
     private const DOMAIN = '/^(?:(?:\*\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}|localhost)$/';
 
     public function authorize(): bool
@@ -21,8 +24,8 @@ class StoreFormRequest extends FormRequest
     }
 
     /**
-     * Accept domains the way people paste them (with scheme, path, port,
-     * spaces or upper case) and store just the lowercase host.
+     * Domains are kept as lowercase text, without stray spaces. Nothing else is rewritten: an address with a scheme,
+     * `www`, a path or a port is refused, so what is saved is always the domain itself.
      */
     protected function prepareForValidation(): void
     {
@@ -34,7 +37,7 @@ class StoreFormRequest extends FormRequest
 
         $this->merge([
             'allowed_domains' => array_values(array_unique(array_map(
-                fn (mixed $domain): mixed => is_string($domain) ? $this->normalizeDomain($domain) : $domain,
+                fn (mixed $domain): mixed => is_string($domain) ? strtolower(trim($domain)) : $domain,
                 $domains,
             ), SORT_REGULAR)),
         ]);
@@ -107,17 +110,17 @@ class StoreFormRequest extends FormRequest
              */
             'destinations.*' => ['email:rfc', 'max:255', 'distinct:ignore_case'],
             /**
-             * Websites allowed to send this form, e.g. `company.com` or `*.company.com` (subdomains). Leave empty to allow any website.
+             * Websites allowed to send this form: the domain itself, e.g. `company.com`, which also covers `www.company.com`. Use `*.company.com` for every other subdomain. Leave empty to allow any website.
              *
              * @example ["company.com", "*.company.com"]
              */
             'allowed_domains' => ['array', 'max:50'],
             /**
-             * One allowed website. Pasting a full URL works: the protocol, path and port are removed.
+             * One allowed website, only the domain: no `http`, `https`, `www`, path or port.
              *
              * @example company.com
              */
-            'allowed_domains.*' => ['string', 'max:253', 'regex:'.self::DOMAIN, 'distinct'],
+            'allowed_domains.*' => ['string', 'max:253', 'regex:'.self::DOMAIN, 'not_regex:'.self::WWW, 'distinct'],
             /**
              * Subject of the email delivered for this form's messages. Leave empty (null) for the default subject. Variables such as `{{form_name}}` are filled in with each message.
              *
@@ -161,12 +164,14 @@ class StoreFormRequest extends FormRequest
         return $rules;
     }
 
-    private function normalizeDomain(string $domain): string
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
     {
-        $domain = strtolower(trim($domain));
-        $domain = (string) preg_replace('#^[a-z][a-z0-9+.-]*://#', '', $domain);
-        $domain = (string) preg_replace('#[/?\#].*$#', '', $domain);
-
-        return (string) preg_replace('#:\d+$#', '', $domain);
+        return [
+            'allowed_domains.*.regex' => 'Use only the domain, like company.com: no http, https, path or port.',
+            'allowed_domains.*.not_regex' => 'Leave out www: company.com already covers www.company.com.',
+        ];
     }
 }

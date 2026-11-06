@@ -106,17 +106,16 @@ export function inputFromDraft(draft: FormDraft): FormInput {
 const FIELD_NAME = /^[a-z][a-z0-9_]*$/;
 const DOMAIN = /^(?:(?:\*\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}|localhost)$/;
 
-/** Accepts a domain the way people paste it (URL, port, capitals) and keeps just the host. */
-export function normalizeDomain(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/^[a-z][a-z0-9+.-]*:\/\//, "")
-    .replace(/[/?#].*$/, "")
-    .replace(/:\d+$/, "");
+/** Only tidied (spaces, capitals): what is typed is never rewritten, so a mistake is explained instead of guessed at. */
+export const normalizeDomain = (value: string): string => value.trim().toLowerCase();
+
+export function validateDomain(value: string): string | null {
+  if (/^[a-z][a-z0-9+.-]*:\/\//.test(value) || /[/?#:]/.test(value)) return "Use only the domain, like company.com: no http, https, path or port.";
+  if (/^(\*\.)?www\./.test(value)) return "Leave out www: company.com already covers www.company.com.";
+
+  return DOMAIN.test(value) ? null : "Use a domain like company.com, or *.company.com for every other subdomain.";
 }
 
-export const validateDomain = (value: string) => (DOMAIN.test(value) ? null : "Use an address like company.com or *.company.com.");
 export const validateEmailChip = (value: string) => (isValidEmail(value) ? null : "Enter a valid email.");
 
 /** Client-side checks that mirror the API, so most mistakes are caught before sending. */

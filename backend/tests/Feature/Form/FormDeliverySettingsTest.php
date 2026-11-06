@@ -39,11 +39,25 @@ it('defaults fields, destinations and allowed domains to empty lists', function 
         ->assertJsonPath('data.allowed_domains', []);
 });
 
-it('normalizes allowed domains', function (): void {
-    $this->postJson('/api/forms', deliveryPayload(['allowed_domains' => ['HTTPS://Example.com/contact', 'www.Site.com:8080', '  *.Example.org ', 'example.com']]))
+it('keeps allowed domains as lowercase domains, ignoring stray spaces and repeats', function (): void {
+    $this->postJson('/api/forms', deliveryPayload(['allowed_domains' => ['  Example.COM ', '*.Example.org', 'example.com', 'localhost']]))
         ->assertCreated()
-        ->assertJsonPath('data.allowed_domains', ['example.com', 'www.site.com', '*.example.org']);
+        ->assertJsonPath('data.allowed_domains', ['example.com', '*.example.org', 'localhost']);
 });
+
+it('only takes the domain itself, with no scheme, www, path or port', function (string $entry): void {
+    $this->postJson('/api/forms', deliveryPayload(['allowed_domains' => [$entry]]))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('allowed_domains.0');
+})->with([
+    'https' => 'https://example.com',
+    'http' => 'http://example.com',
+    'www' => 'www.example.com',
+    'www in capitals' => 'WWW.Example.com',
+    'wildcard on www' => '*.www.example.com',
+    'path' => 'example.com/contact',
+    'port' => 'example.com:8080',
+]);
 
 it('validates fields, destinations and allowed domains', function (array $overrides, string $errorKey): void {
     $this->postJson('/api/forms', deliveryPayload($overrides))

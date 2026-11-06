@@ -158,6 +158,20 @@ describe('allowed domains', function (): void {
             ->assertStatus(202);
     })->with(['https://example.com', 'http://example.com:8080', 'https://EXAMPLE.com']);
 
+    it('lets the domain send from its www version too, and nothing else', function (string $origin, int $status): void {
+        $form = contactForm(['allowed_domains' => ['example.com']]);
+
+        $this->postJson("/api/forms/{$form->code}/submit", validSubmission(), ['Origin' => $origin])
+            ->assertStatus($status);
+    })->with([
+        'the domain' => ['https://example.com', 202],
+        'its www' => ['https://www.example.com', 202],
+        'its www with a port' => ['http://www.example.com:3000', 202],
+        'another subdomain' => ['https://blog.example.com', 403],
+        'www of a lookalike' => ['https://www.badexample.com', 403],
+        'www on a longer name' => ['https://www.example.com.evil.test', 403],
+    ]);
+
     it('falls back to the referer when there is no origin', function (): void {
         $form = contactForm(['allowed_domains' => ['example.com']]);
 
