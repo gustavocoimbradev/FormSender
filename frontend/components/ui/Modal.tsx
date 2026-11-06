@@ -22,6 +22,10 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
 
     const previouslyFocused = document.activeElement as HTMLElement | null;
     panel.current?.querySelector<HTMLElement>("input, select, textarea, [data-autofocus]")?.focus();
+    // Nothing behind the dialog scrolls: the page on a touch screen, the scrolling box with a mouse (its strip stays, so nothing shifts).
+    const box = document.getElementById("scroll-root");
+    const previousBox = box?.style.overflow ?? "";
+    if (box) box.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
 
     const onKey = (event: KeyboardEvent) => {
@@ -31,6 +35,7 @@ export function Modal({ open, title, onClose, children, busy = false, size = "md
 
     return () => {
       window.removeEventListener("keydown", onKey);
+      if (box) box.style.overflow = previousBox;
       document.body.style.overflow = "";
       previouslyFocused?.focus?.();
     };

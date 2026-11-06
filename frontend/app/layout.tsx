@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ScrollRoot } from "@/components/ScrollRoot";
 
 export const metadata: Metadata = {
   title: "FormSender",
@@ -16,7 +17,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ScrollRoot>{children}</ScrollRoot>
+      </body>
     </html>
   );
 }

@@ -19,18 +19,93 @@
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/*
+ * The two soft glows behind every screen are painted on the page itself (not on elements): that way they
+ * continue under the scrollbar's reserved strip, which then looks like part of the background. Each glow
+ * drifts slowly by animating its own registered number.
+ */
+@property --drift-a {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@property --drift-b {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
+@keyframes drift-a {
+  0%,
+  100% {
+    --drift-a: 0;
+  }
+  50% {
+    --drift-a: 1;
+  }
+}
+
+@keyframes drift-b {
+  0%,
+  100% {
+    --drift-b: 0;
+  }
+  50% {
+    --drift-b: 1;
+  }
+}
+
 @layer base {
   html {
     font-size: 16px;
     color-scheme: dark;
     -webkit-text-size-adjust: 100%;
-    /* The vertical scrollbar is always there (just a quiet gutter when nothing scrolls), so pages never jump sideways. */
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
+    background-color: rgb(var(--bg));
+    background-image:
+      radial-gradient(
+        circle calc(30rem * (1 + var(--drift-a) * 0.08)) at calc(-12% + 23rem + var(--drift-a) * 4%) calc(-18% + 23rem - var(--drift-a) * 6%),
+        rgb(var(--accent) / 0.26),
+        rgb(var(--accent) / 0.15) 45%,
+        transparent
+      ),
+      radial-gradient(
+        circle calc(26rem * (1 + var(--drift-b) * 0.08)) at calc(110% - 20rem + var(--drift-b) * 4%) calc(122% - 20rem - var(--drift-b) * 6%),
+        rgb(var(--accent-2) / 0.15),
+        rgb(var(--accent-2) / 0.09) 45%,
+        transparent
+      );
+    background-attachment: fixed;
+    animation:
+      drift-a 16s ease-in-out infinite,
+      drift-b 16s ease-in-out -8s infinite;
   }
 
+  /*
+   * With a mouse the page scrolls inside its own box, always showing the vertical scrollbar (a quiet strip when
+   * nothing scrolls), so pages never jump sideways. The box is what scrolls, not the page, so the scrollbar is drawn
+   * over the background (the glows on the page itself) and not in a plain strip beside it. On touch screens the page
+   * scrolls as usual: scrollbars float over the content and nothing is reserved.
+   */
+  @media (hover: hover) and (pointer: fine) {
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .scroll-root {
+      position: fixed;
+      inset: 0;
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* The page color comes from the page itself (see above), so the glows show through. */
   body {
-    @apply min-h-dvh bg-bg font-sans text-base text-text antialiased;
+    @apply min-h-dvh font-sans text-base text-text antialiased;
   }
 
   ::selection {
@@ -62,36 +137,39 @@
     color: rgb(var(--text));
   }
 
-  /*
-   * Scrollbars (the page's included): thin, with a track that disappears and a
-   * thumb that carries the same violet-to-cyan gradient as the rest of the design.
-   */
-  ::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
-  }
+  /* Custom scrollbars are for a mouse: touch screens keep their own, which float and take no room. */
+  @media (hover: hover) and (pointer: fine) {
+    /*
+     * Scrollbars (the page's included): thin, with a track that disappears and a
+     * thumb that carries the same violet-to-cyan gradient as the rest of the design.
+     */
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
 
-  ::-webkit-scrollbar-track,
-  ::-webkit-scrollbar-corner {
-    background: transparent;
-  }
+    ::-webkit-scrollbar-track,
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
 
-  ::-webkit-scrollbar-thumb {
-    border: 3px solid transparent;
-    border-radius: 999px;
-    background: linear-gradient(180deg, rgb(var(--accent) / 0.55), rgb(var(--accent-2) / 0.4)) padding-box;
-    transition: background 0.3s;
-  }
+    ::-webkit-scrollbar-thumb {
+      border: 3px solid transparent;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgb(var(--accent) / 0.55), rgb(var(--accent-2) / 0.4)) padding-box;
+      transition: background 0.3s;
+    }
 
-  ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, rgb(var(--accent) / 0.9), rgb(var(--accent-2) / 0.75)) padding-box;
-  }
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgb(var(--accent) / 0.9), rgb(var(--accent-2) / 0.75)) padding-box;
+    }
 
-  /* Firefox has no gradient thumb: thin, with the accent color. */
-  @supports not selector(::-webkit-scrollbar) {
-    * {
-      scrollbar-width: thin;
-      scrollbar-color: rgb(var(--accent) / 0.55) transparent;
+    /* Firefox has no gradient thumb: thin, with the accent color. */
+    @supports not selector(::-webkit-scrollbar) {
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgb(var(--accent) / 0.55) transparent;
+      }
     }
   }
 }
