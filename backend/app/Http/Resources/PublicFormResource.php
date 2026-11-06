@@ -37,7 +37,7 @@ class PublicFormResource extends JsonResource
             /** The form's unique code. */
             'code' => $this->code,
             /** The CSS to draw the form with. */
-            'css' => $this->defaultStyle ? DefaultFormStyle::CSS : $this->style(),
+            'css' => $this->defaultStyle ? DefaultFormStyle::for($this->code) : $this->style(),
             /** The texts the form shows by itself, by name. */
             'strings' => $this->texts(),
             /** The fields to draw, in order. */

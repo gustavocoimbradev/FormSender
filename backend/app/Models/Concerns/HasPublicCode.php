@@ -22,7 +22,8 @@ trait HasPublicCode
     public static function newCode(): string
     {
         do {
-            $code = strtolower(Str::random(20));
+            // Always a letter first: the code starts the ids of the embedded form, and a CSS id cannot start with a digit.
+            $code = chr(random_int(97, 122)).strtolower(Str::random(19));
         } while (static::where('code', $code)->exists());
 
         return $code;

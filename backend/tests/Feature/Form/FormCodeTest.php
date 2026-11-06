@@ -13,8 +13,8 @@ it('gives every new form a unique public code', function (): void {
     $first = $this->postJson('/api/forms', ['name' => 'One'])->assertCreated()->json('data.code');
     $second = $this->postJson('/api/forms', ['name' => 'Two'])->assertCreated()->json('data.code');
 
-    expect($first)->toMatch('/^[a-z0-9]{20}$/')
-        ->and($second)->toMatch('/^[a-z0-9]{20}$/')
+    expect($first)->toMatch('/^[a-z][a-z0-9]{19}$/')
+        ->and($second)->toMatch('/^[a-z][a-z0-9]{19}$/')
         ->and($first)->not->toBe($second);
 });
 

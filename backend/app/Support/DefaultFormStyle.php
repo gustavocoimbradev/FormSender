@@ -12,8 +12,20 @@ namespace App\Support;
  */
 final class DefaultFormStyle
 {
-    public const CSS = <<<'CSS'
-#formsender-form {
+    /**
+     * The style of one form. Everything in the embedded form is found by id, and every id starts with the form's code, so
+     * a page that embeds several forms (or has ids of its own) never gets them mixed up. In CSS an id cannot start with a
+     * digit, so a code that does is written the way CSS asks (`\30 `).
+     */
+    public static function for(string $code): string
+    {
+        $selectorId = preg_match('/^[0-9]/', $code) === 1 ? '\\3'.$code[0].' '.substr($code, 1) : $code;
+
+        return str_replace(['__CSSID__', '__ID__'], [$selectorId, $code], self::TEMPLATE);
+    }
+
+    private const TEMPLATE = <<<'CSS'
+#__CSSID__-form {
   --text: #14141f;
   --muted: #6b6b80;
   --border: #d4d4e0;
@@ -26,14 +38,13 @@ final class DefaultFormStyle
   color: var(--text);
   position: relative;
 
-
   form {
     display: grid;
     gap: 16px;
     margin: 0;
   }
 
-  .field {
+  [id^="__ID__-field-"] {
     display: grid;
     gap: 8px;
     min-width: 0;
@@ -43,11 +54,11 @@ final class DefaultFormStyle
     font-size: 16px;
     font-weight: 500;
     line-height: 1.4;
-  }
 
-  .required {
-    color: var(--accent);
-    margin-left: 2px;
+    span {
+      color: var(--accent);
+      margin-left: 2px;
+    }
   }
 
   input,
@@ -111,7 +122,7 @@ final class DefaultFormStyle
     }
   }
 
-  .check {
+  [id^="__ID__-check-"] {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -141,7 +152,7 @@ final class DefaultFormStyle
     }
   }
 
-  .error {
+  [id^="__ID__-error-"] {
     margin: 0;
     font-size: 16px;
     line-height: 1.4;
@@ -181,7 +192,7 @@ final class DefaultFormStyle
     }
   }
 
-  .spinner {
+  #__CSSID__-spinner {
     width: 18px;
     height: 18px;
     border: 2px solid rgba(255, 255, 255, 0.4);
@@ -190,13 +201,13 @@ final class DefaultFormStyle
     animation: spin 0.7s linear infinite;
   }
 
-  .note {
+  #__CSSID__-note {
     margin: 0;
     font-size: 16px;
     color: var(--muted);
   }
 
-  .notice {
+  [id^="__ID__-notice-"] {
     margin: 0;
     padding: 12px 14px;
     font-size: 16px;
@@ -207,7 +218,7 @@ final class DefaultFormStyle
     border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent);
     border-radius: 12px;
 
-    &.bad {
+    &#__CSSID__-notice-failed {
       color: var(--danger);
       background: color-mix(in srgb, var(--danger) 10%, transparent);
       border-color: color-mix(in srgb, var(--danger) 35%, transparent);

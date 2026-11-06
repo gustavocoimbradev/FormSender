@@ -69,7 +69,7 @@ class Form extends Model
      */
     public function style(): string
     {
-        return $this->css ?? DefaultFormStyle::CSS;
+        return $this->css ?? DefaultFormStyle::for($this->code);
     }
 
     /**
@@ -140,7 +140,16 @@ class Form extends Model
     {
         $clean = fn (string $css): string => trim(str_replace("\r\n", "\n", $css));
 
-        return Attribute::set(fn (?string $value): ?string => $value === null || $clean($value) === '' || $clean($value) === $clean(DefaultFormStyle::CSS) ? null : $clean($value));
+        // The default style carries the form's code, so it can only be recognised for a form that has one.
+        return Attribute::set(function (?string $value, array $attributes) use ($clean): ?string {
+            if ($value === null || $clean($value) === '') {
+                return null;
+            }
+
+            $code = $attributes['code'] ?? null;
+
+            return is_string($code) && $clean($value) === $clean(DefaultFormStyle::for($code)) ? null : $clean($value);
+        });
     }
 
     /**
