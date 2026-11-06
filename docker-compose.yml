@@ -44,6 +44,8 @@ services:
 
   queue:
     <<: *backend
+    # The worker leaves by itself every hour (--max-time) so it never grows old: Docker must bring it back.
+    restart: unless-stopped
     command: php artisan queue:work --sleep=1 --max-time=3600
     depends_on:
       app:
@@ -57,6 +59,7 @@ services:
 
   scheduler:
     <<: *backend
+    restart: unless-stopped
     command: php artisan schedule:work
     depends_on:
       app:
