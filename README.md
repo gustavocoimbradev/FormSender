@@ -14,7 +14,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8b6bff" alt="MIT license"></a>
 </p>
 
-<p align="center"><img src="docs/screenshots/templates.png" alt="Email template editor with live preview" width="900"></p>
+<p align="center"><img src="docs/screenshots/email.png" alt="A form's Email tab, with a live preview" width="900"></p>
 
 ## What it is
 
@@ -31,7 +31,7 @@ curl -X POST http://localhost:8000/api/forms/YOUR_FORM_CODE/submit \
 You should not have to write, secure and maintain email sending for every contact page, landing page or signup sheet. Run Form Sender once and every site you own can use it.
 
 1. **Create a form** in the dashboard: its fields, who receives the messages, which sites may send it.
-2. **Copy the snippet** (HTML, JavaScript, React, PHP, Python... the panel generates it for your stack).
+2. **Add it to your site** with one `<script>` line (or an iframe), or just share the form's public page.
 3. **Done.** Each submission is validated, saved, and emailed to your team.
 
 ## What you can use it for
@@ -62,10 +62,10 @@ flowchart LR
 |---|---|
 | **Instant and reliable** | Emails never block a request, so your page never waits for a mail server. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
 | **File attachments** | Add a **file field** to a form: the upload is stored privately and arrives as an **email attachment**. Size and type are limited (5 MB by default; documents and images only), and the generated snippets already send it as `multipart/form-data`. |
-| **JSON or redirect, your choice** | Each form picks what the visitor gets after sending: a short **JSON answer** (which also carries the thank-you page address) or a **redirect** straight to the thank-you page (`303`), so a plain HTML `<form>` works without any JavaScript. A script that sends `Accept: application/json` always gets JSON. |
+| **One line to embed, always up to date** | A `<script>` tag draws the form with the fields you configured, so editing the form changes every site that uses it. Sending never leaves the page: a small notice at the bottom confirms it (or points at what to fix). No JavaScript allowed? Use the iframe. Every form also has a **public page** of its own, fully responsive, with a clean version when it is framed. |
 | **Reply to the visitor** | The first email a visitor types becomes the `Reply-To` of the message your team receives. |
-| **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
-| **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |
+| **An email per form** | Each form has its own email, written in the form's **Email** tab: a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and a **live preview** on desktop and phone widths, filled with the form's own fields. Until you write one, the default email (it matches the dashboard's look) is used, and **Reset to default** brings it back. |
+| **Spam protection** | A built-in **honeypot** on every form: the embed script and the public page already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |
 | **No secrets in the browser** | No token to leak. A form is reached by a random public `code`; sending is controlled by its **allowed sites** (`Origin`/`Referer`, `*.company.com` wildcards, per-form CORS) and rate limiting. Numeric ids are never exposed. |
 | **Audit trail and retention** | Every message is stored with a snapshot of the form, and it stays even if the form is deleted. Nothing is ever deleted by default. Set `SUBMISSION_RETENTION_DAYS` and a daily cleanup removes messages (and their files) older than that. |
 | **Retry and alerts** | A message that failed can be retried from the dashboard (destinations that already got it are skipped). When a delivery fails for good, every admin gets an email. |
@@ -77,11 +77,11 @@ flowchart LR
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/integration.png" alt="Integration tab with a ready-to-paste snippet"></td>
+    <td width="50%"><img src="docs/screenshots/integration.png" alt="Integration tab: one script line to paste"></td>
     <td width="50%"><img src="docs/screenshots/messages.png" alt="Received messages with delivery status"></td>
   </tr>
   <tr>
-    <td align="center"><sub>Ready-to-paste snippets, one per stack</sub></td>
+    <td align="center"><sub>One line to paste, or an iframe</sub></td>
     <td align="center"><sub>Every message, with its delivery status</sub></td>
   </tr>
 </table>
@@ -151,10 +151,10 @@ Full, friendly docs are served at the API root (`/`).
 | Area | Endpoints |
 |---|---|
 | Setup and auth | `POST /setup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, password reset |
-| Forms | CRUD on `/forms/{code}`, `POST /forms/{code}/test` |
-| Submitting | `POST /forms/{code}/submit` (public: allowed sites, no token) |
+| Forms | CRUD on `/forms/{code}` |
+| Submitting | `POST /forms/{code}/submit` and `GET /forms/{code}/public` (the fields to draw), both public: allowed sites, no token |
 | Submissions | `GET /forms/{code}/submissions` (+ filter by status), `POST /forms/{code}/submissions/{id}/retry`, `GET /forms/{code}/submissions/{id}/attachments/{attachment}` |
-| Templates | CRUD on `/templates/{code}`, `POST /templates/preview` |
+| Email | `GET /email/default`, `POST /email/preview` |
 | Users, Settings | CRUD on `/users`, `GET`/`PUT /settings` (admin) |
 
 
