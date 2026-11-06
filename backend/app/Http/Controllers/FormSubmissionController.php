@@ -13,6 +13,7 @@ use Dedoc\Scramble\Attributes\Group;
 use Dedoc\Scramble\Attributes\QueryParameter;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 #[Group('Submissions', description: 'Every message a form receives is kept here, with its delivery status for each destination.', weight: 6)]
@@ -27,6 +28,8 @@ class FormSubmissionController extends Controller
     #[QueryParameter('status', description: 'Only show submissions in this delivery status: `pending`, `processing`, `sent`, `partial`, `failed` or `spam` (caught by the hidden `_gotcha` field and never sent).', required: false, type: 'string', example: 'failed')]
     public function index(Request $request, Form $form): AnonymousResourceCollection
     {
+        Gate::authorize('view', $form);
+
         $filters = $request->validate([
             'status' => ['sometimes', Rule::enum(SubmissionStatus::class)],
         ]);
@@ -45,6 +48,8 @@ class FormSubmissionController extends Controller
     #[Endpoint(operationId: 'getSubmission')]
     public function show(Form $form, FormSubmission $submission): FormSubmissionResource
     {
+        Gate::authorize('view', $form);
+
         return new FormSubmissionResource($submission);
     }
 }

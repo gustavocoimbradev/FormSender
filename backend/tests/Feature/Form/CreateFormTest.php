@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 it('creates a form with a name', function (): void {
     $response = $this->postJson('/api/forms', ['name' => 'Contact']);

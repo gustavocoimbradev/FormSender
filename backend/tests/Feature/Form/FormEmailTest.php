@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Support\DefaultEmailTemplate;
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 it('starts with the default email', function (): void {
     $this->postJson('/api/forms', ['name' => 'Contact'])

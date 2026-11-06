@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\Role;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -42,12 +41,6 @@ class UpdateUserRequest extends FormRequest
              * @example a-new-long-password
              */
             'password' => ['sometimes', 'nullable', 'string', Password::min(8)],
-            /**
-             * What the user can do. Only admins can change it, and only the owner can change another admin's role.
-             *
-             * @example admin
-             */
-            'role' => ['sometimes', Rule::enum(Role::class)],
         ];
     }
 }

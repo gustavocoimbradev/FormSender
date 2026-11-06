@@ -96,6 +96,9 @@ class SendFormSubmission implements ShouldQueue, ShouldQueueAfterCommit
         $submission->processed_at = now();
         $submission->save();
 
-        Notification::send(User::where('role', Role::Admin)->get(), new SubmissionDeliveryFailed($submission));
+        // The owner of the form hears about it; a form without an owner (left from before accounts) goes to the admin.
+        $owner = $submission->form?->user;
+
+        Notification::send($owner ?? User::where('role', Role::Admin)->get(), new SubmissionDeliveryFailed($submission));
     }
 }

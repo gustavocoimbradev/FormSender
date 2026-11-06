@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Support\DefaultFormStrings;
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 it('starts with the default texts', function (): void {
     $this->postJson('/api/forms', ['name' => 'Contact'])

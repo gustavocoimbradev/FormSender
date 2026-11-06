@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Form;
+use App\Models\FormSubmission;
 use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -86,6 +87,20 @@ function actingAsOwner(?User $owner = null): User
     Sanctum::actingAs($owner);
 
     return $owner;
+}
+
+function submissionFor(Form $form, array $overrides = []): FormSubmission
+{
+    return FormSubmission::create([
+        'form_id' => $form->id,
+        'form_name' => $form->name,
+        'fields' => $form->fields,
+        'data' => ['name' => 'Jane', 'email' => 'jane@example.com'],
+        'destinations' => ['sales@example.com'],
+        'deliveries' => [['destination' => 'sales@example.com', 'status' => 'pending', 'error' => null, 'sent_at' => null]],
+        'status' => 'pending',
+        ...$overrides,
+    ]);
 }
 
 function configureSmtp(): void

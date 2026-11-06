@@ -249,7 +249,7 @@ describe('honeypot', function (): void {
     });
 
     it('lists spam in the messages and lets it be filtered', function (): void {
-        actingAsUser();
+        actingAsAdmin();
         $form = contactForm();
         $this->postJson("/api/forms/{$form->code}/submit", validSubmission(['_gotcha' => 'x']));
         $this->postJson("/api/forms/{$form->code}/submit", validSubmission());

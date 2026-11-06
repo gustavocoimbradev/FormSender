@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Support\DefaultFormStyle;
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 it('starts with the default style, made for that form', function (): void {
     $response = $this->postJson('/api/forms', ['name' => 'Contact'])

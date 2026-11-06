@@ -8,6 +8,7 @@ use App\Models\Form;
 use App\Models\FormSubmission;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -25,6 +26,8 @@ class SubmissionAttachmentController extends Controller
     #[Endpoint(operationId: 'downloadAttachment')]
     public function __invoke(Form $form, FormSubmission $submission, string $attachment): StreamedResponse
     {
+        Gate::authorize('view', $form);
+
         $file = $submission->attachment($attachment);
 
         abort_if($file === null, 404);

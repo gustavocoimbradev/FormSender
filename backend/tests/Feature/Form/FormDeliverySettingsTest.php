@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Form;
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 function deliveryPayload(array $overrides = []): array
 {

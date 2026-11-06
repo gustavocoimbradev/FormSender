@@ -9,6 +9,7 @@ use App\Support\DefaultFormStyle;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 #[Group('Forms', description: 'A form defines which fields it accepts, where its messages are delivered (destinations), which websites may send it and its own public code.', weight: 4)]
 class DefaultStyleController extends Controller
@@ -24,6 +25,8 @@ class DefaultStyleController extends Controller
     #[Endpoint(operationId: 'getDefaultStyle')]
     public function __invoke(Form $form): JsonResponse
     {
+        Gate::authorize('view', $form);
+
         return response()->json(['data' => ['css' => DefaultFormStyle::for($form->code)]]);
     }
 }

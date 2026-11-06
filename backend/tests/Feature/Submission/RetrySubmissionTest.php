@@ -23,7 +23,7 @@ beforeEach(function (): void {
 });
 
 it('queues a failed submission again', function (SubmissionStatus $status): void {
-    actingAsUser();
+    actingAsAdmin();
     $submission = submissionWithStatus($status);
 
     $this->postJson("/api/forms/{$submission->form->code}/submissions/{$submission->id}/retry")
@@ -37,7 +37,7 @@ it('queues a failed submission again', function (SubmissionStatus $status): void
 })->with([SubmissionStatus::Failed, SubmissionStatus::Partial]);
 
 it('refuses to retry a submission that is not stuck', function (SubmissionStatus $status): void {
-    actingAsUser();
+    actingAsAdmin();
     $submission = submissionWithStatus($status);
 
     $this->postJson("/api/forms/{$submission->form->code}/submissions/{$submission->id}/retry")
@@ -47,7 +47,7 @@ it('refuses to retry a submission that is not stuck', function (SubmissionStatus
 })->with([SubmissionStatus::Pending, SubmissionStatus::Processing, SubmissionStatus::Sent, SubmissionStatus::Spam]);
 
 it('does not find a submission through another form', function (): void {
-    actingAsUser();
+    actingAsAdmin();
     $submission = submissionWithStatus(SubmissionStatus::Failed);
     $other = Form::factory()->create();
 
@@ -56,7 +56,7 @@ it('does not find a submission through another form', function (): void {
 });
 
 it('answers not found for a submission that does not exist', function (): void {
-    actingAsUser();
+    actingAsAdmin();
     $form = contactForm();
 
     $this->postJson("/api/forms/{$form->code}/submissions/999/retry")->assertNotFound();

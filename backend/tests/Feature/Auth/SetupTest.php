@@ -21,7 +21,7 @@ it('creates the initial admin account', function (): void {
         ->assertCreated()
         ->assertJsonPath('data.email', 'owner@example.com')
         ->assertJsonPath('data.role', 'admin')
-        ->assertJsonPath('data.is_owner', true)
+        ->assertJsonMissingPath('data.is_owner')
         ->assertJsonMissingPath('data.password');
 
     $admin = User::where('email', 'owner@example.com')->first();

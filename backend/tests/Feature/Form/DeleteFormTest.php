@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 use App\Models\Form;
 

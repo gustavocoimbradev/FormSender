@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
@@ -35,15 +34,16 @@ class UserController extends Controller
     /**
      * Create a user.
      *
-     * Admin only. `role` defaults to `user`.
+     * Admin only, and it works even while new accounts are not allowed. The account is ready to use at once (no
+     * email confirmation) and always a regular user: it sees and manages only its own forms.
      */
     #[Endpoint(operationId: 'createUser')]
     public function store(StoreUserRequest $request): UserResource
     {
         Gate::authorize('create', User::class);
 
-        $user = new User(Arr::except($request->validated(), 'role'));
-        $user->role = Role::from($request->validated('role', Role::User->value));
+        $user = new User($request->validated());
+        $user->email_verified_at = now();
         $user->save();
 
         return new UserResource($user);
@@ -65,9 +65,7 @@ class UserController extends Controller
     /**
      * Update a user.
      *
-     * Admin only. Admins edit regular users and themselves; only the owner edits other admins. Changing a
-     * role follows the same rule, nobody changes their own role or the owner's, and a new password revokes
-     * the user's tokens. `PATCH` changes only the attributes sent.
+     * Admin only. A new password revokes the user's tokens. `PATCH` changes only the attributes sent.
      */
     #[Endpoint(operationId: 'updateUser')]
     public function update(UpdateUserRequest $request, User $user): UserResource
@@ -76,12 +74,7 @@ class UserController extends Controller
 
         $data = $request->validated();
 
-        if (isset($data['role']) && Role::from($data['role']) !== $user->role) {
-            Gate::authorize('changeRole', $user);
-            $user->role = Role::from($data['role']);
-        }
-
-        $user->fill(Arr::except($data, ['role', 'password']));
+        $user->fill(Arr::except($data, 'password'));
 
         if (filled($data['password'] ?? null)) {
             $user->password = $data['password'];
@@ -96,7 +89,7 @@ class UserController extends Controller
     /**
      * Delete a user.
      *
-     * Admin only. Nobody deletes themselves or the owner; only the owner deletes other admins.
+     * Admin only. The administrator cannot delete their own account. The user's forms are deleted with the account.
      */
     #[Endpoint(operationId: 'deleteUser')]
     public function destroy(User $user): Response

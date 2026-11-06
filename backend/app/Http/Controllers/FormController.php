@@ -10,8 +10,10 @@ use App\Http\Resources\FormResource;
 use App\Models\Form;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 #[Group('Forms', description: 'A form defines which fields it accepts, where its messages are delivered (destinations), which websites may send it and its own public code.', weight: 4)]
 class FormController extends Controller
@@ -19,25 +21,32 @@ class FormController extends Controller
     /**
      * List forms.
      *
-     * Newest first, paginated.
+     * Newest first, paginated. A person sees their own forms; the administrator sees every form.
      */
     #[Endpoint(operationId: 'listForms')]
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): AnonymousResourceCollection
     {
-        return FormResource::collection(Form::latest('id')->paginate());
+        $user = $request->user();
+
+        return FormResource::collection(
+            Form::query()
+                ->unless($user->isAdmin(), fn ($query) => $query->whereBelongsTo($user))
+                ->latest('id')
+                ->paginate(),
+        );
     }
 
     /**
      * Create a form.
      *
      * Defines the accepted `fields`, the email `destinations` (up to 20) and the `allowed_domains`
-     * (hosts such as `example.com` or `*.example.com`; empty means any domain). A unique public
+     * (hosts such as `example.com` or `*.example.com`; empty means any domain). The form belongs to the person who creates it. A unique public
      * `code` is generated automatically. Domains are normalized: scheme, path, port and case are removed.
      */
     #[Endpoint(operationId: 'createForm')]
     public function store(StoreFormRequest $request): FormResource
     {
-        return new FormResource(Form::create($request->validated()));
+        return new FormResource($request->user()->forms()->create($request->validated()));
     }
 
     /**
@@ -48,6 +57,8 @@ class FormController extends Controller
     #[Endpoint(operationId: 'getForm')]
     public function show(Form $form): FormResource
     {
+        Gate::authorize('view', $form);
+
         return new FormResource($form);
     }
 
@@ -59,6 +70,8 @@ class FormController extends Controller
     #[Endpoint(operationId: 'updateForm')]
     public function update(UpdateFormRequest $request, Form $form): FormResource
     {
+        Gate::authorize('update', $form);
+
         $form->update($request->validated());
 
         return new FormResource($form);
@@ -72,6 +85,8 @@ class FormController extends Controller
     #[Endpoint(operationId: 'deleteForm')]
     public function destroy(Form $form): Response
     {
+        Gate::authorize('delete', $form);
+
         $form->delete();
 
         return response()->noContent();

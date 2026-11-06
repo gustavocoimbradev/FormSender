@@ -7,7 +7,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-beforeEach(fn () => actingAsUser());
+beforeEach(fn () => actingAsAdmin());
 
 it('gives every new form a unique public code', function (): void {
     $first = $this->postJson('/api/forms', ['name' => 'One'])->assertCreated()->json('data.code');

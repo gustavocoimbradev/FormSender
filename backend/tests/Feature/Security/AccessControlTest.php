@@ -26,9 +26,9 @@ it('requires authentication on every protected route', function (string $method,
     ['POST', '/api/auth/logout'],
 ]);
 
-it('lets regular users manage forms', function (): void {
-    actingAsUser();
-    $form = Form::factory()->create();
+it('lets regular users manage their own forms', function (): void {
+    $user = actingAsUser();
+    $form = Form::factory()->for($user)->create();
 
     $this->getJson('/api/forms')->assertOk();
     $this->postJson('/api/forms', ['name' => 'New'])->assertCreated();

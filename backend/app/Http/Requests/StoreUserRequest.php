@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\Role;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 #[SchemaName('NewUser')]
@@ -42,12 +40,6 @@ class StoreUserRequest extends FormRequest
              * @example a-long-secret-password
              */
             'password' => ['required', 'string', Password::min(8)],
-            /**
-             * What the user can do. `user` manages forms; `admin` also manages settings and users. Defaults to `user`.
-             *
-             * @example user
-             */
-            'role' => ['sometimes', Rule::enum(Role::class)],
         ];
     }
 }

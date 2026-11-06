@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\Role;
 use App\Models\User;
 
+/**
+ * There is one administrator (the one who installed it), and only the administrator manages accounts.
+ */
 class UserPolicy
 {
     public function viewAny(User $actor): bool
@@ -24,35 +26,16 @@ class UserPolicy
         return $actor->isAdmin();
     }
 
-    /**
-     * Admins edit regular users and themselves; other admins and the owner
-     * can only be edited by the owner (or by themselves).
-     */
     public function update(User $actor, User $target): bool
     {
-        return $actor->isAdmin()
-            && ($actor->is($target) || $target->role === Role::User || $actor->isOwner());
+        return $actor->isAdmin();
     }
 
     /**
-     * Nobody changes the owner's or their own role; only the owner changes another admin's role.
-     */
-    public function changeRole(User $actor, User $target): bool
-    {
-        return $actor->isAdmin()
-            && ! $actor->is($target)
-            && ! $target->isOwner()
-            && ($target->role === Role::User || $actor->isOwner());
-    }
-
-    /**
-     * Nobody deletes themselves or the owner; only the owner deletes other admins.
+     * The administrator removes any account, but never their own.
      */
     public function delete(User $actor, User $target): bool
     {
-        return $actor->isAdmin()
-            && ! $actor->is($target)
-            && ! $target->isOwner()
-            && ($target->role === Role::User || $actor->isOwner());
+        return $actor->isAdmin() && ! $actor->is($target);
     }
 }

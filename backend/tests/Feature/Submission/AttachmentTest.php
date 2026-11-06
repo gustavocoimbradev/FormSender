@@ -116,7 +116,7 @@ it('attaches the files to the email', function (): void {
 });
 
 it('lists the attachments of a submission without their storage path', function (): void {
-    actingAsUser();
+    actingAsAdmin();
     $form = quoteForm();
     $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'brief' => pdf()]);
 
@@ -127,7 +127,7 @@ it('lists the attachments of a submission without their storage path', function 
 });
 
 it('downloads an attachment for a logged in user', function (): void {
-    actingAsUser();
+    actingAsAdmin();
     $form = quoteForm();
     $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'brief' => pdf()]);
     $code = $submission->attachments[0]['code'];
@@ -146,7 +146,7 @@ it('does not download an attachment without a login', function (): void {
 });
 
 it('answers not found for an unknown attachment', function (): void {
-    actingAsUser();
+    actingAsAdmin();
     $form = quoteForm();
     $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'brief' => pdf()]);
 
