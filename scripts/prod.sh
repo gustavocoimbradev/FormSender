@@ -51,13 +51,21 @@ random() { openssl rand -base64 "$1" | tr -d '\n=+/' | cut -c1-"$2"; }
 
 if [ ! -f "$ENV_FILE" ]; then
     cp .env.prod.example "$ENV_FILE"
-    key="base64:$(openssl rand -base64 32)"
-    password="$(random 48 32)"
-    # | is safe as the separator: neither value can contain it.
-    sed -i "s|^APP_KEY=.*|APP_KEY=${key}|; s|^DB_PASSWORD=.*|DB_PASSWORD=${password}|" "$ENV_FILE"
     chmod 600 "$ENV_FILE"
-    ok "Created $ENV_FILE with a new key and a database password."
+    ok "Created $ENV_FILE."
     ASK_AGAIN=1
+fi
+
+# The key and the database password are generated once, whenever they are empty (also when the file was made by hand).
+# Never replaced when they already have a value: a new key would make the saved SMTP password unreadable.
+# | is safe as the sed separator: neither value can contain it.
+if ! grep -Eq '^APP_KEY=.+' "$ENV_FILE"; then
+    sed -i "s|^APP_KEY=.*|APP_KEY=base64:$(openssl rand -base64 32)|" "$ENV_FILE"
+    ok "Generated the application key."
+fi
+if ! grep -Eq '^DB_PASSWORD=.+' "$ENV_FILE"; then
+    sed -i "s|^DB_PASSWORD=.*|DB_PASSWORD=$(random 48 32)|" "$ENV_FILE"
+    ok "Generated the database password."
 fi
 
 set -a
