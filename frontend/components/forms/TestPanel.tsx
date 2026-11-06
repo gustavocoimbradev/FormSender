@@ -111,7 +111,7 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
           title="This form has no fields yet"
           text="Add fields in the Fields tab to test it."
           action={
-            <ActionButton type="button" onClick={onOpenConfig}>
+            <ActionButton type="button" className="w-full sm:w-auto" onClick={onOpenConfig}>
               Go to Fields
             </ActionButton>
           }

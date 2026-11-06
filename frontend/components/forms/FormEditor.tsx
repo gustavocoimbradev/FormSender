@@ -12,7 +12,6 @@ import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
 import { ChipsInput } from "../ui/ChipsInput";
 import { Select } from "../ui/Select";
-import { Segmented } from "../Segmented";
 import { useToast } from "../ui/Toast";
 import { FieldRow } from "./FieldRow";
 import {
@@ -222,16 +221,6 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
             />
             {form && (
               <>
-                <Segmented
-                  label="After sending"
-                  value={draft.responseType}
-                  options={[
-                    { value: "json", label: "JSON answer" },
-                    { value: "redirect", label: "Redirect" },
-                  ]}
-                  onChange={(responseType) => patch({ responseType })}
-                  disabled={saving}
-                />
                 <Field
                   id="redirect-url"
                   label="Thank-you page"
@@ -240,13 +229,25 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
                   value={draft.redirectUrl}
                   onChange={(event) => patch({ redirectUrl: event.target.value })}
                   error={errors.redirectUrl}
-                  hint={draft.responseType === "redirect" ? "Visitors are sent straight to this page after sending." : "Optional. The JSON answer carries this address."}
                   disabled={saving}
                   placeholder="https://company.com/thanks"
                   autoComplete="off"
                   autoCapitalize="none"
                   spellCheck={false}
                 />
+                <div className="mb-4">
+                  <Select
+                    id="response-type"
+                    label="After sending"
+                    value={draft.responseType}
+                    options={[
+                      { value: "json", label: "JSON answer" },
+                      { value: "redirect", label: "Redirect" },
+                    ]}
+                    onChange={(responseType) => patch({ responseType })}
+                    disabled={saving}
+                  />
+                </div>
               </>
             )}
           </div>

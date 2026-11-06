@@ -24,7 +24,7 @@ export function FileField({ id, label, file, onChange, error, disabled }: FileFi
         {label}
       </span>
 
-      <div className={`flex min-h-14 items-center gap-3 rounded-control border bg-surface/[0.04] px-1.5 transition duration-300 ease-out ${error ? "border-danger/70" : "border-surface/10 hover:border-surface/20"}`}>
+      <div className={`flex min-h-14 flex-col items-stretch gap-2 rounded-control border bg-surface/[0.04] p-1.5 transition duration-300 ease-out sm:flex-row sm:items-center sm:gap-3 sm:py-1.5 ${error ? "border-danger/70" : "border-surface/10 hover:border-surface/20"}`}>
         <input
           ref={input}
           id={id}
@@ -36,26 +36,28 @@ export function FileField({ id, label, file, onChange, error, disabled }: FileFi
           onChange={(event) => onChange(event.target.files?.[0] ?? null)}
         />
 
-        <ActionButton type="button" variant="ghost" disabled={disabled} onClick={() => input.current?.click()}>
+        <ActionButton type="button" variant="ghost" className="w-full sm:w-auto" disabled={disabled} onClick={() => input.current?.click()}>
           <PaperclipIcon className="size-5" /> {file ? "Change" : "Choose file"}
         </ActionButton>
 
-        <span className="min-w-0 flex-1 truncate text-base text-muted">{file ? `${file.name} · ${formatBytes(file.size)}` : "No file chosen"}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-2 px-2 sm:px-0">
+          <span className="min-w-0 flex-1 truncate text-base text-muted">{file ? `${file.name} · ${formatBytes(file.size)}` : "No file chosen"}</span>
 
-        {file && (
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => {
-              if (input.current) input.current.value = "";
-              onChange(null);
-            }}
-            aria-label="Remove file"
-            className="grid size-11 shrink-0 place-items-center rounded-control text-muted transition-colors duration-300 hover:bg-surface/[0.08] hover:text-text"
-          >
-            <CloseIcon />
-          </button>
-        )}
+          {file && (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => {
+                if (input.current) input.current.value = "";
+                onChange(null);
+              }}
+              aria-label="Remove file"
+              className="grid size-11 shrink-0 place-items-center rounded-control text-muted transition-colors duration-300 hover:bg-surface/[0.08] hover:text-text"
+            >
+              <CloseIcon />
+            </button>
+          )}
+        </div>
       </div>
 
       <div aria-live="polite" className="text-base leading-6">

@@ -79,7 +79,7 @@ function TabSkeleton({ tab }: { tab: Tab }) {
 
       {tab === "messages" && (
         <>
-          <div className="max-w-xs">
+          <div className="sm:max-w-xs">
             <FieldSkeleton width="w-14" />
           </div>
           <Card className="overflow-hidden">

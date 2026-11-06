@@ -102,7 +102,7 @@ export function SubmissionsPanel({ form }: { form: Form }) {
 
   return (
     <div className="space-y-5">
-      <div className="max-w-xs">
+      <div className="sm:max-w-xs">
         <Select
           id="status-filter"
           label="Status"
@@ -171,7 +171,7 @@ export function SubmissionsPanel({ form }: { form: Form }) {
                 <h3 className="mb-3 text-lg font-semibold">Attachments</h3>
                 <ul className="divide-y divide-surface/10 rounded-control border border-surface/10">
                   {open.attachments.map((attachment) => (
-                    <li key={attachment.code} className="flex items-center justify-between gap-3 px-4 py-3">
+                    <li key={attachment.code} className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-center gap-3">
                         <PaperclipIcon className="size-5 shrink-0 text-muted" />
                         <div className="min-w-0">
@@ -179,7 +179,7 @@ export function SubmissionsPanel({ form }: { form: Form }) {
                           <p className="text-base text-muted">{formatBytes(attachment.size)}</p>
                         </div>
                       </div>
-                      <ActionButton type="button" variant="ghost" loading={downloading === attachment.code} onClick={() => void download(open, attachment)} aria-label={`Download ${attachment.name}`}>
+                      <ActionButton type="button" variant="ghost" className="w-full sm:w-auto" loading={downloading === attachment.code} onClick={() => void download(open, attachment)} aria-label={`Download ${attachment.name}`}>
                         <DownloadIcon className="size-5" /> Download
                       </ActionButton>
                     </li>
@@ -213,7 +213,7 @@ export function SubmissionsPanel({ form }: { form: Form }) {
                   {open.error ? ` · ${open.error}` : ""}
                 </p>
                 {(open.status === "failed" || open.status === "partial") && (
-                  <ActionButton type="button" className="mt-4" loading={retrying} onClick={() => void retry(open)}>
+                  <ActionButton type="button" className="mt-4 w-full sm:w-auto" loading={retrying} onClick={() => void retry(open)}>
                     <RefreshIcon className="size-5" /> Retry delivery
                   </ActionButton>
                 )}
