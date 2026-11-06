@@ -62,8 +62,10 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       fields: current.fields.map((field) => {
         if (field.key !== key) return field;
         const next = { ...field, ...changes };
-        // The technical name follows the label until the person edits it.
-        if (changes.label !== undefined && !field.nameTouched) next.name = nameFromLabel(changes.label);
+        // The technical name follows the label of a new field; a saved field keeps its name.
+        if (changes.label !== undefined && !field.nameLocked) {
+          next.name = nameFromLabel(changes.label, current.fields.filter((other) => other.key !== key).map((other) => other.name));
+        }
         return next;
       }),
     }));

@@ -22,7 +22,7 @@ export function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
 
-  return /^[a-z]/.test(slug) ? slug.slice(0, 100) : slug ? `campo_${slug}`.slice(0, 100) : "";
+  return /^[a-z]/.test(slug) ? slug.slice(0, 100) : slug ? `field_${slug}`.slice(0, 100) : "";
 }
 
 /** A file size people can read: 340 KB, 2.1 MB. */

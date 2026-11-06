@@ -21,8 +21,8 @@ export type FieldDraft = {
   type: FieldType;
   required: boolean;
   options: string[];
-  /** Once the person edits the name by hand, it stops following the label. */
-  nameTouched: boolean;
+  /** A saved field keeps its name for good (sites already send it); a new one follows its label. */
+  nameLocked: boolean;
 };
 
 export type FormDraft = {
@@ -48,7 +48,7 @@ export type DraftErrors = {
 let counter = 0;
 export const newKey = () => `field-${++counter}`;
 
-export const emptyField = (): FieldDraft => ({ key: newKey(), name: "", label: "", type: "text", required: false, options: [], nameTouched: false });
+export const emptyField = (): FieldDraft => ({ key: newKey(), name: "", label: "", type: "text", required: false, options: [], nameLocked: false });
 
 export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], redirectUrl: "", template: "" });
 
@@ -62,7 +62,7 @@ export function draftFromForm(form: Form): FormDraft {
       type: field.type,
       required: field.required ?? false,
       options: field.options ?? [],
-      nameTouched: true,
+      nameLocked: true,
     })),
     destinations: form.destinations,
     domains: form.allowed_domains,
@@ -129,8 +129,9 @@ export function validateDraft(draft: FormDraft): DraftErrors {
     const row: { name?: string; label?: string; options?: string } = {};
 
     if (!field.label.trim()) row.label = "Enter the field label.";
-    if (!FIELD_NAME.test(field.name)) row.name = "Use lowercase letters, numbers and _ (starting with a letter).";
-    else if (seen.has(field.name)) row.name = "A field with this name already exists.";
+    // The name comes from the label, so a problem with it is shown on the label.
+    if (!FIELD_NAME.test(field.name)) row.label ??= "Use letters or numbers in the label.";
+    else if (seen.has(field.name)) row.label ??= "Another field has the same name. Change the label.";
     seen.add(field.name);
 
     if (field.type === "select" && field.options.length === 0) row.options = "Enter at least one option.";
@@ -143,8 +144,14 @@ export function validateDraft(draft: FormDraft): DraftErrors {
 
 export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.redirectUrl || Object.keys(errors.fields).length > 0);
 
-export function nameFromLabel(label: string): string {
-  return slugify(label);
+/** The technical name of a new field: its label as a slug, made unique among the other fields (email, email_2...). */
+export function nameFromLabel(label: string, taken: string[]): string {
+  const base = slugify(label) || "field";
+  let name = base;
+
+  for (let copy = 2; taken.includes(name); copy++) name = `${base}_${copy}`;
+
+  return name;
 }
 
 /** Maps the API's field errors (e.g. `fields.1.name`) back to the draft. */
@@ -163,7 +170,7 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
       if (!field) continue;
 
       const row = (errors.fields[field.key] ??= {});
-      if (parts[2] === "name") row.name = "This field name is invalid or repeated.";
+      if (parts[2] === "name") row.label = "This label gives the field an invalid or repeated name. Change it.";
       else if (parts[2] === "label") row.label = "Enter the field label.";
       else if (parts[2] === "options") row.options = "Enter at least one option.";
       else errors.general = "Check the form fields.";

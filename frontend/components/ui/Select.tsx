@@ -15,10 +15,12 @@ type SelectProps<T extends string> = {
   disabled?: boolean;
   /** A tighter version for dense rows: 44px tall and a quieter label. */
   compact?: boolean;
+  /** Keeps the label for screen readers only (the chosen option already says what it is). */
+  hideLabel?: boolean;
 };
 
 /** A custom select (never the browser's) with search, keyboard support and a popover that is never clipped. */
-export function Select<T extends string>({ id, label, value, options, onChange, disabled, compact = false }: SelectProps<T>) {
+export function Select<T extends string>({ id, label, value, options, onChange, disabled, compact = false, hideLabel = false }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -107,7 +109,7 @@ export function Select<T extends string>({ id, label, value, options, onChange, 
 
   return (
     <div>
-      <span id={`${id}-label`} className={`block text-base ${compact ? "mb-1 text-muted" : "mb-2 font-medium text-text/90"}`}>
+      <span id={`${id}-label`} className={hideLabel ? "sr-only" : `block text-base ${compact ? "mb-1 text-muted" : "mb-2 font-medium text-text/90"}`}>
         {label}
       </span>
 

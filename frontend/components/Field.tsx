@@ -13,10 +13,12 @@ type FieldProps = InputHTMLAttributes<HTMLInputElement> & {
   labelAside?: ReactNode;
   /** A tighter version for dense rows: 44px tall, no bottom margin. */
   compact?: boolean;
+  /** Keeps the label for screen readers only (the placeholder tells sighted people what to type). */
+  hideLabel?: boolean;
 };
 
 /** Labelled input with an animated focus glow and an inline error that announces itself. */
-export function Field({ id, label, hint, error, icon, trailing, footer, labelAside, compact = false, className = "", ...input }: FieldProps) {
+export function Field({ id, label, hint, error, icon, trailing, footer, labelAside, compact = false, hideLabel = false, className = "", ...input }: FieldProps) {
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   const box = useRef<HTMLDivElement>(null);
 
@@ -39,7 +41,7 @@ export function Field({ id, label, hint, error, icon, trailing, footer, labelAsi
 
   return (
     <div className={compact ? "" : "mb-4"}>
-      <div className={`flex items-baseline justify-between gap-3 ${compact ? "mb-1" : "mb-2"}`}>
+      <div className={hideLabel ? "sr-only" : `flex items-baseline justify-between gap-3 ${compact ? "mb-1" : "mb-2"}`}>
         <label htmlFor={id} className={`text-base ${compact ? "text-muted" : "font-medium text-text/90"}`}>
           {label}
         </label>
