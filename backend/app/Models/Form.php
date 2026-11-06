@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\FormFieldType;
 use App\Models\Concerns\HasPublicCode;
 use App\Support\DefaultEmailTemplate;
+use App\Support\DefaultFormStyle;
 use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,13 +21,14 @@ use Illuminate\Validation\Rule;
  * @property list<string> $allowed_domains
  * @property string|null $email_subject
  * @property string|null $email_html
+ * @property string|null $css
  */
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
     use HasFactory, HasPublicCode;
 
-    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'email_subject', 'email_html'];
+    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'email_subject', 'email_html', 'css'];
 
     protected $attributes = [
         'fields' => '[]',
@@ -60,6 +62,19 @@ class Form extends Model
         ];
     }
 
+    /**
+     * The CSS the embedded form is drawn with: the one written for the form, or the default style.
+     */
+    public function style(): string
+    {
+        return $this->css ?? DefaultFormStyle::CSS;
+    }
+
+    public function usesDefaultStyle(): bool
+    {
+        return $this->css === null;
+    }
+
     public function usesDefaultEmail(): bool
     {
         return $this->email_subject === null && $this->email_html === null;
@@ -73,6 +88,18 @@ class Form extends Model
     protected function emailSubject(): Attribute
     {
         return Attribute::set(fn (?string $value): ?string => $value === null || $value === DefaultEmailTemplate::SUBJECT ? null : $value);
+    }
+
+    /**
+     * Like the email, a style that is the default one is not stored. Line breaks of any system count the same.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function css(): Attribute
+    {
+        $clean = fn (string $css): string => trim(str_replace("\r\n", "\n", $css));
+
+        return Attribute::set(fn (?string $value): ?string => $value === null || $clean($value) === '' || $clean($value) === $clean(DefaultFormStyle::CSS) ? null : $clean($value));
     }
 
     /**

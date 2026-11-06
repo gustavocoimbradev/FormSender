@@ -129,6 +129,12 @@ class StoreFormRequest extends FormRequest
              * @example <h1>{{form_name}}</h1>{{fields}}
              */
             'email_html' => ['nullable', 'string', 'max:100000', 'not_regex:/<\s*script/i'],
+            /**
+             * CSS that draws the embedded form (a script on a site, an iframe or the form's public page). Leave empty (null) for the default style. It only applies to the form, never to the page around it. Importing other stylesheets is not allowed.
+             *
+             * @example .formsender { --accent: #0a7cff; }
+             */
+            'css' => ['nullable', 'string', 'max:50000', 'not_regex:/@import/i', 'not_regex:/<\s*\/?\s*style/i'],
         ];
 
         // A partial update (PATCH) validates only the attributes that were sent.

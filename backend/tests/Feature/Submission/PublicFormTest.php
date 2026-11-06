@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\DefaultFormStyle;
 use Illuminate\Support\Facades\Queue;
 
 it('gives the name and the fields of a form to anyone, with no login', function (): void {
@@ -20,8 +21,8 @@ it('never gives away what is private', function (): void {
 
     $response = $this->getJson("/api/forms/{$form->code}/public", ['Origin' => 'https://site.test'])->assertOk();
 
-    expect($response->json('data'))->toHaveKeys(['name', 'code', 'fields'])
-        ->and(array_keys($response->json('data')))->toHaveCount(3)
+    expect($response->json('data'))->toHaveKeys(['name', 'code', 'css', 'fields'])
+        ->and(array_keys($response->json('data')))->toHaveCount(4)
         ->and($response->getContent())->not->toContain('sales@example.com')->not->toContain('Secret subject')->not->toContain('site.test');
 });
 
@@ -74,5 +75,13 @@ it('is limited per form and visitor, far above a real person', function (): void
 
 it('is served as a script every site can add', function (): void {
     expect(public_path('embed.js'))->toBeFile()
-        ->and(file_get_contents(public_path('embed.js')))->toContain('data-form')->toContain('/public')->toContain('/submit')->toContain('DOMContentLoaded');
+        ->and(file_get_contents(public_path('embed.js')))->toContain('data-form')->toContain('/public')->toContain('/submit')->toContain('DOMContentLoaded')->toContain('formsender:style')->toContain('data-preview');
+});
+
+it('hands the page the style to draw the form with', function (): void {
+    $default = contactForm();
+    $styled = contactForm(['css' => 'button { color: red; }']);
+
+    $this->getJson("/api/forms/{$default->code}/public")->assertJsonPath('data.css', DefaultFormStyle::CSS);
+    $this->getJson("/api/forms/{$styled->code}/public")->assertJsonPath('data.css', 'button { color: red; }');
 });

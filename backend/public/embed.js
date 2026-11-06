@@ -10,8 +10,10 @@
  * Optional attributes on the tag:
  *   data-theme="light" | "dark"   colors of the form (default: light)
  *   data-target="#selector"       draw the form inside that element instead of next to the tag
+ *   data-preview                  only for the dashboard: validates but never sends
  *
- * Events on the form's element: "formsender:sent" and "formsender:error".
+ * Events on the form's element: "formsender:sent" and "formsender:error" (it also accepts "formsender:style",
+ * with CSS as the detail, to try a style without saving it).
  */
 (function () {
   "use strict";
@@ -21,45 +23,12 @@
 
   var code = script.getAttribute("data-form");
   var theme = script.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  var preview = script.hasAttribute("data-preview");
   var base = new URL(script.src, location.href).origin;
   var uid = "fs-" + code + "-";
 
-  var CSS = [
-    ":host{display:block;font:inherit;color:inherit}",
-    "*{box-sizing:border-box}",
-    ".fs{--text:#14141f;--muted:#6b6b80;--border:#d4d4e0;--field:#fff;--accent:#7c5cff;--accent2:#6f8cff;--danger:#d93a4a;--ok:#1f9d63;--toast:#14141f;--toast-text:#fff;font:inherit;color:var(--text);position:relative}",
-    ".fs.dark{--text:#f4f4fb;--muted:#9a9ab2;--border:#2c2c44;--field:#12121f;--accent:#8b6bff;--danger:#ff6b7a;--ok:#3ddc97;--toast:#f4f4fb;--toast-text:#14141f}",
-    ".fs form{display:grid;gap:16px;margin:0}",
-    ".f{display:grid;gap:8px;min-width:0}",
-    "label,.l{font-size:16px;font-weight:500;line-height:1.4}",
-    ".req{color:var(--accent);margin-left:2px}",
-    "input,textarea,select{width:100%;min-height:48px;padding:12px 14px;font:inherit;font-size:16px;color:var(--text);background:var(--field);border:1px solid var(--border);border-radius:12px;transition:border-color .2s ease-out,box-shadow .2s ease-out;appearance:none;-webkit-appearance:none}",
-    "textarea{min-height:120px;resize:vertical}",
-    "select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 50%,calc(100% - 15px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:40px}",
-    "input:hover,textarea:hover,select:hover{border-color:var(--muted)}",
-    "input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}",
-    "[aria-invalid=true]{border-color:var(--danger)}",
-    "input[type=file]{padding:8px}",
-    "input[type=file]::file-selector-button{font:inherit;font-size:16px;margin-right:12px;min-height:32px;padding:0 14px;color:var(--text);background:transparent;border:1px solid var(--border);border-radius:8px;cursor:pointer}",
-    ".c{display:flex;align-items:center;gap:12px;min-height:44px}",
-    ".c input{width:24px;min-height:24px;height:24px;padding:0;border-radius:6px;flex:none;cursor:pointer}",
-    ".c input:checked{background:var(--accent);border-color:var(--accent);background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 5 5 9-10'/%3E%3C/svg%3E\");background-size:16px;background-position:center;background-repeat:no-repeat}",
-    ".c label{cursor:pointer}",
-    ".err{margin:0;font-size:16px;line-height:1.4;color:var(--danger)}",
-    "button{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;padding:0 24px;font:inherit;font-size:16px;font-weight:600;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));border:0;border-radius:12px;cursor:pointer;transition:filter .2s ease-out,opacity .2s ease-out}",
-    "button:hover{filter:brightness(1.08)}",
-    "button:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 50%,transparent);outline-offset:2px}",
-    "button[disabled]{opacity:.6;cursor:progress}",
-    ".spin{width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:r .7s linear infinite}",
-    ".hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}",
-    ".note{margin:0;font-size:16px;color:var(--muted)}",
-    ".toast{position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:2147483000;display:flex;align-items:center;gap:12px;width:max-content;max-width:min(calc(100vw - 32px),28rem);padding:14px 18px;font-size:16px;line-height:1.4;color:var(--toast-text);background:var(--toast);border-radius:14px;box-shadow:0 20px 50px -15px rgba(0,0,0,.5);transform:translate(-50%,0);animation:up .28s ease-out both}",
-    ".toast i{flex:none;width:10px;height:10px;border-radius:50%;background:var(--ok)}",
-    ".toast.bad i{background:var(--danger)}",
-    "@keyframes r{to{transform:rotate(360deg)}}",
-    "@keyframes up{from{opacity:0;transform:translate(-50%,16px)}to{opacity:1;transform:translate(-50%,0)}}",
-    "@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}"
-  ].join("");
+  // What the form needs to work whatever its style says. The look itself comes from the form (its Design tab).
+  var BASE = ":host{display:block;font:inherit;color:inherit}*{box-sizing:border-box}[hidden]{display:none!important}.honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}.note{margin:0;font-size:16px;opacity:.7}";
 
   var INPUT_TYPES = { text: "text", email: "email", phone: "tel", number: "number", date: "date" };
 
@@ -101,9 +70,18 @@
   else mount();
 
   var root = host.attachShadow({ mode: "open" });
-  root.appendChild(el("style", {}, CSS));
-  var box = el("div", { class: "fs" + (theme === "dark" ? " dark" : "") });
+  root.appendChild(el("style", {}, BASE));
+  var style = el("style", {});
+  root.appendChild(style);
+  var box = el("div", { class: "formsender" + (theme === "dark" ? " dark" : "") });
   root.appendChild(box);
+
+  // Used by the dashboard to try a style while it is being written: the form follows it without being drawn again.
+  var cssOverride = null;
+  host.addEventListener("formsender:style", function (event) {
+    cssOverride = String(event.detail);
+    style.textContent = cssOverride;
+  });
 
   var toastTimer;
   function toast(message, bad) {
@@ -120,6 +98,7 @@
   }
 
   function draw(form) {
+    style.textContent = cssOverride !== null ? cssOverride : form.css || "";
     var errors = {};
     var form_el = el("form", { novalidate: true });
 
@@ -143,19 +122,19 @@
 
     form.fields.forEach(function (field) {
       var input = control(field);
-      var label = el("label", { for: uid + field.name }, [field.label, field.required ? el("span", { class: "req", "aria-hidden": "true" }, "*") : ""]);
-      var message = el("p", { class: "err", id: uid + field.name + "-err", hidden: true });
+      var label = el("label", { for: uid + field.name }, [field.label, field.required ? el("span", { class: "required", "aria-hidden": "true" }, "*") : ""]);
+      var message = el("p", { class: "error", id: uid + field.name + "-err", hidden: true });
       input.setAttribute("aria-describedby", message.id);
 
       var wrapper;
-      if (field.type === "checkbox") wrapper = el("div", { class: "f" }, [el("div", { class: "c" }, [input, label]), message]);
-      else wrapper = el("div", { class: "f" }, [label, input, message]);
+      if (field.type === "checkbox") wrapper = el("div", { class: "field" }, [el("div", { class: "check" }, [input, label]), message]);
+      else wrapper = el("div", { class: "field" }, [label, input, message]);
 
       errors[field.name] = { input: input, message: message, field: field };
       form_el.appendChild(wrapper);
     });
 
-    form_el.appendChild(el("div", { class: "hp", "aria-hidden": "true" }, [el("input", { type: "text", name: "_gotcha", tabindex: "-1", autocomplete: "off" })]));
+    form_el.appendChild(el("div", { class: "honeypot", "aria-hidden": "true" }, [el("input", { type: "text", name: "_gotcha", tabindex: "-1", autocomplete: "off" })]));
 
     var button = el("button", { type: "submit" }, "Send");
     form_el.appendChild(button);
@@ -196,6 +175,9 @@
       });
       if (first) { first.focus(); return; }
 
+      // Only the dashboard asks for this, to show how the form looks: nothing is sent.
+      if (preview) { toast("This is a preview: nothing was sent."); return; }
+
       var body = new FormData();
       Object.keys(errors).forEach(function (name) {
         var item = errors[name];
@@ -208,7 +190,7 @@
       button.disabled = true;
       button.setAttribute("aria-busy", "true");
       button.textContent = "";
-      button.appendChild(el("span", { class: "spin", "aria-hidden": "true" }));
+      button.appendChild(el("span", { class: "spinner", "aria-hidden": "true" }));
       button.appendChild(document.createTextNode("Sending"));
 
       fetch(base + "/api/forms/" + code + "/submit", { method: "POST", headers: { Accept: "application/json" }, body: body })

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DefaultEmailController;
+use App\Http\Controllers\DefaultStyleController;
 use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormSubmissionController;
@@ -39,6 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('forms/{form}/submissions/{submission}/attachments/{attachment}', SubmissionAttachmentController::class)->scopeBindings();
 
     Route::get('email/default', DefaultEmailController::class);
+    Route::get('style/default', DefaultStyleController::class);
     Route::post('email/preview', EmailPreviewController::class);
 
     Route::apiResource('users', UserController::class);
