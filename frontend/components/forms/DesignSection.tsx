@@ -28,7 +28,7 @@ export function DesignSection({ code, css, error, disabled, onChange }: DesignSe
   async function restore() {
     setRestoring(true);
     try {
-      onChange(await getDefaultStyle());
+      onChange(await getDefaultStyle(code));
       toast("Back to the default style. Save to keep it.");
     } catch {
       toast("Could not load the default style. Please try again.", "error");
@@ -72,7 +72,6 @@ export function DesignSection({ code, css, error, disabled, onChange }: DesignSe
 
         <div className="px-5 pb-6 sm:px-6">
           <FormPreview code={code} css={css} />
-          <p className="mt-3 text-base text-muted">Point at any part of the form to see its selector.</p>
         </div>
       </Card>
     </div>

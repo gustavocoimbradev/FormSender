@@ -262,8 +262,8 @@ export const getDefaultEmail = async () => (await authed<{ data: { subject: stri
 /** Every text the embedded form shows by itself, with what it is for and its default words. */
 export const getDefaultStrings = async () => (await authed<{ data: StringInfo[] }>("/strings/default")).data;
 
-/** The CSS every form starts with, to go back to it. */
-export const getDefaultStyle = async () => (await authed<{ data: { css: string } }>("/style/default")).data.css;
+/** The CSS a form starts with (its ids carry the form's code, so it is made for each form), to go back to it. */
+export const getDefaultStyle = async (code: string) => (await authed<{ data: { css: string } }>(`/forms/${code}/style/default`)).data.css;
 
 /** The email filled with example answers (for the fields of the form being edited), exactly as a real message would be. */
 export const previewEmail = async (input: { subject: string; html: string; fields: FormField[] }) =>

@@ -7,8 +7,6 @@ type FormPreviewProps = {
   code: string;
   /** The style being written: the form follows it as it changes, without being saved. */
   css: string;
-  /** The texts being written: the form shows them as they change, without being saved. */
-  strings?: Record<string, string>;
 };
 
 /**
@@ -16,7 +14,7 @@ type FormPreviewProps = {
  * switched off, and pointing at any part of it says which CSS selector styles that part. It shows the fields as
  * saved; the style is the one being written.
  */
-export function FormPreview({ code, css, strings }: FormPreviewProps) {
+export function FormPreview({ code, css }: FormPreviewProps) {
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -43,16 +41,13 @@ export function FormPreview({ code, css, strings }: FormPreviewProps) {
     const send = () => {
       const host = box.current?.querySelector("[data-formsender]");
 
-      if (host) {
-        if (strings) host.dispatchEvent(new CustomEvent("formsender:strings", { detail: strings }));
-        host.dispatchEvent(new CustomEvent("formsender:style", { detail: css }));
-      }
+      if (host) host.dispatchEvent(new CustomEvent("formsender:style", { detail: css }));
       else if (tries++ < 40) timer = window.setTimeout(send, 150);
     };
 
     timer = window.setTimeout(send, 200);
     return () => window.clearTimeout(timer);
-  }, [css, strings, code]);
+  }, [css, code]);
 
   return <div ref={box} id="form-preview" className="min-h-48 rounded-control border border-surface/10 bg-white p-4 text-[#14141f] sm:p-6" />;
 }

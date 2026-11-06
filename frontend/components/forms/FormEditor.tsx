@@ -241,7 +241,7 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
 
       {shows("design") && form && <DesignSection code={form.code} css={draft.css} error={errors.css} disabled={saving} onChange={(css) => patch({ css })} />}
 
-      {shows("strings") && form && <StringsSection code={form.code} css={draft.css} strings={draft.strings} error={errors.strings} disabled={saving} onChange={(strings) => patch({ strings })} />}
+      {shows("strings") && form && <StringsSection strings={draft.strings} error={errors.strings} disabled={saving} onChange={(strings) => patch({ strings })} />}
 
       {errors.general && <p role="alert" className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.general}</p>}
 
