@@ -2,23 +2,16 @@
 
 import { useState, type FormEvent } from "react";
 import { ApiError, createUser, updateUser, type ManagedUser, type User, type UserInput } from "@/lib/api";
-import { canChangeRole, canDeleteUser } from "@/lib/permissions";
+import { canDeleteUser } from "@/lib/permissions";
 import { isValidEmail, isValidPassword, normalizeEmail } from "@/lib/validation";
 import { ActionButton } from "../Button";
 import { Field } from "../Field";
 import { MailIcon, TrashIcon } from "../icons";
 import { PasswordField } from "../PasswordField";
-import { Select } from "../ui/Select";
 import { Modal, ModalActions } from "../ui/Modal";
 import { useToast } from "../ui/Toast";
 
-type Role = "admin" | "user";
 type Errors = { name?: string; email?: string; password?: string; form?: string };
-
-const ROLES: { value: Role; label: string }[] = [
-  { value: "user", label: "User" },
-  { value: "admin", label: "Administrator" },
-];
 
 type UserModalProps = {
   open: boolean;
@@ -45,11 +38,8 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>(user?.role ?? "user");
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
-
-  const roleLocked = user !== undefined && !canChangeRole(actor, user);
 
   function validate(): Errors {
     const found: Errors = {};
@@ -74,12 +64,11 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
         if (name.trim() !== user.name) changes.name = name.trim();
         if (normalizeEmail(email) !== user.email) changes.email = normalizeEmail(email);
         if (password) changes.password = password;
-        if (!roleLocked && role !== user.role) changes.role = role;
 
         await updateUser(user.id, changes);
         toast("User updated.");
       } else {
-        await createUser({ name: name.trim(), email: normalizeEmail(email), password, role });
+        await createUser({ name: name.trim(), email: normalizeEmail(email), password });
         toast("User created.");
       }
 
@@ -129,10 +118,6 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
         disabled={saving}
         placeholder={user ? "Leave blank to keep it" : "At least 8 characters"}
       />
-
-      <div className="mb-4">
-        <Select id="user-role" label="Role" value={role} options={ROLES} onChange={setRole} disabled={saving || roleLocked} />
-      </div>
 
       {errors.form && <p role="alert" className="mb-4 rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.form}</p>}
 

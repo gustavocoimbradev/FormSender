@@ -7,7 +7,6 @@ export type CachedUser = {
   name: string;
   email: string;
   role: "admin" | "user";
-  is_owner: boolean;
 };
 
 /** The API token of the signed-in user, kept in this browser. */

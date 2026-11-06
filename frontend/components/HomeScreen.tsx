@@ -25,7 +25,7 @@ export function HomeScreen() {
     }
 
     try {
-      router.replace((await getSetupStatus()) ? "/login" : "/setup");
+      router.replace((await getSetupStatus()).completed ? "/login" : "/setup");
     } catch {
       setUnreachable(true);
     }

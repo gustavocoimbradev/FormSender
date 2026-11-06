@@ -10,7 +10,6 @@ export type User = {
   name: string;
   email: string;
   role: "admin" | "user";
-  is_owner: boolean;
 };
 
 export type SmtpSettings = {
@@ -37,6 +36,8 @@ export type Form = {
   name: string;
   fields: FormField[];
   destinations: string[];
+  /** The destinations that receive messages. An account's new address has to confirm by a link sent to it; until then it is waiting. */
+  confirmed_destinations: string[];
   allowed_domains: string[];
   /** Subject and HTML of the email delivered for this form's messages (the default ones until the form has its own). */
   email_subject: string;
@@ -102,7 +103,7 @@ export type Submission = {
 
 export type ManagedUser = User & { created_at: string | null; updated_at: string | null };
 
-export type UserInput = { name?: string; email?: string; password?: string; role?: "admin" | "user" };
+export type UserInput = { name?: string; email?: string; password?: string };
 
 export type Page<T> = {
   data: T[];
@@ -117,13 +118,15 @@ export class ApiError extends Error {
     readonly status: number,
     message: string,
     readonly fieldErrors: FieldErrors = {},
+    /** A short name the API gives to some refusals, e.g. `email_unconfirmed`. */
+    readonly code?: string,
   ) {
     super(message);
     this.name = "ApiError";
   }
 }
 
-type ErrorBody = { message?: string; errors?: FieldErrors };
+type ErrorBody = { message?: string; errors?: FieldErrors; code?: string };
 
 async function request<T>(path: string, init: RequestInit = {}, token?: string): Promise<T> {
   let response: Response;
@@ -144,7 +147,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
 
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as ErrorBody;
-    throw new ApiError(response.status, body.message ?? "Erro inesperado.", body.errors);
+    throw new ApiError(response.status, body.message ?? "Unexpected error.", body.errors, body.code);
   }
 
   if (response.status === 204) return undefined as T;
@@ -174,21 +177,39 @@ async function authed<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 const json = (method: string, body: unknown): RequestInit => ({ method, body: JSON.stringify(body) });
 
-/** Whether the first admin account already exists. */
-export async function getSetupStatus(): Promise<boolean> {
-  const { data } = await request<{ data: { completed: boolean } }>("/setup");
-  return data.completed;
+/** Whether the first admin account already exists, and whether anyone can create an account. */
+export async function getSetupStatus(): Promise<{ completed: boolean; registrationOpen: boolean }> {
+  const { data } = await request<{ data: { completed: boolean; registration_open: boolean } }>("/setup");
+  return { completed: data.completed, registrationOpen: data.registration_open };
 }
 
-/** Creates the initial admin (the owner). Only works while the setup is pending. */
+/** Creates the initial admin. Only works while the setup is pending. */
 export async function createInitialAdmin(payload: {
   email: string;
   password: string;
+  allow_registration?: boolean;
   smtp?: SmtpSettings;
 }): Promise<User> {
   const { data } = await request<{ data: User }>("/setup", {
     method: "POST",
     body: JSON.stringify(payload),
+  });
+  return data;
+}
+
+/** Creates an account (only while new accounts are allowed). A link to confirm the email is sent. */
+export const register = (payload: { name: string; email: string; password: string }) =>
+  request<{ message: string }>("/auth/register", { method: "POST", body: JSON.stringify(payload) });
+
+/** Sends the confirmation link again to an account that is still waiting. */
+export const resendConfirmation = (email: string) =>
+  request<{ message: string }>("/auth/resend-confirmation", { method: "POST", body: JSON.stringify({ email }) });
+
+/** Uses the token of an emailed link: it confirms a new account, or an address that will receive a form's messages. */
+export async function confirmEmail(token: string): Promise<{ type: "account" | "destination"; email: string; form: string | null }> {
+  const { data } = await request<{ data: { type: "account" | "destination"; email: string; form: string | null } }>("/email-confirmations", {
+    method: "POST",
+    body: JSON.stringify({ token }),
   });
   return data;
 }
@@ -225,6 +246,10 @@ export const updateForm = async (code: string, input: FormInput) =>
   (await authed<{ data: Form }>(`/forms/${code}`, json("PUT", input))).data;
 
 export const deleteForm = (code: string) => authed<void>(`/forms/${code}`, { method: "DELETE" });
+
+/** Sends a new confirmation link to a destination that is still waiting. */
+export const resendDestinationConfirmation = (formCode: string, email: string) =>
+  authed<{ message: string }>(`/forms/${formCode}/destinations/confirmation`, json("POST", { email }));
 
 export const listSubmissions = (formCode: string, page = 1, status?: SubmissionStatus) =>
   authed<Page<Submission>>(`/forms/${formCode}/submissions?page=${page}${status ? `&status=${status}` : ""}`);
@@ -273,7 +298,7 @@ export const previewEmail = async (input: { subject: string; html: string; field
 
 export const listUsers = (page = 1) => authed<Page<ManagedUser>>(`/users?page=${page}`);
 
-export const createUser = async (input: Required<Pick<UserInput, "name" | "email" | "password">> & Pick<UserInput, "role">) =>
+export const createUser = async (input: Required<Pick<UserInput, "name" | "email" | "password">>) =>
   (await authed<{ data: ManagedUser }>("/users", json("POST", input))).data;
 
 export const updateUser = async (id: number, input: UserInput) =>
@@ -283,7 +308,15 @@ export const deleteUser = (id: number) => authed<void>(`/users/${id}`, { method:
 
 // ------------------------------------------------------------------ settings (admin)
 
-export const getSmtp = async () => (await authed<{ data: { smtp: SmtpSettings | null } }>("/settings")).data.smtp;
+export type Settings = { smtp: SmtpSettings | null; allow_registration: boolean };
+
+export const getSettings = async () => (await authed<{ data: Settings }>("/settings")).data;
+
+export const getSmtp = async () => (await getSettings()).smtp;
 
 export const saveSmtp = async (smtp: SmtpSettings) =>
-  (await authed<{ data: { smtp: SmtpSettings | null } }>("/settings", json("PUT", { smtp }))).data.smtp;
+  (await authed<{ data: Settings }>("/settings", json("PUT", { smtp }))).data.smtp;
+
+/** Opens or closes the creation of accounts by anyone (the administrator can always create them). */
+export const setAllowRegistration = async (allow: boolean) =>
+  (await authed<{ data: Settings }>("/settings", json("PUT", { allow_registration: allow }))).data.allow_registration;

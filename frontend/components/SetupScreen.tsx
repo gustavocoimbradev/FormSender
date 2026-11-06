@@ -14,6 +14,7 @@ import { PasswordField } from "./PasswordField";
 import { SetupSteps } from "./SetupSteps";
 import { SmtpFields } from "./SmtpFields";
 import { SuccessCheck } from "./SuccessCheck";
+import { Switch } from "./ui/Switch";
 
 type Phase = "checking" | "pending" | "unreachable" | "created";
 
@@ -48,6 +49,7 @@ export function SetupScreen() {
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [confirmationChecked, setConfirmationChecked] = useState(false);
+  const [allowRegistration, setAllowRegistration] = useState(false);
   const [smtp, setSmtp] = useState<SmtpDraft>(defaultSmtpDraft);
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
@@ -57,7 +59,7 @@ export function SetupScreen() {
     setPhase("checking");
     try {
       // Someone who already did the setup never sees this screen again.
-      if (await getSetupStatus()) router.replace("/login");
+      if ((await getSetupStatus()).completed) router.replace("/login");
       else setPhase("pending");
     } catch {
       setPhase("unreachable");
@@ -89,7 +91,7 @@ export function SetupScreen() {
     setErrors({});
 
     try {
-      const user = await createInitialAdmin({ email: normalizeEmail(email), password, smtp: settingsFromDraft(smtp) });
+      const user = await createInitialAdmin({ email: normalizeEmail(email), password, allow_registration: allowRegistration, smtp: settingsFromDraft(smtp) });
       setCreatedEmail(user.email);
       setPhase("created");
     } catch (error) {
@@ -172,6 +174,15 @@ export function SetupScreen() {
                 showStrength={false}
                 placeholder="Repeat the password"
               />
+
+              <div className="mb-5 rounded-control border border-surface/10 p-4">
+                <Switch id="allow-registration" label="Allow new accounts" checked={allowRegistration} onChange={setAllowRegistration} />
+                <p className="mt-2 text-base text-muted">
+                  {allowRegistration
+                    ? "Anyone will be able to create an account and make their own forms here, using this same server. You see all of them; they see only theirs."
+                    : "Off: you are the only user. You can still create accounts yourself, and turn this on later."}
+                </p>
+              </div>
 
               <div className="mt-1">
                 <Button type="submit" disabled={!adminReady}>

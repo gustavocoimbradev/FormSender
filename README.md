@@ -45,9 +45,9 @@ Keep `APP_KEY` safe: the saved SMTP password is encrypted with it. Without a key
 - **Three ways in:** a script, an iframe or a public page (with our credit), all drawn from the same form.
 - **Your design and your words:** a CSS editor with a live preview (color swatches, snippets, formatting) and every text of the form editable, in any language.
 - **An email per form:** code editor with live preview; replying goes to the visitor. File fields arrive as attachments.
-- **Reliable:** emails go through a queue with retries, a status per destination, a retry button and an alert to the admins when one fails for good.
+- **Reliable:** emails go through a queue with retries, a status per destination, a retry button and an alert to the form's owner when one fails for good.
 - **Spam stays in view:** a hidden trap field, allowed sites per form and rate limits. Caught messages are kept as Spam, never emailed.
-- **Teams:** admins and users, SMTP set in the dashboard (stored encrypted), optional retention of old messages.
+- **Accounts:** the administrator sees every form; with "Allow new accounts" on, anyone can sign up (email confirmed by a link) and manage only their own forms, and each destination confirms by email before it receives messages. SMTP is set in the dashboard (stored encrypted), with optional retention of old messages.
 
 <table>
   <tr>

@@ -1,12 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { CSSProperties, FormEvent, useCallback, useEffect, useState } from "react";
-import { ApiError, getCurrentUser, getSetupStatus, login } from "@/lib/api";
+import { ApiError, getCurrentUser, getSetupStatus, login, resendConfirmation } from "@/lib/api";
 import { clearToken, getToken, saveToken, saveUser } from "@/lib/session";
 import { isValidEmail, normalizeEmail } from "@/lib/validation";
 import { AuthShell } from "./AuthShell";
-import { Button } from "./Button";
+import { Button, GhostButton } from "./Button";
 import { CardSkeleton, CardUnreachable } from "./CardStates";
 import { Field } from "./Field";
 import { PasswordField } from "./PasswordField";
@@ -19,6 +20,7 @@ const step = (index: number): CSSProperties => ({ "--i": index }) as CSSProperti
 function toMessage(error: unknown): string {
   if (!(error instanceof ApiError)) return "Something went wrong. Please try again.";
   if (error.status === 422) return "Incorrect email or password.";
+  if (error.status === 403 && error.code === "email_unconfirmed") return "Confirm your email first: open the link we sent you.";
   if (error.status === 429) return "Too many attempts. Wait a minute and try again.";
   if (error.status === 0) return "Could not reach the server. Check your connection.";
   return "Something went wrong on our side. Please try again shortly.";
@@ -31,16 +33,22 @@ export function LoginScreen() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string>();
+  const [registrationOpen, setRegistrationOpen] = useState(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [notice, setNotice] = useState<string>();
 
   const prepare = useCallback(async () => {
     setPhase("checking");
 
     try {
       // A fresh install has no account to log into yet.
-      if (!(await getSetupStatus())) {
+      const status = await getSetupStatus();
+      if (!status.completed) {
         router.replace("/setup");
         return;
       }
+      setRegistrationOpen(status.registrationOpen);
 
       // Already signed in on this browser: straight to the app.
       const token = getToken();
@@ -74,6 +82,8 @@ export function LoginScreen() {
 
     setSubmitting(true);
     setError(undefined);
+    setNotice(undefined);
+    setUnconfirmed(false);
 
     try {
       const session = await login({ email: normalizeEmail(email), password });
@@ -81,8 +91,23 @@ export function LoginScreen() {
       saveUser(session.user);
       router.replace("/");
     } catch (failure) {
+      setUnconfirmed(failure instanceof ApiError && failure.status === 403 && failure.code === "email_unconfirmed");
       setError(toMessage(failure));
       setSubmitting(false);
+    }
+  }
+
+  async function sendLinkAgain() {
+    setResending(true);
+    setNotice(undefined);
+
+    try {
+      await resendConfirmation(normalizeEmail(email));
+      setNotice("A new link is on its way. It can take a minute to arrive.");
+    } catch {
+      setNotice("Could not send it now. Please try again shortly.");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -137,7 +162,28 @@ export function LoginScreen() {
               Sign in
             </Button>
           </div>
+
+          {unconfirmed && (
+            <div className="mt-3 animate-fade-in">
+              <GhostButton type="button" onClick={() => void sendLinkAgain()} disabled={resending}>
+                {resending ? "Sending…" : "Send the link again"}
+              </GhostButton>
+            </div>
+          )}
+
+          <p role="status" className="text-center text-base text-muted">
+            {notice}
+          </p>
         </form>
+      )}
+
+      {phase === "ready" && registrationOpen && (
+        <p className="mt-5 text-center text-base text-muted">
+          New here?{" "}
+          <Link href="/register" className="inline-flex min-h-11 items-center font-medium text-accent hover:underline">
+            Create an account
+          </Link>
+        </p>
       )}
     </AuthShell>
   );

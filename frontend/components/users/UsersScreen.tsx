@@ -66,7 +66,7 @@ export function UsersScreen() {
       className: "w-px whitespace-nowrap",
       cell: (item) => (
         <span className="inline-flex gap-1">
-          {canEditUser(actor, item) && (
+          {canEditUser(actor) && (
             <button type="button" className={ICON_BUTTON} onClick={() => setEditing(item)} aria-label={`Edit ${item.name}`}>
               <PencilIcon />
             </button>
@@ -102,7 +102,7 @@ export function UsersScreen() {
               columns={columns}
               rows={data?.data ?? []}
               getKey={(item) => item.id}
-              onRowClick={(item) => canEditUser(actor, item) && setEditing(item)}
+              onRowClick={(item) => canEditUser(actor) && setEditing(item)}
               renderMobileRow={(item) => (
                 <div className="flex min-h-14 items-center gap-3">
                   <span className="grid size-11 shrink-0 place-items-center rounded-full bg-surface/10 text-lg font-semibold">{(item.name.trim()[0] ?? "?").toUpperCase()}</span>
@@ -114,7 +114,7 @@ export function UsersScreen() {
                     <p className="truncate text-base text-muted">{item.email}</p>
                   </div>
                   {item.role === "admin" && <Badge tone="accent">Admin</Badge>}
-                  {canEditUser(actor, item) && <ChevronIcon className="size-5 shrink-0 text-muted" />}
+                  {canEditUser(actor) && <ChevronIcon className="size-5 shrink-0 text-muted" />}
                 </div>
               )}
               loading={loading && !data}

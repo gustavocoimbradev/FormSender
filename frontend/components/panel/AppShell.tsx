@@ -18,7 +18,7 @@ type NavItem = { href: string; label: string; icon: ReactNode; adminOnly?: boole
 const NAV: NavItem[] = [
   { href: "/forms", label: "Forms", icon: <FormsIcon /> },
   { href: "/users", label: "Users", icon: <UsersIcon />, adminOnly: true },
-  { href: "/smtp", label: "SMTP", icon: <ServerIcon />, adminOnly: true },
+  { href: "/settings", label: "Settings", icon: <ServerIcon />, adminOnly: true },
 ];
 
 const MENU_LINK = "flex h-12 items-center gap-3 rounded-control px-3 text-base text-text transition-colors duration-300 hover:bg-surface/[0.08]";

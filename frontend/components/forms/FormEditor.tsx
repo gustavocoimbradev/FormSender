@@ -9,12 +9,14 @@ import { ActionButton } from "../Button";
 import { Field } from "../Field";
 import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
+import { useSession } from "../panel/PanelFrame";
 import { ChipsInput } from "../ui/ChipsInput";
 import { useToast } from "../ui/Toast";
 import { formatCss } from "@/lib/formatCss";
 import { DesignSection } from "./DesignSection";
 import { EmailSection } from "./EmailSection";
 import { FieldRow } from "./FieldRow";
+import { PendingDestinations } from "./PendingDestinations";
 import { StringsSection } from "./StringsSection";
 import {
   draftFromForm,
@@ -49,6 +51,7 @@ type FormEditorProps = {
 
 export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }: FormEditorProps) {
   const toast = useToast();
+  const { user } = useSession();
   const [draft, setDraft] = useState<FormDraft>(() => (form ? draftFromForm(form) : emptyDraft()));
   const [errors, setErrors] = useState<DraftErrors>({ fields: {} });
   const [saving, setSaving] = useState(false);
@@ -209,10 +212,12 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
               validate={validateEmailChip}
               normalize={(value) => value.trim().toLowerCase()}
               placeholder="you@company.com"
+              hint={user.role === "admin" ? undefined : "Each address gets an email to confirm it wants the messages. Your own email needs no confirmation."}
               error={errors.destinations}
               max={20}
               disabled={saving}
             />
+            {form && <PendingDestinations form={form} />}
             <ChipsInput
               id="domains"
               label="Allowed sites"
