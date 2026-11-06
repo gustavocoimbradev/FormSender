@@ -5,16 +5,16 @@ import { apiPublicUrl } from "@/lib/config";
 
 type FormPreviewProps = {
   code: string;
-  theme: "light" | "dark";
   /** The style being written: the form follows it as it changes, without being saved. */
   css: string;
 };
 
 /**
  * The form exactly as a site shows it: drawn by the very same script. It is a preview: it validates, but sending is
- * switched off. It shows the fields as saved; the style is the one being written.
+ * switched off, and pointing at any part of it says which CSS selector styles that part. It shows the fields as
+ * saved; the style is the one being written.
  */
-export function FormPreview({ code, theme, css }: FormPreviewProps) {
+export function FormPreview({ code, css }: FormPreviewProps) {
   const box = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -22,7 +22,6 @@ export function FormPreview({ code, theme, css }: FormPreviewProps) {
     script.src = `${apiPublicUrl()}/embed.js`;
     script.async = true;
     script.dataset.form = code;
-    script.dataset.theme = theme;
     script.dataset.preview = "";
     script.dataset.target = "#form-preview";
     document.body.appendChild(script);
@@ -32,7 +31,7 @@ export function FormPreview({ code, theme, css }: FormPreviewProps) {
       script.remove();
       container?.replaceChildren();
     };
-  }, [code, theme]);
+  }, [code]);
 
   // Hands the style to the form once it is there (the script draws itself a moment after it loads).
   useEffect(() => {
@@ -48,7 +47,7 @@ export function FormPreview({ code, theme, css }: FormPreviewProps) {
 
     timer = window.setTimeout(send, 200);
     return () => window.clearTimeout(timer);
-  }, [css, theme, code]);
+  }, [css, code]);
 
-  return <div ref={box} id="form-preview" className={`min-h-48 rounded-control border border-surface/10 p-4 sm:p-6 ${theme === "dark" ? "bg-[#07070d] text-[#f4f4fb]" : "bg-white text-[#14141f]"}`} />;
+  return <div ref={box} id="form-preview" className="min-h-48 rounded-control border border-surface/10 bg-white p-4 text-[#14141f] sm:p-6" />;
 }

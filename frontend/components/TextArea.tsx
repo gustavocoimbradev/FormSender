@@ -15,7 +15,7 @@ export function TextArea({ id, label, error, className = "", ...props }: TextAre
         rows={4}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={`w-full resize-y rounded-control border bg-surface/[0.04] px-4 py-3 text-base text-text transition duration-300 ease-out placeholder:text-muted/60 hover:border-surface/20 focus:bg-surface/[0.07] focus:outline-none focus:ring-4 focus-visible:ring-4 ${
+        className={`w-full resize-none rounded-control border bg-surface/[0.04] px-4 py-3 text-base text-text transition duration-300 ease-out placeholder:text-muted/60 hover:border-surface/20 focus:bg-surface/[0.07] focus:outline-none focus:ring-4 focus-visible:ring-4 ${
           error ? "border-danger/70 focus:border-danger focus:ring-danger/20" : "border-surface/10 focus:border-accent focus:ring-accent/20"
         } ${className}`}
         {...props}

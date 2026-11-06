@@ -74,6 +74,8 @@ export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
     script.async = true;
     script.dataset.form = code;
     script.dataset.theme = formTheme;
+    // The page itself always looks the same; only a form put on a site (script or iframe) wears the style written for it.
+    if (!embedded) script.dataset.style = "default";
     script.dataset.target = "#public-form";
     document.body.appendChild(script);
 

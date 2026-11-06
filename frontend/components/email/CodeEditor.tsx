@@ -1,13 +1,15 @@
 "use client";
 
-import { autocompletion, closeBrackets, type CompletionContext } from "@codemirror/autocomplete";
+import { autocompletion, closeBrackets, snippetCompletion, type Completion, type CompletionContext } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-import { css } from "@codemirror/lang-css";
+import { css, cssLanguage } from "@codemirror/lang-css";
 import { html } from "@codemirror/lang-html";
-import { HighlightStyle, bracketMatching, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, bracketMatching, foldGutter, indentOnInput, syntaxHighlighting } from "@codemirror/language";
 import { lintGutter, linter } from "@codemirror/lint";
 import { EditorState } from "@codemirror/state";
-import { EditorView, keymap, lineNumbers, placeholder } from "@codemirror/view";
+import { highlightSelectionMatches, searchKeymap } from "@codemirror/search";
+import { EditorView, highlightActiveLine, highlightActiveLineGutter, keymap, lineNumbers, placeholder } from "@codemirror/view";
+import { colorPicker } from "@replit/codemirror-css-color-picker";
 import { tags } from "@lezer/highlight";
 import { useEffect, useRef, type MutableRefObject } from "react";
 import { lintEmail } from "./emailLint";
@@ -49,6 +51,9 @@ const theme = EditorView.theme(
     ".cm-completionDetail": { color: "rgb(163 163 186)", fontStyle: "normal", marginLeft: "12px" },
     ".cm-diagnostic": { fontSize: "16px", padding: "8px 12px" },
     ".cm-placeholder": { color: "rgb(163 163 186 / 0.6)" },
+    ".cm-selectionMatch": { backgroundColor: "rgb(61 214 245 / 0.18)" },
+    ".cm-foldPlaceholder": { backgroundColor: "rgb(255 255 255 / 0.08)", border: "none", color: "rgb(163 163 186)", padding: "0 6px", borderRadius: "6px" },
+    ".cm-foldGutter span": { cursor: "pointer" },
   },
   { dark: true },
 );
@@ -64,6 +69,23 @@ const highlight = HighlightStyle.define([
   { tag: tags.number, color: "#ffb454" },
 ]);
 
+/** Snippets for the CSS editor: type a word (flex, media...) and choose it; Tab jumps between the blanks. */
+const CSS_SNIPPETS: Completion[] = [
+  snippetCompletion("display: flex;\nalign-items: ${center};\njustify-content: ${center};\ngap: ${12px};", { label: "flex", detail: "a row of items", type: "snippet" }),
+  snippetCompletion("display: grid;\ngrid-template-columns: repeat(${2}, minmax(0, 1fr));\ngap: ${16px};", { label: "grid", detail: "columns", type: "snippet" }),
+  snippetCompletion("display: flex;\nalign-items: center;\njustify-content: center;", { label: "center", detail: "center its content", type: "snippet" }),
+  snippetCompletion("transition: ${all} ${0.2s} ${ease-out};", { label: "transition", detail: "animate a change", type: "snippet" }),
+  snippetCompletion("box-shadow: 0 ${10px} ${30px} -${10px} rgba(0, 0, 0, ${0.3});", { label: "shadow", detail: "soft shadow", type: "snippet" }),
+  snippetCompletion("background: linear-gradient(${90deg}, ${#7c5cff}, ${#6f8cff});", { label: "gradient", detail: "linear gradient", type: "snippet" }),
+  snippetCompletion("border: 1px solid ${var(--border)};\nborder-radius: ${12px};", { label: "border", detail: "border and corners", type: "snippet" }),
+  snippetCompletion("font: inherit;\nfont-size: ${16px};\nfont-weight: ${500};\nline-height: ${1.4};", { label: "font", detail: "text", type: "snippet" }),
+  snippetCompletion("${selector}:hover {\n  ${}\n}", { label: "hover", detail: "when the mouse is over", type: "snippet" }),
+  snippetCompletion("${selector}:focus {\n  outline: none;\n  ${}\n}", { label: "focus", detail: "when selected", type: "snippet" }),
+  snippetCompletion("@media (max-width: ${600px}) {\n  ${}\n}", { label: "media", detail: "only on small screens", type: "snippet" }),
+  snippetCompletion("@keyframes ${name} {\n  from {\n    ${}\n  }\n  to {\n    ${}\n  }\n}", { label: "keyframes", detail: "an animation", type: "snippet" }),
+  snippetCompletion("var(--${accent})", { label: "var", detail: "a color or value from the top", type: "snippet" }),
+];
+
 type CodeEditorProps = {
   value: string;
   onChange: (value: string) => void;
@@ -74,17 +96,21 @@ type CodeEditorProps = {
   language?: "html" | "css";
   /** Tailwind height of the box. */
   height?: string;
+  /** CSS only: what Shift+Alt+F (tidy the code) does. */
+  onFormat?: () => void;
 };
 
 /**
  * A code editor. For email: HTML, variable autocomplete (type `{{`) and a checker for what email clients ignore.
  * For the form's style: CSS.
  */
-export function CodeEditor({ value, onChange, insertRef, label, language = "html", height = "h-[34rem]" }: CodeEditorProps) {
+export function CodeEditor({ value, onChange, insertRef, label, language = "html", height = "h-[34rem]", onFormat }: CodeEditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView>();
   const change = useRef(onChange);
   change.current = onChange;
+  const format = useRef(onFormat);
+  format.current = onFormat;
 
   useEffect(() => {
     if (!host.current) return;
@@ -100,7 +126,30 @@ export function CodeEditor({ value, onChange, insertRef, label, language = "html
           bracketMatching(),
           language === "css" ? css() : html({ autoCloseTags: true }),
           syntaxHighlighting(highlight),
-          ...(language === "css" ? [autocompletion()] : [autocompletion({ override: [variableCompletions] }), linter(lintEmail, { delay: 400 }), lintGutter()]),
+          ...(language === "css"
+            ? [
+                // Like a code editor for CSS: a swatch beside every color (click it to pick another), snippets, folding of
+                // blocks, the current line and the same words highlighted, search (Ctrl+F) and tidying (Shift+Alt+F).
+                cssLanguage.data.of({ autocomplete: CSS_SNIPPETS }),
+                autocompletion(),
+                colorPicker,
+                foldGutter(),
+                indentOnInput(),
+                highlightActiveLine(),
+                highlightActiveLineGutter(),
+                highlightSelectionMatches(),
+                keymap.of([
+                  {
+                    key: "Shift-Alt-f",
+                    run: () => {
+                      format.current?.();
+                      return true;
+                    },
+                  },
+                  ...searchKeymap,
+                ]),
+              ]
+            : [autocompletion({ override: [variableCompletions] }), linter(lintEmail, { delay: 400 }), lintGutter()]),
           EditorView.lineWrapping,
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
           placeholder(language === "css" ? "/* CSS */" : "<table>...</table>"),
