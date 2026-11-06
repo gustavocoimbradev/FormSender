@@ -33,26 +33,26 @@ export type FormField = {
   options?: string[] | null;
 };
 
-export type ResponseType = "json" | "redirect";
-
 export type Form = {
   name: string;
   fields: FormField[];
   destinations: string[];
   allowed_domains: string[];
-  /** What the visitor gets after sending: a JSON answer, or a redirect straight to the thank-you page. */
-  response_type: ResponseType;
-  /** The thank-you page (the JSON answer carries it too), or null when there is none. */
-  redirect_url: string | null;
-  /** Code of the email template, or null when the form uses the default one. */
-  template: string | null;
+  /** Subject and HTML of the email delivered for this form's messages (the default ones until the form has its own). */
+  email_subject: string;
+  email_html: string;
+  email_is_default: boolean;
   /** The form's unique code: it identifies the form in every address, in the panel and on the websites that send it. */
   code: string;
   created_at: string | null;
   updated_at: string | null;
 };
 
-export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains" | "response_type" | "redirect_url" | "template">;
+export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains"> & {
+  /** Null (or empty) means the default email. */
+  email_subject: string | null;
+  email_html: string | null;
+};
 
 export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed" | "spam";
 
@@ -88,19 +88,6 @@ export type Submission = {
   processed_at: string | null;
 };
 
-export type Template = {
-  code: string;
-  name: string;
-  subject: string;
-  html: string;
-  is_default: boolean;
-  forms_count: number;
-  created_at: string | null;
-  updated_at: string | null;
-};
-
-export type TemplateInput = Pick<Template, "name" | "subject" | "html">;
-
 export type ManagedUser = User & { created_at: string | null; updated_at: string | null };
 
 export type UserInput = { name?: string; email?: string; password?: string; role?: "admin" | "user" };
@@ -134,8 +121,7 @@ async function request<T>(path: string, init: RequestInit = {}, token?: string):
       ...init,
       headers: {
         Accept: "application/json",
-        // A file upload sets its own Content-Type (with the boundary), so only JSON bodies are labelled.
-        ...(init.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+        ...(init.body ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...init.headers,
       },
@@ -228,27 +214,6 @@ export const updateForm = async (code: string, input: FormInput) =>
 
 export const deleteForm = (code: string) => authed<void>(`/forms/${code}`, { method: "DELETE" });
 
-/** Sends a test message through the form (the panel's own action: it ignores the allowed sites). Files go as a multipart upload. */
-export const sendTestMessage = (code: string, values: Record<string, unknown>) => {
-  const hasFile = Object.values(values).some((value) => value instanceof File);
-  const body = hasFile ? toFormData(values) : JSON.stringify(values);
-
-  return authed<{ message: string; data: { id: number; status: SubmissionStatus } }>(`/forms/${code}/test`, { method: "POST", body });
-};
-
-function toFormData(values: Record<string, unknown>): FormData {
-  const data = new FormData();
-
-  for (const [name, value] of Object.entries(values)) {
-    if (value instanceof File) data.append(name, value);
-    // A checkbox travels as 1 or 0: that is what the API reads as yes or no.
-    else if (typeof value === "boolean") data.append(name, value ? "1" : "0");
-    else data.append(name, String(value));
-  }
-
-  return data;
-}
-
 export const listSubmissions = (formCode: string, page = 1, status?: SubmissionStatus) =>
   authed<Page<Submission>>(`/forms/${formCode}/submissions?page=${page}${status ? `&status=${status}` : ""}`);
 
@@ -277,22 +242,14 @@ export async function downloadAttachment(formCode: string, submissionId: number,
   URL.revokeObjectURL(url);
 }
 
-// ------------------------------------------------------------------ templates
+// ------------------------------------------------------------------ email
 
-export const listTemplates = async () => (await authed<{ data: Template[] }>("/templates")).data;
+/** The subject and HTML every form starts with, to go back to them. */
+export const getDefaultEmail = async () => (await authed<{ data: { subject: string; html: string } }>("/email/default")).data;
 
-export const getTemplate = async (code: string) => (await authed<{ data: Template }>(`/templates/${code}`)).data;
-
-export const createTemplate = async (input: TemplateInput) => (await authed<{ data: Template }>("/templates", json("POST", input))).data;
-
-export const updateTemplate = async (code: string, input: TemplateInput) =>
-  (await authed<{ data: Template }>(`/templates/${code}`, json("PUT", input))).data;
-
-export const deleteTemplate = (code: string) => authed<void>(`/templates/${code}`, { method: "DELETE" });
-
-/** The subject and HTML filled with example data, exactly as a real message would be. */
-export const previewTemplate = async (input: Pick<TemplateInput, "subject" | "html">) =>
-  (await authed<{ data: { subject: string; html: string } }>("/templates/preview", json("POST", input))).data;
+/** The email filled with example answers (for the fields of the form being edited), exactly as a real message would be. */
+export const previewEmail = async (input: { subject: string; html: string; fields: FormField[] }) =>
+  (await authed<{ data: { subject: string; html: string } }>("/email/preview", json("POST", input))).data;
 
 // ------------------------------------------------------------------ users (admin)
 

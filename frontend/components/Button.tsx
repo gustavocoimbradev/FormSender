@@ -79,8 +79,8 @@ export function ActionButton({
   );
 }
 
-export function ActionLink({ href, variant = "primary", children, target, rel, roundOnPhone = false }: { href: string; variant?: Variant; children: ReactNode; target?: string; rel?: string; roundOnPhone?: boolean }) {
-  const classes = `${ACTION} ${VARIANTS[variant]} ${roundOnPhone ? ROUND_ON_PHONE : ""}`;
+export function ActionLink({ href, variant = "primary", children, target, rel, roundOnPhone = false, className = "" }: { href: string; variant?: Variant; children: ReactNode; target?: string; rel?: string; roundOnPhone?: boolean; className?: string }) {
+  const classes = `${ACTION} ${VARIANTS[variant]} ${roundOnPhone ? ROUND_ON_PHONE : ""} ${className}`;
 
   return target ? (
     <a href={href} target={target} rel={rel} className={classes}>

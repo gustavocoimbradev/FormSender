@@ -9,3 +9,6 @@ export function apiPublicUrl(): string {
   const port = process.env.NEXT_PUBLIC_API_PORT ?? "8000";
   return `${window.location.protocol}//${window.location.hostname}:${port}`;
 }
+
+/** Where Form Sender itself lives: the public page of a form credits it. */
+export const PROJECT_URL = "https://github.com/gustavocoimbradev/form-sender";

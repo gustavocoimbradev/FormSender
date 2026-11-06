@@ -130,9 +130,3 @@ export const SearchIcon = icon(
   </>,
 );
 
-export const TemplateIcon = icon(
-  <>
-    <rect x="3" y="4" width="18" height="16" rx="2.500" />
-    <path d="M3 9h18M9 9v11" />
-  </>,
-);

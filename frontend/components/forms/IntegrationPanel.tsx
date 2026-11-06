@@ -1,40 +1,57 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Form } from "@/lib/api";
 import { apiPublicUrl } from "@/lib/config";
-import { ActionButton } from "../Button";
+import type { Form } from "@/lib/api";
 import { Card, CardHeader } from "../ui/Card";
-import { CodeBlock, CopyBox } from "../ui/CodeBlock";
-import { htmlForm } from "./snippets";
+import { CodeBlock } from "../ui/CodeBlock";
+import { Select } from "../ui/Select";
 
-export function EmbedPanel({ form, onOpenDelivery }: { form: Form; onOpenDelivery: () => void }) {
-  const [base, setBase] = useState("");
+type Way = "script" | "iframe";
 
-  useEffect(() => setBase(apiPublicUrl()), []);
+const WAYS: { value: Way; label: string }[] = [
+  { value: "script", label: "Script" },
+  { value: "iframe", label: "Iframe" },
+];
 
-  const endpoint = `${base}/api/forms/${form.code}/submit`;
+const HINTS: Record<Way, string> = {
+  script: "Paste this where the form should appear. It always shows the fields you have here.",
+  iframe: "For pages that do not allow scripts. It shows the same form, in its own frame. Add ?theme=dark to the address for dark sites.",
+};
+
+/** Roughly how tall the form is, so the frame needs no scrollbar for most forms. */
+function frameHeight(form: Form): number {
+  const rows = form.fields.reduce((total, field) => total + (field.type === "textarea" ? 190 : 96), 0);
+  return Math.max(320, Math.round((rows + 120) / 10) * 10);
+}
+
+export function IntegrationPanel({ form }: { form: Form }) {
+  const [api, setApi] = useState("");
+  const [panel, setPanel] = useState("");
+  const [way, setWay] = useState<Way>("script");
+
+  useEffect(() => {
+    setApi(apiPublicUrl());
+    setPanel(window.location.origin);
+  }, []);
+
+  const code =
+    way === "script"
+      ? `<script src="${api}/embed.js" data-form="${form.code}" async></script>`
+      : `<iframe src="${panel}/f/${form.code}" width="100%" height="${frameHeight(form)}" style="border:0" loading="lazy"></iframe>`;
 
   return (
     <Card className="animate-fade-up">
-      <CardHeader title="Embed" />
+      <CardHeader title="Integration" />
 
       <div className="px-5 pb-6 sm:px-6">
-        <CopyBox id="endpoint" prefix="POST" value={endpoint} />
-
-        {/* A plain form shows the visitor whatever comes back: a JSON page, unless the form redirects. */}
-        {form.response_type !== "redirect" && (
-          <div className="mt-5 flex flex-col gap-3 rounded-control border border-accent/30 bg-accent/10 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-base leading-relaxed">Visitors will see a JSON answer after sending. Choose Redirect so they land on your thank-you page.</p>
-            <ActionButton type="button" variant="ghost" className="w-full sm:w-auto" onClick={onOpenDelivery}>
-              Go to Delivery
-            </ActionButton>
-          </div>
-        )}
-
-        <div className="mt-6">
-          <CodeBlock language="HTML" code={htmlForm(form, endpoint)} />
+        <div className="mb-4">
+          <Select id="integration-way" label="Add it with" value={way} options={WAYS} onChange={setWay} />
         </div>
+
+        <p className="mb-5 text-base leading-relaxed text-muted">{HINTS[way]}</p>
+
+        <CodeBlock language="HTML" code={code} />
       </div>
     </Card>
   );

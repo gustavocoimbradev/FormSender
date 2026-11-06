@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { previewTemplate } from "@/lib/api";
+import { previewEmail, type FormField } from "@/lib/api";
 import { Pills } from "../ui/Pills";
 
 type Width = "desktop" | "mobile";
@@ -27,7 +27,7 @@ const WIDTHS: { id: Width; label: string }[] = [
 ];
 
 /** The email as it will arrive, filled with example data by the API itself (the same code that sends it). */
-export function TemplatePreview({ subject, html }: { subject: string; html: string }) {
+export function EmailPreview({ subject, html, fields }: { subject: string; html: string; fields: FormField[] }) {
   const [rendered, setRendered] = useState<{ subject: string; html: string }>();
   const [failed, setFailed] = useState(false);
   const [width, setWidth] = useState<Width>("desktop");
@@ -35,7 +35,7 @@ export function TemplatePreview({ subject, html }: { subject: string; html: stri
   useEffect(() => {
     let cancelled = false;
     const timer = window.setTimeout(() => {
-      previewTemplate({ subject, html }).then(
+      previewEmail({ subject, html, fields }).then(
         (result) => {
           if (cancelled) return;
           setRendered(result);
@@ -49,7 +49,7 @@ export function TemplatePreview({ subject, html }: { subject: string; html: stri
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [subject, html]);
+  }, [subject, html, fields]);
 
   return (
     <div>

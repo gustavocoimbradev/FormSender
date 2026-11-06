@@ -3,16 +3,15 @@
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { useState } from "react";
-import { ApiError, createForm, listTemplates, updateForm, type Form } from "@/lib/api";
-import { useResource } from "@/lib/hooks";
+import { useMemo, useState } from "react";
+import { ApiError, createForm, updateForm, type Form } from "@/lib/api";
 import { ActionButton } from "../Button";
 import { Field } from "../Field";
 import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
 import { ChipsInput } from "../ui/ChipsInput";
-import { Select } from "../ui/Select";
 import { useToast } from "../ui/Toast";
+import { EmailSection } from "./EmailSection";
 import { FieldRow } from "./FieldRow";
 import {
   draftFromForm,
@@ -54,12 +53,8 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
   const [lastAdded, setLastAdded] = useState<string>();
   // A small distance before a drag starts keeps clicks on the row from moving it; the keyboard works on the grip too.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
-  const templates = useResource(listTemplates, []);
-  const templateOptions = [
-    { value: "", label: "Default" },
-    ...(templates.data ?? []).filter((template) => !template.is_default).map((template) => ({ value: template.code, label: template.name })),
-  ];
 
+  const emailFields = useMemo(() => draft.fields.map((field) => ({ name: field.name, label: field.label, type: field.type, required: field.required, options: field.options })), [draft.fields]);
   const shows = (part: EditorSection) => section === undefined || section === part;
 
   /** Shows the mistakes and takes the person to the part of the form that has the first one. */
@@ -98,7 +93,7 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
   }
 
   async function save() {
-    const found = validateDraft(draft);
+    const found = validateDraft(draft, { checkEmail: Boolean(form) });
     if (hasErrors(found)) {
       showErrors(found);
       return;
@@ -145,9 +140,6 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
               autoFocus={!form}
               autoComplete="off"
             />
-            <div className="mb-4">
-              <Select id="form-template" label="Email template" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
-            </div>
           </div>
         </Card>
       )}
@@ -219,39 +211,19 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
               error={errors.domains}
               disabled={saving}
             />
-            {form && (
-              <>
-                <Field
-                  id="redirect-url"
-                  label="Thank-you page"
-                  type="url"
-                  inputMode="url"
-                  value={draft.redirectUrl}
-                  onChange={(event) => patch({ redirectUrl: event.target.value })}
-                  error={errors.redirectUrl}
-                  disabled={saving}
-                  placeholder="https://company.com/thanks"
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  spellCheck={false}
-                />
-                <div className="mb-4">
-                  <Select
-                    id="response-type"
-                    label="After sending"
-                    value={draft.responseType}
-                    options={[
-                      { value: "json", label: "JSON answer" },
-                      { value: "redirect", label: "Redirect" },
-                    ]}
-                    onChange={(responseType) => patch({ responseType })}
-                    disabled={saving}
-                  />
-                </div>
-              </>
-            )}
           </div>
         </Card>
+      )}
+
+      {shows("email") && form && (
+        <EmailSection
+          subject={draft.emailSubject}
+          html={draft.emailHtml}
+          fields={emailFields}
+          errors={{ subject: errors.emailSubject, html: errors.emailHtml }}
+          disabled={saving}
+          onChange={patch}
+        />
       )}
 
       {errors.general && <p role="alert" className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.general}</p>}

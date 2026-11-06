@@ -1,4 +1,4 @@
-import type { ApiError, Form, FormField, FormInput, FieldType, ResponseType } from "@/lib/api";
+import type { ApiError, Form, FormField, FormInput, FieldType } from "@/lib/api";
 import { slugify } from "@/lib/format";
 import { isValidEmail } from "@/lib/validation";
 
@@ -30,12 +30,9 @@ export type FormDraft = {
   fields: FieldDraft[];
   destinations: string[];
   domains: string[];
-  /** What the visitor gets after sending: a JSON answer or a redirect to the thank-you page. */
-  responseType: ResponseType;
-  /** The thank-you page; required when the answer is a redirect. */
-  redirectUrl: string;
-  /** Code of the chosen template; empty means the default one. */
-  template: string;
+  /** The email delivered for the form's messages. Empty means the default email (a form being created has not got to choose yet). */
+  emailSubject: string;
+  emailHtml: string;
 };
 
 export type DraftErrors = {
@@ -43,7 +40,8 @@ export type DraftErrors = {
   fields: Record<string, { name?: string; label?: string; options?: string }>;
   destinations?: string;
   domains?: string;
-  redirectUrl?: string;
+  emailSubject?: string;
+  emailHtml?: string;
   general?: string;
 };
 
@@ -57,7 +55,7 @@ export const newKey = () => `field-${Math.random().toString(36).slice(2, 8)}${(+
 
 export const emptyField = (): FieldDraft => ({ key: newKey(), name: "", label: "", type: "text", required: false, options: [], nameLocked: false });
 
-export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], responseType: "json", redirectUrl: "", template: "" });
+export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], emailSubject: "", emailHtml: "" });
 
 export function draftFromForm(form: Form): FormDraft {
   return {
@@ -73,9 +71,8 @@ export function draftFromForm(form: Form): FormDraft {
     })),
     destinations: form.destinations,
     domains: form.allowed_domains,
-    responseType: form.response_type,
-    redirectUrl: form.redirect_url ?? "",
-    template: form.template ?? "",
+    emailSubject: form.email_subject,
+    emailHtml: form.email_html,
   };
 }
 
@@ -91,9 +88,8 @@ export function inputFromDraft(draft: FormDraft): FormInput {
     })),
     destinations: draft.destinations,
     allowed_domains: draft.domains,
-    response_type: draft.responseType,
-    redirect_url: draft.redirectUrl.trim() || null,
-    template: draft.template || null,
+    email_subject: draft.emailSubject.trim() || null,
+    email_html: draft.emailHtml.trim() || null,
   };
 }
 
@@ -111,27 +107,19 @@ export function normalizeDomain(value: string): string {
 }
 
 export const validateDomain = (value: string) => (DOMAIN.test(value) ? null : "Use an address like company.com or *.company.com.");
-export function validateRedirectUrl(value: string): string | undefined {
-  if (!value.trim()) return undefined;
-
-  try {
-    const url = new URL(value.trim());
-    return url.protocol === "http:" || url.protocol === "https:" ? undefined : "Use an address starting with http:// or https://.";
-  } catch {
-    return "Use a full address like https://company.com/thanks.";
-  }
-}
-
 export const validateEmailChip = (value: string) => (isValidEmail(value) ? null : "Enter a valid email.");
 
 /** Client-side checks that mirror the API, so most mistakes are caught before sending. */
-export function validateDraft(draft: FormDraft): DraftErrors {
+export function validateDraft(draft: FormDraft, { checkEmail }: { checkEmail: boolean }): DraftErrors {
   const errors: DraftErrors = { fields: {} };
 
   if (!draft.name.trim()) errors.name = "Give the form a name.";
 
-  const redirectError = draft.responseType === "redirect" && !draft.redirectUrl.trim() ? "Enter the thank-you page address." : validateRedirectUrl(draft.redirectUrl);
-  if (redirectError) errors.redirectUrl = redirectError;
+  // A saved form shows its email in the editor, so an empty one is a mistake (to go back to the default there is a button).
+  if (checkEmail) {
+    if (!draft.emailSubject.trim()) errors.emailSubject = "Enter the email subject.";
+    if (!draft.emailHtml.trim()) errors.emailHtml = "The email cannot be empty.";
+  }
 
   const seen = new Set<string>();
   for (const field of draft.fields) {
@@ -151,16 +139,17 @@ export function validateDraft(draft: FormDraft): DraftErrors {
   return errors;
 }
 
-export type EditorSection = "general" | "fields" | "delivery";
+export type EditorSection = "general" | "fields" | "delivery" | "email";
 
 /** The tab that holds the first mistake, so the person is taken to it. */
 export function sectionWithErrors(errors: DraftErrors): EditorSection {
   if (errors.name) return "general";
   if (Object.keys(errors.fields).length > 0) return "fields";
+  if (errors.emailSubject || errors.emailHtml) return "email";
   return "delivery";
 }
 
-export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.redirectUrl || Object.keys(errors.fields).length > 0);
+export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.emailSubject || errors.emailHtml || Object.keys(errors.fields).length > 0);
 
 /** The technical name of a new field: its label as a slug, made unique among the other fields (email, email_2...). */
 export function nameFromLabel(label: string, taken: string[]): string {
@@ -182,7 +171,8 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
     if (key === "name") errors.name = "Give the form a name.";
     else if (parts[0] === "destinations") errors.destinations = "Check the destination emails.";
     else if (parts[0] === "allowed_domains") errors.domains = "Check the allowed sites.";
-    else if (key === "redirect_url") errors.redirectUrl = "Use a full address like https://company.com/thanks.";
+    else if (key === "email_subject") errors.emailSubject = "Check the subject (up to 200 characters).";
+    else if (key === "email_html") errors.emailHtml = "Check the email: scripts are not allowed and the limit is 100,000 characters.";
     else if (parts[0] === "fields" && parts[1] !== undefined) {
       const field = draft.fields[Number(parts[1])];
       if (!field) continue;
@@ -195,7 +185,7 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
     }
   }
 
-  if (!errors.name && !errors.destinations && !errors.domains && !errors.redirectUrl && Object.keys(errors.fields).length === 0) {
+  if (!errors.name && !errors.destinations && !errors.domains && !errors.emailSubject && !errors.emailHtml && Object.keys(errors.fields).length === 0) {
     errors.general = "Check the form details and try again.";
   }
 

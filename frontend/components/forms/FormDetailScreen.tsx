@@ -8,31 +8,38 @@ import { useResource } from "@/lib/hooks";
 import { CardUnreachable } from "../CardStates";
 import { ListSkeleton } from "../ui/DataTable";
 import { Bar, FieldSkeleton, FormCardSkeleton, PillsSkeleton } from "../ui/Skeleton";
-import { ChevronIcon } from "../icons";
+import { ActionLink, PhoneLabel } from "../Button";
+import { ChevronIcon, ExternalIcon } from "../icons";
 import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { EmptyState } from "../ui/EmptyState";
-import { PageHeader } from "../ui/PageHeader";
+import { PageHeader, usePhoneLayout } from "../ui/PageHeader";
 import { Pills } from "../ui/Pills";
 import { useToast } from "../ui/Toast";
 import { FormsIcon } from "../icons";
 import { FormEditor } from "./FormEditor";
-import { EmbedPanel } from "./EmbedPanel";
+import { IntegrationPanel } from "./IntegrationPanel";
 import { SubmissionsPanel } from "./SubmissionsPanel";
-import { TestPanel } from "./TestPanel";
 
-type Tab = "general" | "fields" | "delivery" | "embed" | "messages" | "test";
+type Tab = "general" | "fields" | "delivery" | "email" | "integration" | "messages";
 
-const EDITOR_TABS: Tab[] = ["general", "fields", "delivery"];
+const EDITOR_TABS: Tab[] = ["general", "fields", "delivery", "email"];
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "general", label: "General" },
   { id: "fields", label: "Fields" },
   { id: "delivery", label: "Delivery" },
-  { id: "embed", label: "Embed" },
+  { id: "email", label: "Email" },
+  { id: "integration", label: "Integration" },
   { id: "messages", label: "Messages" },
-  { id: "test", label: "Test form" },
 ];
+
+/** Opens the form's own page in a new tab (round and icon-only on the smallest screens). */
+const publicPage = (code: string) => (
+  <ActionLink href={`/f/${code}`} target="_blank" rel="noopener noreferrer" variant="ghost" roundOnPhone>
+    <PhoneLabel>Public page</PhoneLabel> <ExternalIcon className="size-5" />
+  </ActionLink>
+);
 
 export const BackLink = () => (
   <Link href="/forms" className="mb-2 inline-flex min-h-11 items-center gap-1 text-base text-muted transition-colors duration-300 hover:text-text">
@@ -67,13 +74,17 @@ function TabSkeleton({ tab }: { tab: Tab }) {
         </FormCardSkeleton>
       )}
 
-      {tab === "embed" && (
+      {tab === "email" && (
         <FormCardSkeleton>
-          <Bar className="mb-5 h-[3.125rem] rounded-control" />
-          <Bar className="mb-2 h-6 w-40 rounded-full" />
-          <Bar className="mb-5 h-40 rounded-control" />
-          <FieldSkeleton width="w-24" />
+          <FieldSkeleton />
           <Bar className="mb-5 h-72 rounded-control" />
+        </FormCardSkeleton>
+      )}
+
+      {tab === "integration" && (
+        <FormCardSkeleton>
+          <Bar className="mb-5 h-6 w-3/4 rounded-full" />
+          <Bar className="mb-5 h-24 rounded-control" />
         </FormCardSkeleton>
       )}
 
@@ -94,21 +105,13 @@ function TabSkeleton({ tab }: { tab: Tab }) {
           </Card>
         </>
       )}
-
-      {tab === "test" && (
-        <FormCardSkeleton>
-          <FieldSkeleton />
-          <FieldSkeleton />
-          <FieldSkeleton />
-          <Bar className="mb-4 h-14 rounded-control" />
-        </FormCardSkeleton>
-      )}
     </div>
   );
 }
 
 export function FormDetailScreen({ code, initialTab }: { code: string; initialTab: Tab }) {
   const router = useRouter();
+  const phone = usePhoneLayout();
   const toast = useToast();
   const { data, loading, error, reload } = useResource(() => getForm(code), [code]);
   const [form, setForm] = useState<Form>();
@@ -157,17 +160,23 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
 
   return (
     <>
-      <PageHeader title={current.name} back={<BackLink />} />
+      {/* On a phone the link sits in the header, at the right; elsewhere it is at the far right of the tabs. */}
+      <PageHeader title={current.name} back={<BackLink />}>
+        {phone ? publicPage(current.code) : null}
+      </PageHeader>
 
-      <div className="mb-6">
-        <Pills label="Form sections" value={tab} options={TABS} onChange={setTab} />
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div className={`min-w-0 ${phone ? "flex-1" : ""}`}>
+          <Pills label="Form sections" value={tab} options={TABS} onChange={setTab} />
+        </div>
+
+        {!phone && publicPage(current.code)}
       </div>
 
       {/* The three editing tabs share one editor, so what was typed stays while moving between them. */}
       <div key={EDITOR_TABS.includes(tab) ? "editor" : tab}>
-        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
-        {tab === "embed" && <EmbedPanel form={current} onOpenDelivery={() => setTab("delivery")} />}
-        {tab === "test" && <TestPanel form={current} onOpenMessages={() => setTab("messages")} onOpenConfig={() => setTab("fields")} />}
+        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery" | "email"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
+        {tab === "integration" && <IntegrationPanel form={current} />}
         {tab === "messages" && <SubmissionsPanel form={current} />}
       </div>
 
