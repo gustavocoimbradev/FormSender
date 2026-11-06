@@ -97,7 +97,7 @@ services:
   # Only with TUNNEL_TOKEN: a Cloudflare Tunnel that brings the public address to this machine, so no port has to be
   # opened on the router and a changing home IP does not matter.
   cloudflared:
-    image: cloudflare/cloudflared:2025.8.1
+    image: cloudflare/cloudflared:2026.10.7
     profiles: ["tunnel"]
     restart: unless-stopped
     command: tunnel --no-autoupdate run
