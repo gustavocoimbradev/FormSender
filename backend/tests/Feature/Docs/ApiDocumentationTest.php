@@ -7,11 +7,31 @@ declare(strict_types=1);
  */
 function openApi(): array
 {
-    return test()->getJson('/openapi.json')->assertOk()->json();
+    return test()->getJson('/docs/openapi.json')->assertOk()->json();
 }
 
-it('serves the interactive documentation at the root of the backend', function (): void {
-    $this->get('/')->assertOk();
+it('serves the interactive documentation at /docs, never at the root', function (): void {
+    $this->get('/docs')->assertOk();
+    $this->get('/')->assertNotFound();
+    $this->getJson('/openapi.json')->assertNotFound();
+});
+
+describe('who can open the documentation', function (): void {
+    it('is closed in production by default', function (): void {
+        app()['env'] = 'production';
+        config(['app.api_docs' => false]);
+
+        $this->get('/docs')->assertForbidden();
+        $this->getJson('/docs/openapi.json')->assertForbidden();
+    });
+
+    it('opens in production when the owner turns it on', function (): void {
+        app()['env'] = 'production';
+        config(['app.api_docs' => true]);
+
+        $this->get('/docs')->assertOk();
+        $this->getJson('/docs/openapi.json')->assertOk();
+    });
 });
 
 it('describes the api in openapi 3', function (): void {
@@ -189,7 +209,7 @@ describe('friendly documentation', function (): void {
 
 describe('docs design', function (): void {
     it('shows the FormSender brand at the top of the docs', function (): void {
-        $this->get('/')
+        $this->get('/docs')
             ->assertOk()
             ->assertSee('FormSender')
             ->assertSee('class="fs-brand"', false)
@@ -197,20 +217,20 @@ describe('docs design', function (): void {
     });
 
     it('uses the same colors as the dashboard', function (): void {
-        $this->get('/')
+        $this->get('/docs')
             ->assertSee('--scalar-color-accent: #8b6bff', false)
             ->assertSee('--scalar-background-1: #07070d', false);
     });
 
     it('has the same subtle gradient scrollbars as the dashboard', function (): void {
-        $this->get('/')
+        $this->get('/docs')
             ->assertSee('::-webkit-scrollbar-thumb', false)
             ->assertSee('rgba(139, 107, 255, 0.55)', false)
             ->assertSee('@supports not selector(::-webkit-scrollbar)', false);
     });
 
     it('does not offer a light mode, to stay uniform with the dashboard', function (): void {
-        $this->get('/')
+        $this->get('/docs')
             ->assertSee('"forceDarkModeState":"dark"', false)
             ->assertSee('"hideDarkModeToggle":true', false);
     });
@@ -218,12 +238,12 @@ describe('docs design', function (): void {
     it('links back to the dashboard when its address is known', function (): void {
         config(['app.frontend_url' => 'http://localhost:3000']);
 
-        $this->get('/')->assertSee('href="http://localhost:3000"', false)->assertSee('Open dashboard');
+        $this->get('/docs')->assertSee('href="http://localhost:3000"', false)->assertSee('Open dashboard');
     });
 
     it('does not show a dead link to the dashboard when its address is unknown', function (): void {
         config(['app.frontend_url' => null]);
 
-        $this->get('/')->assertDontSee('Open dashboard');
+        $this->get('/docs')->assertDontSee('Open dashboard');
     });
 });

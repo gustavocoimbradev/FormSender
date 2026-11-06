@@ -49,13 +49,13 @@ function UserMenu() {
   const { user, signOut } = useSession();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
-  const [docsUrl, setDocsUrl] = useState("/");
+  const [docsUrl, setDocsUrl] = useState("/docs");
   const [mailpitUrl, setMailpitUrl] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const phone = usePhoneLayout();
 
   useEffect(() => {
-    setDocsUrl(`${apiPublicUrl()}/`);
+    setDocsUrl(`${apiPublicUrl()}/docs`);
     setMailpitUrl(mailpitPublicUrl());
   }, []);
 

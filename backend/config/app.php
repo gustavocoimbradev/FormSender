@@ -62,6 +62,9 @@ return [
     // Where the dashboard lives (the API docs link back to it).
     'frontend_url' => env('FRONTEND_URL'),
 
+    // The API documentation (at /docs) is always open while developing; in production it is closed unless this is true.
+    'api_docs' => (bool) env('API_DOCS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

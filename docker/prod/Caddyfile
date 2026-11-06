@@ -13,7 +13,7 @@
 		max_size 25MB
 	}
 
-	@backend path /api/* /embed.js
+	@backend path /api/* /embed.js /docs /docs/*
 	handle @backend {
 		@script path /embed.js
 		header @script Cache-Control "public, max-age=300"

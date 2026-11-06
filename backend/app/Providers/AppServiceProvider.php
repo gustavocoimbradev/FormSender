@@ -22,15 +22,15 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        // The API documentation is served at the root of the backend; outside
-        // local/testing environments it stays closed.
+        // The API documentation is served at /docs (the root belongs to the dashboard in production). Outside
+        // local/testing it stays closed, unless the owner turns it on with API_DOCS=true.
         Scramble::configure()
-            ->expose(ui: '/', document: '/openapi.json')
+            ->expose(ui: '/docs', document: '/docs/openapi.json')
             ->afterOpenApiGenerated(function (OpenApi $openApi): void {
                 $openApi->info->title = 'FormSender API';
             });
 
-        Gate::define('viewApiDocs', fn (?User $user = null): bool => app()->environment(['local', 'testing']));
+        Gate::define('viewApiDocs', fn (?User $user = null): bool => app()->environment(['local', 'testing']) || (bool) config('app.api_docs'));
 
         Gate::define('manage-settings', fn (User $user): bool => $user->isAdmin());
 

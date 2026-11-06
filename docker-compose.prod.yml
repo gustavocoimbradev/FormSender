@@ -27,6 +27,7 @@ x-app: &app
     SUBMISSION_RETENTION_DAYS: ${SUBMISSION_RETENTION_DAYS:-0}
     ATTACHMENT_MAX_KILOBYTES: ${ATTACHMENT_MAX_KILOBYTES:-5120}
     API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
+    API_DOCS: ${API_DOCS:-false}
   volumes:
     # Shared by the three: the files visitors attach are written by one and read by another.
     - storage:/app/storage

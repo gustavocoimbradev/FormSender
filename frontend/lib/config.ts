@@ -4,7 +4,7 @@ export function mailpitPublicUrl(): string | null {
   return port ? `${window.location.protocol}//${window.location.hostname}:${port}` : null;
 }
 
-/** Where the backend is reachable from the browser (the API docs live at its root). */
+/** Where the backend is reachable from the browser (the API docs live at its /docs). */
 export function apiPublicUrl(): string {
   const port = process.env.NEXT_PUBLIC_API_PORT;
 
