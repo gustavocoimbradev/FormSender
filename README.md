@@ -40,7 +40,7 @@ curl -X POST https://YOUR-DOMAIN/api/forms/FORM_CODE/submit -F name=Maria -F ema
 Needs Docker.
 
 ```bash
-make up       # development: everything up with sample data, a fake inbox (Mailpit) and free ports picked for you
+make dev      # development: everything up with sample data, a fake inbox (Mailpit) and free ports picked for you
 make prod     # production: asks for your address the first time, then builds and runs it for good
 ```
 
@@ -80,7 +80,7 @@ Keep `APP_KEY` safe: the saved SMTP password is encrypted with it. Without a key
 backend/     Laravel API
 frontend/    Next.js dashboard
 docker/      PHP image, production images and proxy
-scripts/     make up and make prod
+scripts/     make dev and make prod
 ```
 
 ## License

@@ -15,7 +15,7 @@ class ExampleFormSeeder extends Seeder
      * message optional), delivering to a fake address that Mailpit catches locally.
      *
      * It runs once only: it is skipped when forms already exist, and a marker keeps it from coming
-     * back after someone deletes it, so this is safe to run on every `make up`.
+     * back after someone deletes it, so this is safe to run on every `make dev`.
      */
     public function run(): void
     {

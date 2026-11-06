@@ -1,16 +1,19 @@
-.PHONY: up start down urls logs test migrate seed reset status prod prod-setup prod-logs prod-down prod-backup
+# `make dev` and `make prod` are the two ways to run it; `make up` is the old name of `make dev` and still works.
+.PHONY: dev up start down urls logs test migrate seed reset status prod prod-setup prod-logs prod-down prod-backup
 
-# Quiet by default. For the full logs: `make up logs` (or `make up LOGS=1`).
+# Quiet by default. For the full logs: `make dev logs` (or `make dev LOGS=1`).
 UP_FLAGS :=
-ifneq ($(filter up,$(MAKECMDGOALS)),)
+ifneq ($(filter dev up,$(MAKECMDGOALS)),)
 ifneq ($(or $(filter logs,$(MAKECMDGOALS)),$(LOGS)),)
 UP_FLAGS := --logs
 endif
 endif
 
-# Foreground: Ctrl+C stops everything.
-up:
+# Development, in the foreground: Ctrl+C stops everything.
+dev:
 	@./scripts/up.sh $(UP_FLAGS)
+
+up: dev
 
 # Same stack in the background (for scripts and automation); stop it with `make down`.
 start:
@@ -25,7 +28,7 @@ down:
 urls:
 	@./scripts/urls.sh
 
-# Follows the logs of a running stack. (`make up logs` already shows them.)
+# Follows the logs of a running stack. (`make dev logs` already shows them.)
 logs:
 	@$(if $(filter up,$(MAKECMDGOALS)),:,docker compose logs -f --tail=100)
 

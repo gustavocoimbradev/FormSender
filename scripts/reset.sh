@@ -30,7 +30,7 @@ command -v docker >/dev/null 2>&1 || fail "Docker was not found." "Open Docker D
 docker info >/dev/null 2>&1 || fail "Docker is not running." "Open Docker Desktop, wait for it to start and try again."
 
 [ -n "$(docker compose ps -q app 2>/dev/null)" ] \
-    || fail "The project is not running." "Start it with make up (or make start) and run make reset again."
+    || fail "The project is not running." "Start it with make dev (or make start) and run make reset again."
 
 printf '\n'
 brand_title
