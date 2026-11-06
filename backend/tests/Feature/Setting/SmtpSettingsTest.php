@@ -79,12 +79,17 @@ it('accepts smtp settings without authentication or encryption', function (): vo
         ->assertJsonPath('data.smtp.password', null);
 });
 
+it('changes nothing when nothing is sent', function (): void {
+    $this->putJson('/api/settings', smtpPayload())->assertOk();
+
+    $this->putJson('/api/settings', [])->assertOk()->assertJsonPath('data.smtp.host', 'smtp.example.com');
+});
+
 it('validates the smtp settings', function (array $payload, string $errorKey): void {
     $this->putJson('/api/settings', $payload)
         ->assertUnprocessable()
         ->assertJsonValidationErrors($errorKey);
 })->with([
-    'missing smtp' => [[], 'smtp'],
     'missing host' => [fn () => smtpPayload(['host' => null]), 'smtp.host'],
     'missing port' => [fn () => smtpPayload(['port' => null]), 'smtp.port'],
     'port out of range' => [fn () => smtpPayload(['port' => 70000]), 'smtp.port'],

@@ -29,6 +29,9 @@ it('documents every api route', function (string $path, string $method): void {
     ['/setup', 'get'],
     ['/setup', 'post'],
     ['/auth/login', 'post'],
+    ['/auth/register', 'post'],
+    ['/auth/resend-confirmation', 'post'],
+    ['/email-confirmations', 'post'],
     ['/auth/logout', 'post'],
     ['/auth/me', 'get'],
     ['/auth/forgot-password', 'post'],
@@ -60,7 +63,7 @@ it('declares bearer authentication for protected routes only', function (): void
         expect($document['paths'][$path][$method]['security'] ?? null)->not->toBe([], "{$method} {$path} must be protected");
     }
 
-    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post'], ['/forms/{form}/submit', 'post'], ['/forms/{form}/public', 'get']] as [$path, $method]) {
+    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/register', 'post'], ['/auth/resend-confirmation', 'post'], ['/email-confirmations', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post'], ['/forms/{form}/submit', 'post'], ['/forms/{form}/public', 'get']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->toBe([], "{$method} {$path} must be public");
     }
 });

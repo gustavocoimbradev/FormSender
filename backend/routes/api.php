@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DefaultEmailController;
 use App\Http\Controllers\DefaultStringsController;
 use App\Http\Controllers\DefaultStyleController;
+use App\Http\Controllers\EmailConfirmationController;
 use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormSubmissionController;
@@ -27,6 +28,9 @@ Route::get('forms/{form:code}/public', PublicFormController::class)
 Route::post('forms/{form:code}/submit', SubmitFormController::class)
     ->middleware(['throttle:form-submit', EnsureAllowedDomain::class]);
 
+Route::post('auth/register', [AuthController::class, 'register'])->middleware('throttle:register');
+Route::post('auth/resend-confirmation', [AuthController::class, 'resendConfirmation'])->middleware('throttle:password-reset');
+Route::post('email-confirmations', EmailConfirmationController::class)->middleware('throttle:email-confirmation');
 Route::post('auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('auth/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset');
 Route::post('auth/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset');

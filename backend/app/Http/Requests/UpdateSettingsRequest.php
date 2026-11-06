@@ -26,19 +26,25 @@ class UpdateSettingsRequest extends FormRequest
              *
              * @example {"host": "smtp.company.com", "port": 465, "username": "mailer@company.com", "password": "secret", "encryption": "ssl", "from_address": "no-reply@company.com", "from_name": "My Company"}
              */
-            'smtp' => ['required', 'array'],
+            'smtp' => ['sometimes', 'array'],
+            /**
+             * Whether anyone can create an account. When `false`, only the administrator creates accounts.
+             *
+             * @example true
+             */
+            'allow_registration' => ['sometimes', 'boolean'],
             /**
              * Address of the email server.
              *
              * @example smtp.company.com
              */
-            'smtp.host' => ['required', 'string', 'max:255'],
+            'smtp.host' => ['required_with:smtp', 'string', 'max:255'],
             /**
              * Port of the email server (1 to 65535). Usually 465 (SSL), 587 (TLS) or 25.
              *
              * @example 465
              */
-            'smtp.port' => ['required', 'integer', 'between:1,65535'],
+            'smtp.port' => ['required_with:smtp', 'integer', 'between:1,65535'],
             /**
              * Login of the email server. Leave empty if it needs none.
              *
@@ -62,7 +68,7 @@ class UpdateSettingsRequest extends FormRequest
              *
              * @example no-reply@company.com
              */
-            'smtp.from_address' => ['required', 'email', 'max:255'],
+            'smtp.from_address' => ['required_with:smtp', 'email', 'max:255'],
             /**
              * Name shown as the sender.
              *

@@ -83,7 +83,7 @@ it('validates the setup payload', function (array $overrides, string $errorKey):
 it('reports that the setup is still pending', function (): void {
     $this->getJson('/api/setup')
         ->assertOk()
-        ->assertExactJson(['data' => ['completed' => false]]);
+        ->assertExactJson(['data' => ['completed' => false, 'registration_open' => false]]);
 });
 
 it('reports that the setup is done once an admin exists', function (): void {
@@ -91,7 +91,7 @@ it('reports that the setup is done once an admin exists', function (): void {
 
     $this->getJson('/api/setup')
         ->assertOk()
-        ->assertExactJson(['data' => ['completed' => true]]);
+        ->assertExactJson(['data' => ['completed' => true, 'registration_open' => false]]);
 });
 
 it('does not treat regular users as a finished setup', function (): void {

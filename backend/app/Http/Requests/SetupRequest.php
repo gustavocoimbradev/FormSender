@@ -41,6 +41,13 @@ class SetupRequest extends FormRequest
              */
             'password' => ['required', 'string', Password::min(8)],
             /**
+             * Whether anyone can create an account and use the service with their own forms. Closed unless `true`. The
+             * administrator can change it later.
+             *
+             * @example false
+             */
+            'allow_registration' => ['sometimes', 'boolean'],
+            /**
              * The email server (SMTP) used to deliver messages. Optional: leave it out to keep the current one.
              *
              * @example {"host": "smtp.company.com", "port": 587, "username": "mailer@company.com", "password": "secret", "encryption": "tls", "from_address": "no-reply@company.com", "from_name": "My Company"}
