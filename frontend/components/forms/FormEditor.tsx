@@ -11,9 +11,11 @@ import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
 import { ChipsInput } from "../ui/ChipsInput";
 import { useToast } from "../ui/Toast";
+import { formatCss } from "@/lib/formatCss";
 import { DesignSection } from "./DesignSection";
 import { EmailSection } from "./EmailSection";
 import { FieldRow } from "./FieldRow";
+import { StringsSection } from "./StringsSection";
 import {
   draftFromForm,
   emptyDraft,
@@ -94,7 +96,17 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
   }
 
   async function save() {
-    const found = validateDraft(draft, { saved: Boolean(form) });
+    // The style is tidied before it is saved (a half-written one is saved as it is).
+    let current = draft;
+    if (form && draft.css.trim()) {
+      const css = await formatCss(draft.css).catch(() => draft.css);
+      if (css !== draft.css) {
+        current = { ...draft, css };
+        setDraft(current);
+      }
+    }
+
+    const found = validateDraft(current, { saved: Boolean(form) });
     if (hasErrors(found)) {
       showErrors(found);
       return;
@@ -103,12 +115,12 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
 
     setSaving(true);
     try {
-      const saved = form ? await updateForm(form.code, inputFromDraft(draft)) : await createForm(inputFromDraft(draft));
+      const saved = form ? await updateForm(form.code, inputFromDraft(current)) : await createForm(inputFromDraft(current));
       toast(form ? "Form saved." : "Form created.");
       onSaved(saved);
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
-        showErrors(errorsFromApi(error, draft));
+        showErrors(errorsFromApi(error, current));
       } else {
         toast("Could not save. Please try again.", "error");
       }
@@ -228,6 +240,8 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
       )}
 
       {shows("design") && form && <DesignSection code={form.code} css={draft.css} error={errors.css} disabled={saving} onChange={(css) => patch({ css })} />}
+
+      {shows("strings") && form && <StringsSection code={form.code} css={draft.css} strings={draft.strings} error={errors.strings} disabled={saving} onChange={(strings) => patch({ strings })} />}
 
       {errors.general && <p role="alert" className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.general}</p>}
 

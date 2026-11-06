@@ -45,6 +45,9 @@ export type Form = {
   /** CSS that draws the embedded form (the default style until the form has its own). */
   css: string;
   css_is_default: boolean;
+  /** Every text the embedded form shows by itself, by name (the default words for the ones not changed). */
+  strings: Record<string, string>;
+  strings_are_default: boolean;
   /** The form's unique code: it identifies the form in every address, in the panel and on the websites that send it. */
   code: string;
   created_at: string | null;
@@ -57,7 +60,11 @@ export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed
   email_html: string | null;
   /** Null (or empty) means the default style. */
   css: string | null;
+  /** Only the texts to change; null means all the default ones. */
+  strings: Record<string, string> | null;
 };
+
+export type StringInfo = { key: string; description: string; text: string };
 
 export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed" | "spam";
 
@@ -251,6 +258,9 @@ export async function downloadAttachment(formCode: string, submissionId: number,
 
 /** The subject and HTML every form starts with, to go back to them. */
 export const getDefaultEmail = async () => (await authed<{ data: { subject: string; html: string } }>("/email/default")).data;
+
+/** Every text the embedded form shows by itself, with what it is for and its default words. */
+export const getDefaultStrings = async () => (await authed<{ data: StringInfo[] }>("/strings/default")).data;
 
 /** The CSS every form starts with, to go back to it. */
 export const getDefaultStyle = async () => (await authed<{ data: { css: string } }>("/style/default")).data.css;

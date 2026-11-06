@@ -7,10 +7,10 @@ export const metadata: Metadata = { title: "Form", robots: { index: false, follo
 
 /**
  * One address for everything: opened directly it is the form's page, with our logo and credit; inside an
- * iframe it is only the form. `theme=dark` paints the framed form dark (light is the default).
+ * iframe it is only the form.
  */
-export default function PublicFormPage({ params, searchParams }: { params: { code: string }; searchParams: { theme?: string } }) {
+export default function PublicFormPage({ params }: { params: { code: string } }) {
   if (!/^[a-z0-9]{10,32}$/.test(params.code)) notFound();
 
-  return <PublicFormScreen code={params.code} theme={searchParams.theme === "dark" ? "dark" : "light"} />;
+  return <PublicFormScreen code={params.code} />;
 }

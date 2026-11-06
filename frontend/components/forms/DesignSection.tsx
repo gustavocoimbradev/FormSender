@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { getDefaultStyle } from "@/lib/api";
 import { formatCss } from "@/lib/formatCss";
 import { ActionButton } from "../Button";
@@ -22,7 +22,8 @@ type DesignSectionProps = {
 export function DesignSection({ code, css, error, disabled, onChange }: DesignSectionProps) {
   const toast = useToast();
   const [restoring, setRestoring] = useState(false);
-  const [formatting, setFormatting] = useState(false);
+  const latest = useRef(css);
+  latest.current = css;
 
   async function restore() {
     setRestoring(true);
@@ -36,14 +37,15 @@ export function DesignSection({ code, css, error, disabled, onChange }: DesignSe
     }
   }
 
+  // Tidies the style by itself when the editor loses the focus. A style that is half written cannot be tidied: it is left alone.
   async function format() {
-    setFormatting(true);
+    const before = css;
+
     try {
-      onChange(await formatCss(css));
+      const tidy = await formatCss(before);
+      if (tidy !== before && latest.current === before) onChange(tidy);
     } catch {
-      toast("Could not tidy the style. Check it for a missing brace or semicolon.", "error");
-    } finally {
-      setFormatting(false);
+      /* not valid CSS yet */
     }
   }
 
@@ -51,14 +53,9 @@ export function DesignSection({ code, css, error, disabled, onChange }: DesignSe
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6 xl:grid-cols-2">
       <Card className="min-w-0 animate-fade-up">
         <CardHeader title="Style">
-          <div className="flex flex-wrap gap-2">
-            <ActionButton type="button" variant="ghost" loading={formatting} disabled={disabled || restoring} onClick={() => void format()} title="Shift+Alt+F">
-              Format
-            </ActionButton>
-            <ActionButton type="button" variant="ghost" loading={restoring} disabled={disabled || formatting} onClick={() => void restore()}>
-              <RefreshIcon className="size-5" /> Restore default style
-            </ActionButton>
-          </div>
+          <ActionButton type="button" variant="ghost" loading={restoring} disabled={disabled} onClick={() => void restore()}>
+            <RefreshIcon className="size-5" /> Restore default style
+          </ActionButton>
         </CardHeader>
 
         <div className="px-5 pb-6 sm:px-6">

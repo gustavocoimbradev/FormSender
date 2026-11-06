@@ -16,7 +16,7 @@ const WAYS: { value: Way; label: string }[] = [
 
 const HINTS: Record<Way, string> = {
   script: "Paste this where the form should appear. It always shows the fields you have here.",
-  iframe: "For pages that do not allow scripts. It shows the same form, in its own frame. Add ?theme=dark to the address for dark sites.",
+  iframe: "For pages that do not allow scripts. It shows the same form, in its own frame.",
 };
 
 /** Height of each kind of field in the framed form (label, control and the space under it), measured on the real page. */

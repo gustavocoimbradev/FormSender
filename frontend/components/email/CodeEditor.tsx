@@ -96,7 +96,7 @@ type CodeEditorProps = {
   language?: "html" | "css";
   /** Tailwind height of the box. */
   height?: string;
-  /** CSS only: what Shift+Alt+F (tidy the code) does. */
+  /** CSS only: tidies the code. It runs by itself when the editor loses the focus (and on Shift+Alt+F). */
   onFormat?: () => void;
 };
 
@@ -138,6 +138,14 @@ export function CodeEditor({ value, onChange, insertRef, label, language = "html
                 highlightActiveLine(),
                 highlightActiveLineGutter(),
                 highlightSelectionMatches(),
+                // Tidy by itself once the person moves on (but not while they pick a color: that is a click on the swatch's own input).
+                EditorView.domEventHandlers({
+                  blur: (event) => {
+                    const next = event.relatedTarget;
+                    if (!(next instanceof HTMLInputElement && next.type === "color")) format.current?.();
+                    return false;
+                  },
+                }),
                 keymap.of([
                   {
                     key: "Shift-Alt-f",

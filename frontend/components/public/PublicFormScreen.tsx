@@ -8,23 +8,16 @@ import { Spinner } from "../Spinner";
 
 type State = { status: "loading" } | { status: "ready"; name: string } | { status: "missing" } | { status: "unavailable" };
 
-type PublicFormScreenProps = {
-  code: string;
-  /** Colors of the form when it is inside an iframe (opened directly, the page is always dark, like the platform). */
-  theme: "light" | "dark";
-};
-
 /**
  * A form's own page: the same form every website gets from the embed script, drawn by that very script,
  * so what you see here is what a visitor sees anywhere. It works on any screen, and nothing here needs a login.
  * Opened directly it carries our logo and credit; inside an iframe it is just the form. It is one address for
  * both, so a link meant for a frame cannot be used to show the form without our name.
  */
-export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
+export function PublicFormScreen({ code }: { code: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
   // Known only in the browser. Until then nothing is drawn, so neither version flashes.
   const [embedded, setEmbedded] = useState<boolean | null>(null);
-  const formTheme = embedded ? theme : "dark";
 
   useEffect(() => setEmbedded(window.self !== window.top), []);
 
@@ -55,16 +48,14 @@ export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
 
     const { documentElement, body } = document;
     const previous = [documentElement.style.colorScheme, documentElement.style.background, body.style.background];
-    const background = theme === "dark" ? "#07070d" : "#ffffff";
-
-    documentElement.style.colorScheme = theme;
-    documentElement.style.background = background;
-    body.style.background = background;
+    documentElement.style.colorScheme = "light";
+    documentElement.style.background = "#ffffff";
+    body.style.background = "#ffffff";
 
     return () => {
       [documentElement.style.colorScheme, documentElement.style.background, body.style.background] = previous;
     };
-  }, [embedded, theme]);
+  }, [embedded]);
 
   useEffect(() => {
     if (state.status !== "ready" || embedded === null) return;
@@ -73,7 +64,8 @@ export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
     script.src = `${apiPublicUrl()}/embed.js`;
     script.async = true;
     script.dataset.form = code;
-    script.dataset.theme = formTheme;
+    // The page itself is dark, like the platform; a framed form is light, and only that one is restyled by its owner.
+    if (!embedded) script.dataset.theme = "dark";
     // The page itself always looks the same; only a form put on a site (script or iframe) wears the style written for it.
     if (!embedded) script.dataset.style = "default";
     script.dataset.target = "#public-form";
@@ -83,13 +75,13 @@ export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
       script.remove();
       document.getElementById("public-form")?.replaceChildren();
     };
-  }, [state.status, embedded, code, formTheme]);
+  }, [state.status, embedded, code]);
 
   if (embedded === null) return <main className="min-h-dvh" />;
 
   if (embedded) {
     return (
-      <main className={`min-h-dvh p-1 ${theme === "dark" ? "text-text" : "text-[#14141f]"}`}>
+      <main className="min-h-dvh p-1 text-[#14141f]">
         {state.status === "loading" && (
           <div role="status" aria-label="Loading" className="grid place-items-center py-10">
             <Spinner className="size-6" />
@@ -99,9 +91,9 @@ export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
           <>
             <div id="public-form" />
             {/* Quiet, but always there: the framed form carries our credit too. */}
-            <p className={`mt-4 text-center text-base ${theme === "dark" ? "text-muted" : "text-[#6b6b80]"}`}>
+            <p className="mt-4 text-center text-base text-[#6b6b80]">
               Powered by{" "}
-              <a href={PROJECT_URL} target="_blank" rel="noopener noreferrer" className={`font-medium underline-offset-4 hover:underline ${theme === "dark" ? "text-text" : "text-[#14141f]"}`}>
+              <a href={PROJECT_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-[#14141f] underline-offset-4 hover:underline">
                 Form Sender
               </a>
             </p>

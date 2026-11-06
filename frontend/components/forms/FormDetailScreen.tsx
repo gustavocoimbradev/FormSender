@@ -21,9 +21,9 @@ import { FormEditor } from "./FormEditor";
 import { IntegrationPanel } from "./IntegrationPanel";
 import { SubmissionsPanel } from "./SubmissionsPanel";
 
-type Tab = "general" | "fields" | "delivery" | "email" | "design" | "integration" | "messages";
+type Tab = "general" | "fields" | "delivery" | "email" | "design" | "strings" | "integration" | "messages";
 
-const EDITOR_TABS: Tab[] = ["general", "fields", "delivery", "email", "design"];
+const EDITOR_TABS: Tab[] = ["general", "fields", "delivery", "email", "design", "strings"];
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "general", label: "General" },
@@ -31,6 +31,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "delivery", label: "Delivery" },
   { id: "email", label: "Email" },
   { id: "design", label: "Design" },
+  { id: "strings", label: "Strings" },
   { id: "integration", label: "Integration" },
   { id: "messages", label: "Messages" },
 ];
@@ -85,6 +86,15 @@ function TabSkeleton({ tab }: { tab: Tab }) {
       {tab === "design" && (
         <FormCardSkeleton>
           <Bar className="mb-5 h-[32rem] rounded-control" />
+        </FormCardSkeleton>
+      )}
+
+      {tab === "strings" && (
+        <FormCardSkeleton>
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <FieldSkeleton />
         </FormCardSkeleton>
       )}
 
@@ -182,7 +192,7 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
 
       {/* The three editing tabs share one editor, so what was typed stays while moving between them. */}
       <div key={EDITOR_TABS.includes(tab) ? "editor" : tab}>
-        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery" | "email" | "design"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
+        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery" | "email" | "design" | "strings"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
         {tab === "integration" && <IntegrationPanel form={current} />}
         {tab === "messages" && <SubmissionsPanel form={current} />}
       </div>
