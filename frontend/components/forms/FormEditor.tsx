@@ -124,6 +124,9 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
         showErrors(errorsFromApi(error, current));
+      } else if (error instanceof ApiError && error.status === 403) {
+        // The limit of forms of the account was reached: the API says it in plain words.
+        toast(error.message, "error");
       } else {
         toast("Could not save. Please try again.", "error");
       }

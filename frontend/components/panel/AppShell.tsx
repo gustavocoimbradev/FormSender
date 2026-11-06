@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { apiPublicUrl, mailpitPublicUrl } from "@/lib/config";
 import { isAdmin, roleLabel } from "@/lib/permissions";
 import { AmbientBackground } from "../AmbientBackground";
+import { QuotaBars } from "./QuotaBars";
 import { BookIcon, ChevronIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon } from "../icons";
 import { LogoMark } from "../Logo";
 import { PHONE_HEADER_SLOT, usePhoneLayout } from "../ui/PageHeader";
@@ -102,6 +103,8 @@ function UserMenu() {
               </p>
               <p className="mt-1 text-base text-accent">{roleLabel(user)}</p>
 
+              <QuotaBars />
+
               <div className="mt-3 border-t border-surface/10 pt-2">
                 <a href={docsUrl} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_LINK}>
                   <BookIcon /> Documentation <ExternalIcon className="ml-auto size-4 text-muted" />
@@ -145,6 +148,8 @@ function UserMenu() {
             {user.email}
           </p>
           <p className="mt-1 text-base text-accent">{roleLabel(user)}</p>
+
+          <QuotaBars />
 
           <div className="mt-3 border-t border-surface/10 pt-2">
             <a href={docsUrl} target="_blank" rel="noopener noreferrer" role="menuitem" className={MENU_LINK}>

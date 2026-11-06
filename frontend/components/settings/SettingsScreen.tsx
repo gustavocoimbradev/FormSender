@@ -8,16 +8,18 @@ import { PageHeader, usePhoneLayout } from "../ui/PageHeader";
 import { Pills } from "../ui/Pills";
 import { Bar, FieldsRow } from "../ui/Skeleton";
 import { Card } from "../ui/Card";
+import { QuotasTab } from "./QuotasTab";
 import { SmtpTab } from "./SmtpTab";
 import { StorageTab } from "./StorageTab";
 import { UsersTab } from "./UsersTab";
 
-type Tab = "smtp" | "users" | "storage";
+type Tab = "smtp" | "users" | "storage" | "quotas";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "smtp", label: "SMTP" },
   { id: "users", label: "Users" },
   { id: "storage", label: "Storage" },
+  { id: "quotas", label: "Quotas" },
 ];
 
 const isTab = (value: string): value is Tab => TABS.some((tab) => tab.id === value);
@@ -72,6 +74,7 @@ export function SettingsScreen() {
           {tab === "smtp" && <SmtpTab smtp={data.smtp} />}
           {tab === "users" && <UsersTab allowRegistration={data.allow_registration} />}
           {tab === "storage" && <StorageTab retentionDays={data.retention_days} />}
+          {tab === "quotas" && <QuotasTab quotas={data.quotas} />}
         </div>
       )}
     </>

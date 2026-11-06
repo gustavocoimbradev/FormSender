@@ -308,7 +308,15 @@ export const deleteUser = (id: number) => authed<void>(`/users/${id}`, { method:
 
 // ------------------------------------------------------------------ settings (admin)
 
-export type Settings = { smtp: SmtpSettings | null; allow_registration: boolean; retention_days: number };
+export type QuotaLimits = { max_forms: number | null; max_daily_submissions: number | null };
+
+export type Settings = { smtp: SmtpSettings | null; allow_registration: boolean; retention_days: number; quotas: QuotaLimits };
+
+/** What an account has used against each limit (`limit` is null when there is none). */
+export type QuotaUsage = {
+  forms: { used: number; limit: number | null };
+  daily_submissions: { used: number; limit: number | null };
+};
 
 export const getSettings = async () => (await authed<{ data: Settings }>("/settings")).data;
 
@@ -324,3 +332,10 @@ export const setAllowRegistration = async (allow: boolean) =>
 /** How many days messages are kept before they are deleted, with their files. 0 keeps them forever. */
 export const setRetentionDays = async (days: number) =>
   (await authed<{ data: Settings }>("/settings", json("PUT", { retention_days: days }))).data.retention_days;
+
+/** The limits for every account (the administrator's included). A null limit means unlimited. */
+export const saveQuotas = async (quotas: QuotaLimits) =>
+  (await authed<{ data: Settings }>("/settings", json("PUT", { quotas }))).data.quotas;
+
+/** What the signed-in account has used: its forms and the messages its forms received today. */
+export const getQuotas = async () => (await authed<{ data: QuotaUsage }>("/quotas")).data;
