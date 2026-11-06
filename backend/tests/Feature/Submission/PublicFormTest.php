@@ -74,5 +74,5 @@ it('is limited per form and visitor, far above a real person', function (): void
 
 it('is served as a script every site can add', function (): void {
     expect(public_path('embed.js'))->toBeFile()
-        ->and(file_get_contents(public_path('embed.js')))->toContain('data-form')->toContain('/public')->toContain('/submit');
+        ->and(file_get_contents(public_path('embed.js')))->toContain('data-form')->toContain('/public')->toContain('/submit')->toContain('DOMContentLoaded');
 });

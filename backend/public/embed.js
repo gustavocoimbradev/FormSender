@@ -75,14 +75,30 @@
     return node;
   }
 
-  // Where the form goes: inside the target element, or right after the tag.
+  // Where the form goes: inside the target element, or right after the tag. A script pasted in the <head> (or
+  // alone in a file) would put it inside the <head>, which is never drawn: then it goes to the end of the <body>.
   var host = el("div", { "data-formsender": code });
-  var target = script.getAttribute("data-target") && document.querySelector(script.getAttribute("data-target"));
-  if (target) {
-    // The same form is never drawn twice in the same place (a page may run the script more than once).
-    if (target.querySelector('[data-formsender="' + code + '"]')) return;
-    target.appendChild(host);
-  } else script.parentNode.insertBefore(host, script.nextSibling);
+
+  function mount() {
+    var selector = script.getAttribute("data-target");
+    var target = selector && document.querySelector(selector);
+
+    if (target) {
+      // The same form is never drawn twice in the same place (a page may run the script more than once).
+      if (target.querySelector('[data-formsender="' + code + '"]')) return;
+      target.appendChild(host);
+    } else if (document.body && document.body.contains(script)) {
+      script.parentNode.insertBefore(host, script.nextSibling);
+    } else {
+      document.body.appendChild(host);
+    }
+  }
+
+  // Too early (the page is still being read and what the form needs is not there yet): wait for it.
+  var selector = script.getAttribute("data-target");
+  var early = document.readyState === "loading" && (!document.body || (selector && !document.querySelector(selector)));
+  if (early) document.addEventListener("DOMContentLoaded", mount);
+  else mount();
 
   var root = host.attachShadow({ mode: "open" });
   root.appendChild(el("style", {}, CSS));
