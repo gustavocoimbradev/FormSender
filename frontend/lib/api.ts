@@ -42,6 +42,9 @@ export type Form = {
   email_subject: string;
   email_html: string;
   email_is_default: boolean;
+  /** CSS that draws the embedded form (the default style until the form has its own). */
+  css: string;
+  css_is_default: boolean;
   /** The form's unique code: it identifies the form in every address, in the panel and on the websites that send it. */
   code: string;
   created_at: string | null;
@@ -52,6 +55,8 @@ export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed
   /** Null (or empty) means the default email. */
   email_subject: string | null;
   email_html: string | null;
+  /** Null (or empty) means the default style. */
+  css: string | null;
 };
 
 export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed" | "spam";
@@ -246,6 +251,9 @@ export async function downloadAttachment(formCode: string, submissionId: number,
 
 /** The subject and HTML every form starts with, to go back to them. */
 export const getDefaultEmail = async () => (await authed<{ data: { subject: string; html: string } }>("/email/default")).data;
+
+/** The CSS every form starts with, to go back to it. */
+export const getDefaultStyle = async () => (await authed<{ data: { css: string } }>("/style/default")).data.css;
 
 /** The email filled with example answers (for the fields of the form being edited), exactly as a real message would be. */
 export const previewEmail = async (input: { subject: string; html: string; fields: FormField[] }) =>

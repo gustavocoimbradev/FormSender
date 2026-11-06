@@ -33,6 +33,8 @@ export type FormDraft = {
   /** The email delivered for the form's messages. Empty means the default email (a form being created has not got to choose yet). */
   emailSubject: string;
   emailHtml: string;
+  /** The CSS that draws the embedded form; empty means the default style (a form being created has not got to choose yet). */
+  css: string;
 };
 
 export type DraftErrors = {
@@ -42,6 +44,7 @@ export type DraftErrors = {
   domains?: string;
   emailSubject?: string;
   emailHtml?: string;
+  css?: string;
   general?: string;
 };
 
@@ -55,7 +58,7 @@ export const newKey = () => `field-${Math.random().toString(36).slice(2, 8)}${(+
 
 export const emptyField = (): FieldDraft => ({ key: newKey(), name: "", label: "", type: "text", required: false, options: [], nameLocked: false });
 
-export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], emailSubject: "", emailHtml: "" });
+export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], emailSubject: "", emailHtml: "", css: "" });
 
 export function draftFromForm(form: Form): FormDraft {
   return {
@@ -73,6 +76,7 @@ export function draftFromForm(form: Form): FormDraft {
     domains: form.allowed_domains,
     emailSubject: form.email_subject,
     emailHtml: form.email_html,
+    css: form.css,
   };
 }
 
@@ -90,6 +94,7 @@ export function inputFromDraft(draft: FormDraft): FormInput {
     allowed_domains: draft.domains,
     email_subject: draft.emailSubject.trim() || null,
     email_html: draft.emailHtml.trim() || null,
+    css: draft.css.trim() || null,
   };
 }
 
@@ -110,15 +115,16 @@ export const validateDomain = (value: string) => (DOMAIN.test(value) ? null : "U
 export const validateEmailChip = (value: string) => (isValidEmail(value) ? null : "Enter a valid email.");
 
 /** Client-side checks that mirror the API, so most mistakes are caught before sending. */
-export function validateDraft(draft: FormDraft, { checkEmail }: { checkEmail: boolean }): DraftErrors {
+export function validateDraft(draft: FormDraft, { saved }: { saved: boolean }): DraftErrors {
   const errors: DraftErrors = { fields: {} };
 
   if (!draft.name.trim()) errors.name = "Give the form a name.";
 
-  // A saved form shows its email in the editor, so an empty one is a mistake (to go back to the default there is a button).
-  if (checkEmail) {
+  // A saved form shows its email and its style in the editor, so an empty one is a mistake (to go back to the default there are buttons).
+  if (saved) {
     if (!draft.emailSubject.trim()) errors.emailSubject = "Enter the email subject.";
     if (!draft.emailHtml.trim()) errors.emailHtml = "The email cannot be empty.";
+    if (!draft.css.trim()) errors.css = "The style cannot be empty. Use Restore default style to go back to the standard one.";
   }
 
   const seen = new Set<string>();
@@ -139,17 +145,18 @@ export function validateDraft(draft: FormDraft, { checkEmail }: { checkEmail: bo
   return errors;
 }
 
-export type EditorSection = "general" | "fields" | "delivery" | "email";
+export type EditorSection = "general" | "fields" | "delivery" | "email" | "design";
 
 /** The tab that holds the first mistake, so the person is taken to it. */
 export function sectionWithErrors(errors: DraftErrors): EditorSection {
   if (errors.name) return "general";
   if (Object.keys(errors.fields).length > 0) return "fields";
   if (errors.emailSubject || errors.emailHtml) return "email";
+  if (errors.css) return "design";
   return "delivery";
 }
 
-export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.emailSubject || errors.emailHtml || Object.keys(errors.fields).length > 0);
+export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.emailSubject || errors.emailHtml || errors.css || Object.keys(errors.fields).length > 0);
 
 /** The technical name of a new field: its label as a slug, made unique among the other fields (email, email_2...). */
 export function nameFromLabel(label: string, taken: string[]): string {
@@ -172,6 +179,7 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
     else if (parts[0] === "destinations") errors.destinations = "Check the destination emails.";
     else if (parts[0] === "allowed_domains") errors.domains = "Check the allowed sites.";
     else if (key === "email_subject") errors.emailSubject = "Check the subject (up to 200 characters).";
+    else if (key === "css") errors.css = "Check the style: importing other stylesheets is not allowed and the limit is 50,000 characters.";
     else if (key === "email_html") errors.emailHtml = "Check the email: scripts are not allowed and the limit is 100,000 characters.";
     else if (parts[0] === "fields" && parts[1] !== undefined) {
       const field = draft.fields[Number(parts[1])];
@@ -185,7 +193,7 @@ export function errorsFromApi(error: ApiError, draft: FormDraft): DraftErrors {
     }
   }
 
-  if (!errors.name && !errors.destinations && !errors.domains && !errors.emailSubject && !errors.emailHtml && Object.keys(errors.fields).length === 0) {
+  if (!errors.name && !errors.destinations && !errors.domains && !errors.emailSubject && !errors.emailHtml && !errors.css && Object.keys(errors.fields).length === 0) {
     errors.general = "Check the form details and try again.";
   }
 

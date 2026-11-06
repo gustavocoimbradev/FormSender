@@ -50,10 +50,12 @@ export function Field({ id, label, hint, error, icon, trailing, footer, labelAsi
 
       <div
         ref={box}
-        className={`group relative flex items-center rounded-control border bg-surface/[0.04] transition duration-300 ease-out focus-within:bg-surface/[0.07] focus-within:ring-4 ${
-          error
-            ? "border-danger/70 focus-within:border-danger focus-within:ring-danger/20"
-            : "border-surface/10 hover:border-surface/20 focus-within:border-accent focus-within:ring-accent/20"
+        className={`group relative flex items-center rounded-control border transition duration-300 ease-out focus-within:ring-4 ${
+          input.readOnly
+            ? "border-dashed border-surface/10 bg-transparent focus-within:border-surface/25 focus-within:ring-surface/10"
+            : error
+              ? "bg-surface/[0.04] border-danger/70 focus-within:border-danger focus-within:bg-surface/[0.07] focus-within:ring-danger/20"
+              : "bg-surface/[0.04] border-surface/10 hover:border-surface/20 focus-within:border-accent focus-within:bg-surface/[0.07] focus-within:ring-accent/20"
         }`}
       >
         {icon && (

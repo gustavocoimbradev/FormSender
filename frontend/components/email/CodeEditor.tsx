@@ -2,6 +2,7 @@
 
 import { autocompletion, closeBrackets, type CompletionContext } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { css } from "@codemirror/lang-css";
 import { html } from "@codemirror/lang-html";
 import { HighlightStyle, bracketMatching, syntaxHighlighting } from "@codemirror/language";
 import { lintGutter, linter } from "@codemirror/lint";
@@ -69,10 +70,17 @@ type CodeEditorProps = {
   /** Filled with a function that inserts text where the cursor is. */
   insertRef?: MutableRefObject<((text: string) => void) | null>;
   label: string;
+  /** HTML (the default) comes with variable autocomplete and the email checker; CSS with its own completion. */
+  language?: "html" | "css";
+  /** Tailwind height of the box. */
+  height?: string;
 };
 
-/** A code editor made for email: HTML, variable autocomplete (type `{{`) and a checker for what email clients ignore. */
-export function CodeEditor({ value, onChange, insertRef, label }: CodeEditorProps) {
+/**
+ * A code editor. For email: HTML, variable autocomplete (type `{{`) and a checker for what email clients ignore.
+ * For the form's style: CSS.
+ */
+export function CodeEditor({ value, onChange, insertRef, label, language = "html", height = "h-[34rem]" }: CodeEditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView>();
   const change = useRef(onChange);
@@ -90,14 +98,12 @@ export function CodeEditor({ value, onChange, insertRef, label }: CodeEditorProp
           history(),
           closeBrackets(),
           bracketMatching(),
-          html({ autoCloseTags: true }),
+          language === "css" ? css() : html({ autoCloseTags: true }),
           syntaxHighlighting(highlight),
-          autocompletion({ override: [variableCompletions] }),
-          linter(lintEmail, { delay: 400 }),
-          lintGutter(),
+          ...(language === "css" ? [autocompletion()] : [autocompletion({ override: [variableCompletions] }), linter(lintEmail, { delay: 400 }), lintGutter()]),
           EditorView.lineWrapping,
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
-          placeholder("<table>...</table>"),
+          placeholder(language === "css" ? "/* CSS */" : "<table>...</table>"),
           EditorView.contentAttributes.of({ "aria-label": label, autocapitalize: "off", spellcheck: "false" }),
           EditorView.updateListener.of((update) => update.docChanged && change.current(update.state.doc.toString())),
           theme,
@@ -120,9 +126,15 @@ export function CodeEditor({ value, onChange, insertRef, label }: CodeEditorProp
       view.current = undefined;
       if (insertRef) insertRef.current = null;
     };
-    // The editor is created once; later changes come from the person typing.
+    // The editor is created once; later changes to the text come from the person typing (or from the effect below).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return <div ref={host} className="h-[34rem] overflow-hidden rounded-control border border-surface/10 transition duration-300 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/20" />;
+  // A change that did not come from typing (a "Reset to default" button, for instance) replaces what the editor shows.
+  useEffect(() => {
+    const editor = view.current;
+    if (editor && value !== editor.state.doc.toString()) editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: value } });
+  }, [value]);
+
+  return <div ref={host} className={`${height} overflow-hidden rounded-control border border-surface/10 transition duration-300 focus-within:border-accent focus-within:ring-4 focus-within:ring-accent/20`} />;
 }

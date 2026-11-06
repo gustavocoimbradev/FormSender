@@ -11,6 +11,7 @@ import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
 import { ChipsInput } from "../ui/ChipsInput";
 import { useToast } from "../ui/Toast";
+import { DesignSection } from "./DesignSection";
 import { EmailSection } from "./EmailSection";
 import { FieldRow } from "./FieldRow";
 import {
@@ -93,7 +94,7 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
   }
 
   async function save() {
-    const found = validateDraft(draft, { checkEmail: Boolean(form) });
+    const found = validateDraft(draft, { saved: Boolean(form) });
     if (hasErrors(found)) {
       showErrors(found);
       return;
@@ -225,6 +226,8 @@ export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }
           onChange={patch}
         />
       )}
+
+      {shows("design") && form && <DesignSection code={form.code} css={draft.css} error={errors.css} disabled={saving} onChange={(css) => patch({ css })} />}
 
       {errors.general && <p role="alert" className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.general}</p>}
 

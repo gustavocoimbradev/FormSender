@@ -41,7 +41,7 @@ export function FieldRow({ field, errors, disabled, autoFocus, onChange, onRemov
       <div
         onAnimationEnd={(event) => event.target === event.currentTarget && setEntered(true)}
         className={`${entered ? "" : "animate-pop"} rounded-control border p-3 transition-colors duration-300 sm:p-4 ${isDragging ? "border-accent/60 bg-surface/[0.1] shadow-[0_20px_50px_-20px_rgb(0_0_0/0.9)]" : "border-surface/10 bg-bg/40"}`}>
-        <div className="grid grid-cols-2 gap-x-3 gap-y-3 xl:grid-cols-[auto_minmax(0,3fr)_minmax(0,2fr)_auto_auto] xl:items-start">
+        <div className="grid grid-cols-2 gap-x-3 gap-y-3 xl:grid-cols-[auto_minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)_auto_auto] xl:items-start">
           <div className="col-span-2 sm:col-span-1 xl:order-2">
             <Field
               compact
@@ -58,7 +58,24 @@ export function FieldRow({ field, errors, disabled, autoFocus, onChange, onRemov
             />
           </div>
 
+          {/* Informative only: it comes from the label and, once the form is saved, never changes (sites already send it). */}
           <div className="col-span-2 sm:col-span-1 xl:order-3">
+            <Field
+              compact
+              hideLabel
+              readOnly
+              id={`${field.key}-name`}
+              label="Field name"
+              title="The technical name sent with each message. It comes from the label and stays the same once the form is saved."
+              value={field.name}
+              placeholder="field_name"
+              className="cursor-default font-mono !text-muted"
+              autoComplete="off"
+              spellCheck={false}
+            />
+          </div>
+
+          <div className="col-span-2 xl:order-4 xl:col-span-1">
             <Select compact hideLabel id={`${field.key}-type`} label="Type" value={field.type} options={FIELD_TYPES} onChange={(type) => onChange({ type })} disabled={disabled} />
           </div>
 
@@ -77,18 +94,18 @@ export function FieldRow({ field, errors, disabled, autoFocus, onChange, onRemov
                 <GripIcon />
               </button>
 
-              <div className="xl:order-4">
+              <div className="xl:order-5">
                 <Switch id={`${field.key}-required`} label="Required" checked={field.required} onChange={(required) => onChange({ required })} disabled={disabled} />
               </div>
             </div>
 
-            <button type="button" className={`${ICON_BUTTON} hover:!text-danger xl:order-5`} onClick={onRemove} disabled={disabled} aria-label="Remove field">
+            <button type="button" className={`${ICON_BUTTON} hover:!text-danger xl:order-6`} onClick={onRemove} disabled={disabled} aria-label="Remove field">
               <TrashIcon />
             </button>
           </div>
 
           {field.type === "select" && (
-            <div className="col-span-2 xl:order-6 xl:col-span-5">
+            <div className="col-span-2 xl:order-7 xl:col-span-6">
               <ChipsInput
                 id={`${field.key}-options`}
                 label="Options"
@@ -102,7 +119,7 @@ export function FieldRow({ field, errors, disabled, autoFocus, onChange, onRemov
             </div>
           )}
 
-          {field.type === "file" && <p className="col-span-2 text-base text-muted xl:order-6 xl:col-span-5">The visitor picks a file. It travels as an attachment on the email.</p>}
+          {field.type === "file" && <p className="col-span-2 text-base text-muted xl:order-7 xl:col-span-6">The visitor picks a file. It travels as an attachment on the email.</p>}
         </div>
       </div>
     </div>

@@ -21,15 +21,16 @@ import { FormEditor } from "./FormEditor";
 import { IntegrationPanel } from "./IntegrationPanel";
 import { SubmissionsPanel } from "./SubmissionsPanel";
 
-type Tab = "general" | "fields" | "delivery" | "email" | "integration" | "messages";
+type Tab = "general" | "fields" | "delivery" | "email" | "design" | "integration" | "messages";
 
-const EDITOR_TABS: Tab[] = ["general", "fields", "delivery", "email"];
+const EDITOR_TABS: Tab[] = ["general", "fields", "delivery", "email", "design"];
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "general", label: "General" },
   { id: "fields", label: "Fields" },
   { id: "delivery", label: "Delivery" },
   { id: "email", label: "Email" },
+  { id: "design", label: "Design" },
   { id: "integration", label: "Integration" },
   { id: "messages", label: "Messages" },
 ];
@@ -78,6 +79,12 @@ function TabSkeleton({ tab }: { tab: Tab }) {
         <FormCardSkeleton>
           <FieldSkeleton />
           <Bar className="mb-5 h-72 rounded-control" />
+        </FormCardSkeleton>
+      )}
+
+      {tab === "design" && (
+        <FormCardSkeleton>
+          <Bar className="mb-5 h-[32rem] rounded-control" />
         </FormCardSkeleton>
       )}
 
@@ -175,7 +182,7 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
 
       {/* The three editing tabs share one editor, so what was typed stays while moving between them. */}
       <div key={EDITOR_TABS.includes(tab) ? "editor" : tab}>
-        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery" | "email"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
+        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery" | "email" | "design"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
         {tab === "integration" && <IntegrationPanel form={current} />}
         {tab === "messages" && <SubmissionsPanel form={current} />}
       </div>
