@@ -65,6 +65,14 @@ set -a
 source "$ENV_FILE"
 set +a
 
+# A tunnel token means the server sits behind a Cloudflare Tunnel: the tunnel brings https, so Caddy listens on plain
+# http and the ports stay on this machine only.
+TUNNEL=0
+if [ -n "${TUNNEL_TOKEN:-}" ]; then
+    TUNNEL=1
+    export COMPOSE_PROFILES=tunnel SITE_ADDRESS=":80" BIND_ADDRESS="127.0.0.1"
+fi
+
 # ------------------------------------------------------------ the address
 # What people type becomes a full address: a domain gets https (the certificate is automatic); an IP address,
 # localhost or a name without dots can only use plain http, because nobody issues a certificate for them.
@@ -149,6 +157,9 @@ else
     ok "Address: $PUBLIC_URL"
 fi
 
+[ "$TUNNEL" = 1 ] && [ "${PUBLIC_URL#https://}" = "$PUBLIC_URL" ] && \
+    fail "With a tunnel the address must be https." "Set PUBLIC_URL to the https address of the tunnel in $ENV_FILE (for example https://forms.mycompany.com)."
+
 case "$PUBLIC_URL" in
     http://*) warn "Over plain http. A form on an https site needs its embed script over https too: use a domain for that." ;;
 esac
@@ -158,7 +169,9 @@ esac
 # ------------------------------------------------------------ the ports must be free
 port_busy() { ss -ltn 2>/dev/null | awk 'NR>1 {print $4}' | grep -Eq "[:.]$1\$"; }
 
-if ! docker ps --format '{{.Names}}' | grep -q '^formsender-prod-web-1$'; then
+if [ "$TUNNEL" = 1 ]; then
+    ok "Tunnel on: nothing is opened on this machine."
+elif ! docker ps --format '{{.Names}}' | grep -q '^formsender-prod-web-1$'; then
     for port in 80 443; do
         if [ "$port" = 443 ] && [ "${PUBLIC_URL#https://}" = "$PUBLIC_URL" ]; then continue; fi
         port_busy "$port" && fail "Port $port is already used on this server." \

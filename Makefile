@@ -49,7 +49,7 @@ status:
 	@docker compose ps
 
 # ---- Production: `make prod` builds and starts everything in the background and keeps it running (reads .env.prod).
-PROD := docker compose --env-file .env.prod -f docker-compose.prod.yml
+PROD := docker compose --profile tunnel --env-file .env.prod -f docker-compose.prod.yml
 
 prod:
 	@./scripts/prod.sh

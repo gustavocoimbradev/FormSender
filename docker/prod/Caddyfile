@@ -4,8 +4,8 @@
 	order php_server before file_server
 }
 
-# The one public address. The API (and the embed script) is PHP; everything else is the dashboard.
-{$PUBLIC_URL} {
+# The one public address (SITE_ADDRESS is PUBLIC_URL, or just :80 behind a tunnel, which already brings https). The API (and the embed script) is PHP; everything else is the dashboard.
+{$SITE_ADDRESS} {
 	root * /app/public
 	encode zstd gzip
 

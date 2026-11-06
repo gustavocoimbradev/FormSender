@@ -44,13 +44,15 @@ services:
     build:
       context: .
       dockerfile: docker/prod/app.Dockerfile
+    # Behind a tunnel (TUNNEL_TOKEN set) the ports stay on this machine only and Caddy speaks plain http.
     ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp"
+      - "${BIND_ADDRESS:-0.0.0.0}:80:80"
+      - "${BIND_ADDRESS:-0.0.0.0}:443:443"
+      - "${BIND_ADDRESS:-0.0.0.0}:443:443/udp"
     environment:
       <<: *app-env
       PUBLIC_URL: ${PUBLIC_URL}
+      SITE_ADDRESS: ${SITE_ADDRESS:-${PUBLIC_URL}}
       RUN_MIGRATIONS: "1"
     volumes:
       - storage:/app/storage
@@ -88,6 +90,19 @@ services:
     healthcheck:
       disable: true
     command: php artisan schedule:work
+    depends_on:
+      web:
+        condition: service_healthy
+
+  # Only with TUNNEL_TOKEN: a Cloudflare Tunnel that brings the public address to this machine, so no port has to be
+  # opened on the router and a changing home IP does not matter.
+  cloudflared:
+    image: cloudflare/cloudflared:2025.8.1
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
     depends_on:
       web:
         condition: service_healthy
