@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 class ConfirmEmailAction
 {
     /**
-     * Uses a token received by email: it confirms the account, once. A wrong, used or expired token is refused.
+     * Uses a token received by email: it confirms the account, or a form's destination, once. A wrong, used or expired token is refused.
      */
     public function execute(string $token): EmailConfirmation
     {
@@ -20,6 +20,12 @@ class ConfirmEmailAction
 
         DB::transaction(function () use ($confirmation): void {
             $confirmation->user?->forceFill(['email_verified_at' => now()])->save();
+
+            if ($confirmation->form !== null) {
+                $confirmation->form->forceFill([
+                    'confirmed_destinations' => array_values(array_unique([...$confirmation->form->confirmed_destinations, $confirmation->email])),
+                ])->save();
+            }
 
             $confirmation->delete();
         });

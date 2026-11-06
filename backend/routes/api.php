@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DefaultEmailController;
 use App\Http\Controllers\DefaultStringsController;
 use App\Http\Controllers\DefaultStyleController;
+use App\Http\Controllers\DestinationConfirmationController;
 use App\Http\Controllers\EmailConfirmationController;
 use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\FormController;
@@ -43,6 +44,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('forms.submissions', FormSubmissionController::class)->only(['index', 'show'])->scoped();
     Route::post('forms/{form}/submissions/{submission}/retry', RetrySubmissionController::class)->scopeBindings();
     Route::get('forms/{form}/submissions/{submission}/attachments/{attachment}', SubmissionAttachmentController::class)->scopeBindings();
+
+    Route::post('forms/{form}/destinations/confirmation', DestinationConfirmationController::class);
 
     Route::get('email/default', DefaultEmailController::class);
     Route::get('forms/{form}/style/default', DefaultStyleController::class);

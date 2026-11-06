@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FormResource extends JsonResource
 {
     /**
-     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, email_subject: string, email_html: string, email_is_default: bool, css: string, css_is_default: bool, strings: array<string, string>, strings_are_default: bool, code: string, created_at: Carbon|null, updated_at: Carbon|null}
+     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, confirmed_destinations: list<string>, allowed_domains: list<string>, email_subject: string, email_html: string, email_is_default: bool, css: string, css_is_default: bool, strings: array<string, string>, strings_are_default: bool, code: string, created_at: Carbon|null, updated_at: Carbon|null}
      */
     public function toArray(Request $request): array
     {
@@ -28,6 +28,8 @@ class FormResource extends JsonResource
             'fields' => $this->fields,
             /** Email addresses that receive every message. */
             'destinations' => $this->destinations,
+            /** The destinations that receive messages. Each new address in an account's form has to confirm by a link sent to it; the administrator's forms need no confirmation. */
+            'confirmed_destinations' => $this->confirmedDestinations(),
             /** Websites allowed to send the form. Empty means any website. */
             'allowed_domains' => $this->allowed_domains,
             /** Subject of the email delivered for this form's messages (the default one when none was written). */

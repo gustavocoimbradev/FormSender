@@ -20,6 +20,7 @@ use Illuminate\Validation\Rule;
 /**
  * @property list<array<string, mixed>> $fields
  * @property list<string> $destinations
+ * @property list<string> $confirmed_destinations
  * @property list<string> $allowed_domains
  * @property string|null $email_subject
  * @property string|null $email_html
@@ -36,6 +37,7 @@ class Form extends Model
     protected $attributes = [
         'fields' => '[]',
         'destinations' => '[]',
+        'confirmed_destinations' => '[]',
         'allowed_domains' => '[]',
     ];
 
@@ -47,6 +49,7 @@ class Form extends Model
         return [
             'fields' => 'array',
             'destinations' => 'array',
+            'confirmed_destinations' => 'array',
             'allowed_domains' => 'array',
         ];
     }
@@ -159,6 +162,45 @@ class Form extends Model
     protected function emailHtml(): Attribute
     {
         return Attribute::set(fn (?string $value): ?string => $value === null || $value === DefaultEmailTemplate::HTML ? null : $value);
+    }
+
+    /**
+     * Whether each destination has to confirm that it wants the messages. The administrator is trusted, and so is a form
+     * left without an owner: with accounts open, this keeps the service from being used to send mail to strangers.
+     */
+    public function requiresConfirmation(): bool
+    {
+        return $this->user !== null && ! $this->user->isAdmin();
+    }
+
+    /**
+     * The destinations that receive messages: all of them when no confirmation is needed, otherwise the owner's own
+     * address and the ones that confirmed.
+     *
+     * @return list<string>
+     */
+    public function confirmedDestinations(): array
+    {
+        if (! $this->requiresConfirmation()) {
+            return $this->destinations;
+        }
+
+        $ready = array_map('strtolower', [...$this->confirmed_destinations, (string) $this->user?->email]);
+
+        return array_values(array_filter(
+            $this->destinations,
+            fn (string $address): bool => in_array(strtolower($address), $ready, true),
+        ));
+    }
+
+    /**
+     * The destinations still waiting to confirm.
+     *
+     * @return list<string>
+     */
+    public function pendingDestinations(): array
+    {
+        return array_values(array_diff($this->destinations, $this->confirmedDestinations()));
     }
 
     /**

@@ -23,6 +23,7 @@ class ReceiveFormSubmissionAction
     public function execute(Form $form, array $data, array $meta = []): FormSubmission
     {
         abort_if($form->destinations === [], 422, 'This form has no destinations configured.');
+        abort_if($form->confirmedDestinations() === [], 422, 'This form has no confirmed destination yet.');
         abort_unless(Setting::where('key', 'smtp')->exists(), 503, 'Email delivery is not configured.');
 
         $submission = $this->storeSubmission->execute($form, $data, $meta);

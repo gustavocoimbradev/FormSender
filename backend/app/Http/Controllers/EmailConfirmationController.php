@@ -16,18 +16,23 @@ class EmailConfirmationController extends Controller
     /**
      * Confirm an email.
      *
-     * Uses the token from the link that came by email. It confirms the account, once: the link stops working after
-     * it is used or after 48 hours. A wrong, used or expired token answers 422.
+     * Uses the token from the link that came by email. It confirms a new account (`type` is `account`) or an
+     * address that will receive a form's messages (`type` is `destination`, and `form` is the form's name), once:
+     * the link stops working after it is used or after 48 hours. A wrong, used or expired token answers 422.
      *
      * @unauthenticated
      *
-     * @response array{data: array{type: string, email: string}}
+     * @response array{data: array{type: string, email: string, form: string|null}}
      */
     #[Endpoint(operationId: 'confirmEmail')]
     public function __invoke(ConfirmEmailRequest $request, ConfirmEmailAction $confirmEmail): JsonResponse
     {
         $confirmation = $confirmEmail->execute($request->string('token')->toString());
 
-        return response()->json(['data' => ['type' => 'account', 'email' => $confirmation->email]]);
+        return response()->json(['data' => [
+            'type' => $confirmation->form_id === null ? 'account' : 'destination',
+            'email' => $confirmation->email,
+            'form' => $confirmation->form?->name,
+        ]]);
     }
 }

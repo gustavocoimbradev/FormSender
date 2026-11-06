@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Form\SyncFormDestinationsAction;
 use App\Http\Requests\StoreFormRequest;
 use App\Http\Requests\UpdateFormRequest;
 use App\Http\Resources\FormResource;
@@ -40,13 +41,18 @@ class FormController extends Controller
      * Create a form.
      *
      * Defines the accepted `fields`, the email `destinations` (up to 20) and the `allowed_domains`
-     * (hosts such as `example.com` or `*.example.com`; empty means any domain). The form belongs to the person who creates it. A unique public
+     * (hosts such as `example.com` or `*.example.com`; empty means any domain). The form belongs to the person who creates it. Each destination of an account's form gets an email to confirm it wants the messages; until then it receives nothing. A unique public
      * `code` is generated automatically. Domains are normalized: scheme, path, port and case are removed.
      */
     #[Endpoint(operationId: 'createForm')]
-    public function store(StoreFormRequest $request): FormResource
+    public function store(StoreFormRequest $request, SyncFormDestinationsAction $syncDestinations): FormResource
     {
-        return new FormResource($request->user()->forms()->create($request->validated()));
+        $form = $request->user()->forms()->create($request->validated());
+        $form->setRelation('user', $request->user());
+
+        $syncDestinations->execute($form);
+
+        return new FormResource($form);
     }
 
     /**
@@ -68,11 +74,15 @@ class FormController extends Controller
      * `PUT` replaces the form; `PATCH` changes only the attributes sent.
      */
     #[Endpoint(operationId: 'updateForm')]
-    public function update(UpdateFormRequest $request, Form $form): FormResource
+    public function update(UpdateFormRequest $request, Form $form, SyncFormDestinationsAction $syncDestinations): FormResource
     {
         Gate::authorize('update', $form);
 
+        $previousDestinations = $form->destinations;
+
         $form->update($request->validated());
+
+        $syncDestinations->execute($form, $previousDestinations);
 
         return new FormResource($form);
     }

@@ -31,13 +31,15 @@ class StoreFormSubmissionAction
             $data,
         );
 
-        return DB::transaction(function () use ($form, $values, $files, $meta): FormSubmission {
+        $destinations = $form->confirmedDestinations();
+
+        return DB::transaction(function () use ($form, $destinations, $values, $files, $meta): FormSubmission {
             $submission = FormSubmission::create([
                 'form_id' => $form->id,
                 'form_name' => $form->name,
                 'fields' => $form->fields,
                 'data' => $values,
-                'destinations' => $form->destinations,
+                'destinations' => $destinations,
                 'deliveries' => array_map(
                     fn (string $destination): array => [
                         'destination' => $destination,
@@ -45,7 +47,7 @@ class StoreFormSubmissionAction
                         'error' => null,
                         'sent_at' => null,
                     ],
-                    $form->destinations,
+                    $destinations,
                 ),
                 'ip' => $meta['ip'] ?? null,
                 'origin' => $meta['origin'] ?? null,

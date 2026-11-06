@@ -41,6 +41,7 @@ it('documents every api route', function (string $path, string $method): void {
     ['/forms/{form}', 'get'],
     ['/forms/{form}', 'put'],
     ['/forms/{form}', 'delete'],
+    ['/forms/{form}/destinations/confirmation', 'post'],
     ['/forms/{form}/submit', 'post'],
     ['/forms/{form}/public', 'get'],
     ['/forms/{form}/submissions', 'get'],
