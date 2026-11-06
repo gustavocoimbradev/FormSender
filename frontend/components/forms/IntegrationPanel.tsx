@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiPublicUrl } from "@/lib/config";
-import type { Form } from "@/lib/api";
+import type { FieldType, Form } from "@/lib/api";
 import { Card, CardHeader } from "../ui/Card";
 import { CodeBlock } from "../ui/CodeBlock";
 import { Select } from "../ui/Select";
@@ -19,10 +19,15 @@ const HINTS: Record<Way, string> = {
   iframe: "For pages that do not allow scripts. It shows the same form, in its own frame. Add ?theme=dark to the address for dark sites.",
 };
 
-/** Roughly how tall the form is, so the frame needs no scrollbar for most forms. */
+/** Height of each kind of field in the framed form (label, control and the space under it), measured on the real page. */
+const FIELD_HEIGHT: Partial<Record<FieldType, number>> = { textarea: 168, checkbox: 60, file: 98 };
+
+/** What is under the fields: the Send button, our credit and the page's margin. */
+const FRAME_REST = 104;
+
+/** How tall the framed form is, so the frame ends right under it: no empty space and, for most forms, no scrollbar. */
 function frameHeight(form: Form): number {
-  const rows = form.fields.reduce((total, field) => total + (field.type === "textarea" ? 190 : 96), 0);
-  return Math.max(320, Math.round((rows + 120) / 10) * 10);
+  return Math.max(180, form.fields.reduce((total, field) => total + (FIELD_HEIGHT[field.type] ?? 96), FRAME_REST));
 }
 
 export function IntegrationPanel({ form }: { form: Form }) {

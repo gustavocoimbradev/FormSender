@@ -93,7 +93,18 @@ export function PublicFormScreen({ code, theme }: PublicFormScreenProps) {
             <Spinner className="size-6" />
           </div>
         )}
-        {state.status === "ready" && <div id="public-form" />}
+        {state.status === "ready" && (
+          <>
+            <div id="public-form" />
+            {/* Quiet, but always there: the framed form carries our credit too. */}
+            <p className={`mt-4 text-center text-base ${theme === "dark" ? "text-muted" : "text-[#6b6b80]"}`}>
+              Powered by{" "}
+              <a href={PROJECT_URL} target="_blank" rel="noopener noreferrer" className={`font-medium underline-offset-4 hover:underline ${theme === "dark" ? "text-text" : "text-[#14141f]"}`}>
+                Form Sender
+              </a>
+            </p>
+          </>
+        )}
         {(state.status === "missing" || state.status === "unavailable") && <p role="alert" className="py-6 text-base">This form is not available.</p>}
       </main>
     );
