@@ -69,7 +69,7 @@ export function Pills<T extends string>({ label, value, options, onChange, singl
 
   if (single) {
     return (
-      <div role="group" aria-label={label} className="flex items-center gap-1">
+      <div role="group" aria-label={label} className="flex items-center gap-1 rounded-full border border-surface/10 bg-surface/[0.04] p-1">
         <button
           type="button"
           aria-label="Previous tab"
@@ -80,7 +80,7 @@ export function Pills<T extends string>({ label, value, options, onChange, singl
           <ChevronIcon className="size-5 rotate-180" />
         </button>
 
-        {/* Just the name, centered. All the names sit side by side behind a window that shows one: choosing another slides the row, and a swipe on it does too. */}
+        {/* The box of the tabs, with just the chosen name centered in it (no highlight). All the names sit side by side behind a window that shows one: choosing another slides the row, and a swipe on it does too. */}
         <div
           onTouchStart={(event) => (swipeFrom.current = event.touches[0].clientX)}
           onTouchEnd={(event) => {
