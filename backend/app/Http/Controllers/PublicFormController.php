@@ -8,6 +8,8 @@ use App\Http\Resources\PublicFormResource;
 use App\Models\Form;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
+use Dedoc\Scramble\Attributes\QueryParameter;
+use Illuminate\Http\Request;
 
 #[Group('Submitting a form', description: 'The endpoint your website calls when a visitor sends the form. No login and no token: only the sites allowed on the form can send it.', weight: 5)]
 class PublicFormController extends Controller
@@ -20,8 +22,9 @@ class PublicFormController extends Controller
      * allowed to send the form can read it, and nothing about where its messages go is given.
      */
     #[Endpoint(operationId: 'getPublicForm')]
-    public function __invoke(Form $form): PublicFormResource
+    #[QueryParameter('style', description: 'Send `default` to get the standard style instead of the one written for the form (the dashboard\'s own page for the form does).', required: false, type: 'string', example: 'default')]
+    public function __invoke(Request $request, Form $form): PublicFormResource
     {
-        return new PublicFormResource($form);
+        return new PublicFormResource($form, defaultStyle: $request->query('style') === 'default');
     }
 }

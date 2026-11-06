@@ -14,12 +14,12 @@ it('starts with the default style', function (): void {
 });
 
 it('saves a style written for the form', function (): void {
-    $this->postJson('/api/forms', ['name' => 'Contact', 'css' => '.formsender { --accent: #ff0000; }'])
+    $this->postJson('/api/forms', ['name' => 'Contact', 'css' => '#formsender-form { --accent: #ff0000; }'])
         ->assertCreated()
-        ->assertJsonPath('data.css', '.formsender { --accent: #ff0000; }')
+        ->assertJsonPath('data.css', '#formsender-form { --accent: #ff0000; }')
         ->assertJsonPath('data.css_is_default', false);
 
-    $this->assertDatabaseHas('forms', ['name' => 'Contact', 'css' => '.formsender { --accent: #ff0000; }']);
+    $this->assertDatabaseHas('forms', ['name' => 'Contact', 'css' => '#formsender-form { --accent: #ff0000; }']);
 });
 
 it('goes back to the default style with null', function (): void {
@@ -69,7 +69,12 @@ it('gives the default style to anyone logged in, to go back to it', function ():
 
 it('has a default style that covers what the form draws', function (): void {
     expect(DefaultFormStyle::CSS)
-        ->toContain('.formsender')->toContain('.formsender.dark')->toContain('.field')->toContain('.error')
+        ->toContain('#formsender-form')->toContain('&.dark')->toContain('.field')->toContain('.error')
         ->toContain('.toast')->toContain('button')->toContain('prefers-reduced-motion')
         ->not->toContain('@import')->not->toContain('</style');
+
+    // Every rule lives inside the one element with the specific id (the animations apart): nothing can reach another page.
+    $outside = preg_replace('/@keyframes\s+\w+\s*\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}/', '', DefaultFormStyle::CSS);
+    preg_match_all('/^[^\s}\/][^\n]*\{$/m', (string) $outside, $topLevel);
+    expect($topLevel[0])->toBe(['#formsender-form {']);
 });

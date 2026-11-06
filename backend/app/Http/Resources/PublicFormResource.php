@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Form;
+use App\Support\DefaultFormStyle;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -18,6 +19,14 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class PublicFormResource extends JsonResource
 {
     /**
+     * @param  bool  $defaultStyle  the platform's own page always uses the standard style, whatever the form wrote
+     */
+    public function __construct(mixed $resource, private readonly bool $defaultStyle = false)
+    {
+        parent::__construct($resource);
+    }
+
+    /**
      * @return array{name: string, code: string, css: string, fields: list<array{name: string, label: string, type: string, required: bool, options: list<string>|null}>}
      */
     public function toArray(Request $request): array
@@ -28,7 +37,7 @@ class PublicFormResource extends JsonResource
             /** The form's unique code. */
             'code' => $this->code,
             /** The CSS to draw the form with. */
-            'css' => $this->style(),
+            'css' => $this->defaultStyle ? DefaultFormStyle::CSS : $this->style(),
             /** The fields to draw, in order. */
             'fields' => array_map(fn (array $field): array => [
                 /** Technical name of the field: the key sent when submitting. */
