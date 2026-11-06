@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FormResource extends JsonResource
 {
     /**
-     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, email_subject: string, email_html: string, email_is_default: bool, css: string, css_is_default: bool, code: string, created_at: Carbon|null, updated_at: Carbon|null}
+     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, email_subject: string, email_html: string, email_is_default: bool, css: string, css_is_default: bool, strings: array<string, string>, strings_are_default: bool, code: string, created_at: Carbon|null, updated_at: Carbon|null}
      */
     public function toArray(Request $request): array
     {
@@ -40,6 +40,10 @@ class FormResource extends JsonResource
             'css' => $this->style(),
             /** Whether the form still uses the default style. */
             'css_is_default' => $this->usesDefaultStyle(),
+            /** Every text the embedded form shows by itself, by name (the default words for the ones not changed). */
+            'strings' => $this->texts(),
+            /** Whether the form still uses all the default texts. */
+            'strings_are_default' => $this->usesDefaultStrings(),
             /** The form's unique code: it identifies the form in every address, here and on the websites that send it. */
             'code' => $this->code,
             /** When the form was created. */

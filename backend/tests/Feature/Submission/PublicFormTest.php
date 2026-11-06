@@ -21,8 +21,8 @@ it('never gives away what is private', function (): void {
 
     $response = $this->getJson("/api/forms/{$form->code}/public", ['Origin' => 'https://site.test'])->assertOk();
 
-    expect($response->json('data'))->toHaveKeys(['name', 'code', 'css', 'fields'])
-        ->and(array_keys($response->json('data')))->toHaveCount(4)
+    expect($response->json('data'))->toHaveKeys(['name', 'code', 'css', 'strings', 'fields'])
+        ->and(array_keys($response->json('data')))->toHaveCount(5)
         ->and($response->getContent())->not->toContain('sales@example.com')->not->toContain('Secret subject')->not->toContain('site.test');
 });
 
@@ -75,7 +75,7 @@ it('is limited per form and visitor, far above a real person', function (): void
 
 it('is served as a script every site can add', function (): void {
     expect(public_path('embed.js'))->toBeFile()
-        ->and(file_get_contents(public_path('embed.js')))->toContain('data-form')->toContain('/public')->toContain('/submit')->toContain('DOMContentLoaded')->toContain('formsender:style')->toContain('data-preview');
+        ->and(file_get_contents(public_path('embed.js')))->toContain('data-form')->toContain('/public')->toContain('/submit')->toContain('DOMContentLoaded')->toContain('formsender:style')->toContain('formsender:strings')->toContain('data-preview');
 });
 
 it('hands the standard style to the platform own page when asked, whatever the form wrote', function (): void {
@@ -83,6 +83,14 @@ it('hands the standard style to the platform own page when asked, whatever the f
 
     $this->getJson("/api/forms/{$styled->code}/public?style=default")->assertJsonPath('data.css', DefaultFormStyle::CSS);
     $this->getJson("/api/forms/{$styled->code}/public")->assertJsonPath('data.css', 'button { color: red; }');
+});
+
+it('hands the page the texts to draw the form with', function (): void {
+    $default = contactForm();
+    $custom = contactForm(['strings' => ['send' => 'Enviar']]);
+
+    $this->getJson("/api/forms/{$default->code}/public")->assertJsonPath('data.strings.send', 'Send')->assertJsonPath('data.strings.sent', 'Message sent!');
+    $this->getJson("/api/forms/{$custom->code}/public")->assertJsonPath('data.strings.send', 'Enviar')->assertJsonPath('data.strings.sent', 'Message sent!');
 });
 
 it('hands the page the style to draw the form with', function (): void {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DefaultEmailController;
+use App\Http\Controllers\DefaultStringsController;
 use App\Http\Controllers\DefaultStyleController;
 use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\FormController;
@@ -41,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('email/default', DefaultEmailController::class);
     Route::get('style/default', DefaultStyleController::class);
+    Route::get('strings/default', DefaultStringsController::class);
     Route::post('email/preview', EmailPreviewController::class);
 
     Route::apiResource('users', UserController::class);

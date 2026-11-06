@@ -8,13 +8,13 @@
  * notice at the bottom of the screen.
  *
  * Optional attributes on the tag:
- *   data-theme="light" | "dark"   colors of the form (default: light)
  *   data-target="#selector"       draw the form inside that element instead of next to the tag
  *   data-style="default"          only for the dashboard's own page: the standard style, not the form's
+ *   data-theme="dark"             only for the dashboard's own page: its dark look
  *   data-preview                  only for the dashboard: validates but never sends
  *
- * Events on the form's element: "formsender:sent" and "formsender:error" (it also accepts "formsender:style",
- * with CSS as the detail, to try a style without saving it).
+ * Events on the form's element: "formsender:sent" and "formsender:error" (it also accepts "formsender:style" and
+ * "formsender:strings", with CSS or an object of texts as the detail, to try them without saving).
  */
 (function () {
   "use strict";
@@ -29,7 +29,7 @@
   var uid = "fs-" + code + "-";
 
   // What the form needs to work whatever its style says. The look itself comes from the form (its Design tab).
-  var BASE = ":host{display:block;font:inherit;color:inherit}*{box-sizing:border-box}[hidden]{display:none!important}.honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}.note{margin:0;font-size:16px;opacity:.7}.inspector{position:fixed;z-index:2147483001;pointer-events:none;padding:6px 10px;font:16px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#f4f4fb;background:#14141f;border:1px solid #3a3a5c;border-radius:8px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6);white-space:nowrap}";
+  var BASE = ":host{display:block;font:inherit;color:inherit}*{box-sizing:border-box}[hidden]{display:none!important}.extra{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}.note{margin:0;font-size:16px;opacity:.7}#formsender-form.dark{--text:#f4f4fb;--muted:#9a9ab2;--border:#2c2c44;--field:#12121f;--accent:#8b6bff;--danger:#ff6b7a;--ok:#3ddc97}#formsender-form{position:relative}.inspector{position:absolute;z-index:2147483001;pointer-events:none;max-width:calc(100% - 8px);padding:6px 10px;font:16px/1.3 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#f4f4fb;background:#14141f;border:1px solid #3a3a5c;border-radius:8px;box-shadow:0 10px 30px -10px rgba(0,0,0,.6);word-break:break-all}";
 
   var INPUT_TYPES = { text: "text", email: "email", phone: "tel", number: "number", date: "date" };
 
@@ -79,15 +79,23 @@
 
   // Used by the dashboard to try a style while it is being written: the form follows it without being drawn again.
   var cssOverride = null;
+  var stringsOverride = null;
+  var lastForm = null;
   host.addEventListener("formsender:style", function (event) {
     cssOverride = String(event.detail);
     style.textContent = cssOverride;
   });
 
+  host.addEventListener("formsender:strings", function (event) {
+    stringsOverride = event.detail || {};
+    if (lastForm) draw(lastForm);
+  });
+
   // Only in the dashboard's preview: pointing at any part of the form tells which CSS selector styles it.
   function inspect() {
+    // It lives inside the form's box and is placed in it (not on the screen): a page can put the form inside
+    // something that moves, blurs or clips, and a position on the screen would then land somewhere else.
     var tip = el("div", { class: "inspector", hidden: true });
-    root.appendChild(tip);
     var marked = null;
 
     // The selector a person would write to change that element, as in the style they are editing.
@@ -100,8 +108,8 @@
       if (tag === "input" && node.type === "checkbox") return root_ + " .check input";
       if (tag === "input" && node.type === "file") return root_ + ' input[type="file"]';
       if (tag === "label") return root_ + (inCheck ? " .check label" : " label");
-      if (tag === "i" && node.closest(".toast")) return root_ + " .toast i";
-      var known = ["field", "check", "required", "error", "note", "spinner", "toast"];
+      if (node.classList.contains("notice")) return root_ + " .notice" + (node.classList.contains("bad") ? ".bad" : "");
+      var known = ["field", "check", "required", "error", "note", "spinner"];
       for (var i = 0; i < known.length; i++) if (node.classList.contains(known[i])) return root_ + " ." + known[i];
       return root_ + " " + tag;
     }
@@ -120,11 +128,15 @@
         node.style.outline = "2px dashed #8b6bff";
         node.style.outlineOffset = "2px";
       }
+      if (!tip.isConnected) box.appendChild(tip);
       tip.textContent = selectorOf(node);
       tip.hidden = false;
-      var width = tip.offsetWidth;
-      tip.style.left = Math.max(8, Math.min(event.clientX + 14, window.innerWidth - width - 8)) + "px";
-      tip.style.top = Math.min(event.clientY + 18, window.innerHeight - tip.offsetHeight - 8) + "px";
+      var area = box.getBoundingClientRect();
+      var x = event.clientX - area.left + 14;
+      var y = event.clientY - area.top + 18;
+      // Kept inside the box, so showing it never makes anything scroll.
+      tip.style.left = Math.max(4, Math.min(x, area.width - tip.offsetWidth - 4)) + "px";
+      tip.style.top = Math.max(4, Math.min(y, area.height - tip.offsetHeight - 4)) + "px";
     }
 
     root.addEventListener("mousemove", show);
@@ -134,22 +146,18 @@
   }
   if (preview) inspect();
 
-  var toastTimer;
-  function toast(message, bad) {
-    var old = box.querySelector(".toast");
-    if (old) old.remove();
-    clearTimeout(toastTimer);
-    var node = el("div", { class: "toast" + (bad ? " bad" : ""), role: bad ? "alert" : "status" }, [el("i", { "aria-hidden": "true" }), el("span", {}, message)]);
-    box.appendChild(node);
-    toastTimer = setTimeout(function () { node.remove(); }, 6000);
-  }
-
   function announce(type, detail) {
     host.dispatchEvent(new CustomEvent("formsender:" + type, { bubbles: true, composed: true, detail: detail }));
   }
 
   function draw(form) {
+    lastForm = form;
     style.textContent = cssOverride !== null ? cssOverride : form.css || "";
+    var T = Object.assign({}, form.strings);
+    // A text left empty while the dashboard is trying them keeps its default words.
+    Object.keys(stringsOverride || {}).forEach(function (key) {
+      if (String(stringsOverride[key]).trim() !== "") T[key] = stringsOverride[key];
+    });
     var errors = {};
     var form_el = el("form", { novalidate: true });
 
@@ -160,7 +168,7 @@
       if (field.type === "textarea") return el("textarea", Object.assign({ rows: 4 }, common));
 
       if (field.type === "select") {
-        return el("select", common, [el("option", { value: "" }, "Select")].concat((field.options || []).map(function (option) {
+        return el("select", common, [el("option", { value: "" }, T.select)].concat((field.options || []).map(function (option) {
           return el("option", { value: option }, option);
         })));
       }
@@ -185,10 +193,24 @@
       form_el.appendChild(wrapper);
     });
 
-    form_el.appendChild(el("div", { class: "honeypot", "aria-hidden": "true" }, [el("input", { type: "text", name: "_gotcha", tabindex: "-1", autocomplete: "off" })]));
+    form_el.appendChild(el("div", { class: "extra", "aria-hidden": "true" }, [el("input", { type: "text", name: "_gotcha", tabindex: "-1", autocomplete: "off" })]));
 
-    var button = el("button", { type: "submit" }, "Send");
+    var button = el("button", { type: "submit" }, T.send);
     form_el.appendChild(button);
+
+    // What happened after sending, right under the button: it stays until the person goes on (or a few seconds).
+    var notice = el("p", { class: "notice", hidden: true, "aria-live": "polite" });
+    form_el.appendChild(notice);
+    var noticeTimer;
+    function notify(message, bad) {
+      clearTimeout(noticeTimer);
+      notice.className = "notice" + (bad ? " bad" : "");
+      notice.setAttribute("role", bad ? "alert" : "status");
+      notice.setAttribute("aria-live", bad ? "assertive" : "polite");
+      notice.textContent = message;
+      notice.hidden = false;
+      if (!bad) noticeTimer = setTimeout(function () { notice.hidden = true; }, 8000);
+    }
 
     function show(name, text) {
       var item = errors[name];
@@ -207,9 +229,9 @@
       var input = item.input;
       var value = field.type === "file" ? (input.files && input.files.length ? "x" : "") : field.type === "checkbox" ? (input.checked ? "x" : "") : input.value.trim();
 
-      if (field.required && !value) return field.type === "file" ? "Choose a file." : field.type === "checkbox" ? "This box must be ticked." : "Fill in this field.";
-      if (value && field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return "Enter a valid email.";
-      if (value && field.type === "number" && isNaN(Number(value))) return "Enter a number.";
+      if (field.required && !value) return field.type === "file" ? T.required_file : field.type === "checkbox" ? T.required_check : T.required;
+      if (value && field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return T.invalid_email;
+      if (value && field.type === "number" && isNaN(Number(value))) return T.invalid_number;
       return "";
     }
 
@@ -227,7 +249,8 @@
       if (first) { first.focus(); return; }
 
       // Only the dashboard asks for this, to show how the form looks: nothing is sent.
-      if (preview) { toast("This is a preview: nothing was sent."); return; }
+      if (preview) return;
+      notice.hidden = true;
 
       var body = new FormData();
       Object.keys(errors).forEach(function (name) {
@@ -242,7 +265,7 @@
       button.setAttribute("aria-busy", "true");
       button.textContent = "";
       button.appendChild(el("span", { class: "spinner", "aria-hidden": "true" }));
-      button.appendChild(document.createTextNode("Sending"));
+      button.appendChild(document.createTextNode(T.sending));
 
       fetch(base + "/api/forms/" + code + "/submit", { method: "POST", headers: { Accept: "application/json" }, body: body })
         .then(function (response) {
@@ -253,7 +276,7 @@
 
           if (result.response.ok) {
             form_el.reset();
-            toast("Message sent!");
+            notify(T.sent);
             announce("sent", { id: result.data.data && result.data.data.id });
             return;
           }
@@ -263,25 +286,35 @@
             Object.keys(result.data.errors).forEach(function (name) {
               if (errors[name]) { show(name, result.data.errors[name][0]); firstInvalid = firstInvalid || errors[name].input; }
             });
-            if (firstInvalid) { firstInvalid.focus(); toast("Check the highlighted fields.", true); announce("error", { status: status }); return; }
+            if (firstInvalid) { firstInvalid.focus(); notify(T.check_fields, true); announce("error", { status: status }); return; }
           }
 
-          toast(status === 429 ? "Too many attempts. Please wait a minute and try again." : status === 403 ? "This form cannot be sent from this site." : status === 422 || status === 503 ? "This form cannot receive messages right now." : "Could not send. Please try again.", true);
+          notify(status === 429 ? T.too_many : status === 403 ? T.forbidden : status === 422 || status === 503 ? T.unavailable : T.failed, true);
           announce("error", { status: status });
         })
         .catch(function () {
-          toast("Could not send. Please check your connection and try again.", true);
+          notify(T.offline, true);
           announce("error", { status: 0 });
         })
         .then(function () {
           button.disabled = false;
           button.removeAttribute("aria-busy");
-          button.textContent = "Send";
+          button.textContent = T.send;
         });
     });
 
     box.textContent = "";
     box.appendChild(form_el);
+
+    // In the dashboard's preview every state is on show, so each can be styled: a field with a mistake, and both notices.
+    if (preview) {
+      var sampled = Object.keys(errors).filter(function (name) { return errors[name].field.type !== "checkbox" && errors[name].field.type !== "file"; })[0];
+      if (sampled) show(sampled, T.required);
+      notice.className = "notice";
+      notice.textContent = T.sent;
+      notice.hidden = false;
+      form_el.appendChild(el("p", { class: "notice bad", role: "alert" }, T.failed));
+    }
   }
 
   box.appendChild(el("p", { class: "note", role: "status" }, "Loading the form"));

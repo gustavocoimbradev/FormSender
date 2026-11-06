@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\FormFieldType;
 use App\Models\Concerns\HasPublicCode;
 use App\Support\DefaultEmailTemplate;
+use App\Support\DefaultFormStrings;
 use App\Support\DefaultFormStyle;
 use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -22,13 +23,14 @@ use Illuminate\Validation\Rule;
  * @property string|null $email_subject
  * @property string|null $email_html
  * @property string|null $css
+ * @property array<string, string>|null $strings
  */
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
     use HasFactory, HasPublicCode;
 
-    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'email_subject', 'email_html', 'css'];
+    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'email_subject', 'email_html', 'css', 'strings'];
 
     protected $attributes = [
         'fields' => '[]',
@@ -70,6 +72,21 @@ class Form extends Model
         return $this->css ?? DefaultFormStyle::CSS;
     }
 
+    /**
+     * Every text the embedded form shows: the ones changed for this form, and the default words for the rest.
+     *
+     * @return array<string, string>
+     */
+    public function texts(): array
+    {
+        return [...DefaultFormStrings::texts(), ...($this->strings ?? [])];
+    }
+
+    public function usesDefaultStrings(): bool
+    {
+        return $this->strings === null;
+    }
+
     public function usesDefaultStyle(): bool
     {
         return $this->css === null;
@@ -88,6 +105,30 @@ class Form extends Model
     protected function emailSubject(): Attribute
     {
         return Attribute::set(fn (?string $value): ?string => $value === null || $value === DefaultEmailTemplate::SUBJECT ? null : $value);
+    }
+
+    /**
+     * Only the texts that were really changed are stored (known ones, with words, different from the default), so
+     * the others keep following the defaults as these improve.
+     *
+     * @return Attribute<array<string, string>|null, array<mixed>|null>
+     */
+    protected function strings(): Attribute
+    {
+        return Attribute::make(get: fn (?string $value): ?array => $value === null ? null : json_decode($value, true, 512, JSON_THROW_ON_ERROR), set: function (?array $value): ?string {
+            $defaults = DefaultFormStrings::texts();
+            $changed = [];
+
+            foreach ($value ?? [] as $key => $text) {
+                $text = is_string($text) ? trim($text) : '';
+
+                if (isset($defaults[$key]) && $text !== '' && $text !== $defaults[$key]) {
+                    $changed[$key] = $text;
+                }
+            }
+
+            return $changed === [] ? null : json_encode($changed, JSON_THROW_ON_ERROR);
+        });
     }
 
     /**

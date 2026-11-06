@@ -22,23 +22,10 @@ final class DefaultFormStyle
   --accent-2: #6f8cff;
   --danger: #d93a4a;
   --ok: #1f9d63;
-  --toast: #14141f;
-  --toast-text: #ffffff;
   font: inherit;
   color: var(--text);
   position: relative;
 
-  &.dark {
-    --text: #f4f4fb;
-    --muted: #9a9ab2;
-    --border: #2c2c44;
-    --field: #12121f;
-    --accent: #8b6bff;
-    --danger: #ff6b7a;
-    --ok: #3ddc97;
-    --toast: #f4f4fb;
-    --toast-text: #14141f;
-  }
 
   form {
     display: grid;
@@ -209,36 +196,21 @@ final class DefaultFormStyle
     color: var(--muted);
   }
 
-  .toast {
-    position: fixed;
-    left: 50%;
-    bottom: max(16px, env(safe-area-inset-bottom));
-    z-index: 2147483000;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: max-content;
-    max-width: min(calc(100vw - 32px), 28rem);
-    padding: 14px 18px;
+  .notice {
+    margin: 0;
+    padding: 12px 14px;
     font-size: 16px;
     line-height: 1.4;
-    color: var(--toast-text);
-    background: var(--toast);
-    border-radius: 14px;
-    box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.5);
-    transform: translate(-50%, 0);
-    animation: rise 0.28s ease-out both;
+    text-align: center;
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--ok) 35%, transparent);
+    border-radius: 12px;
 
-    i {
-      flex: none;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: var(--ok);
-    }
-
-    &.bad i {
-      background: var(--danger);
+    &.bad {
+      color: var(--danger);
+      background: color-mix(in srgb, var(--danger) 10%, transparent);
+      border-color: color-mix(in srgb, var(--danger) 35%, transparent);
     }
   }
 
@@ -253,17 +225,6 @@ final class DefaultFormStyle
 @keyframes spin {
   to {
     transform: rotate(360deg);
-  }
-}
-
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translate(-50%, 16px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, 0);
   }
 }
 CSS;

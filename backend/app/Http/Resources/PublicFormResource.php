@@ -27,7 +27,7 @@ class PublicFormResource extends JsonResource
     }
 
     /**
-     * @return array{name: string, code: string, css: string, fields: list<array{name: string, label: string, type: string, required: bool, options: list<string>|null}>}
+     * @return array{name: string, code: string, css: string, strings: array<string, string>, fields: list<array{name: string, label: string, type: string, required: bool, options: list<string>|null}>}
      */
     public function toArray(Request $request): array
     {
@@ -38,6 +38,8 @@ class PublicFormResource extends JsonResource
             'code' => $this->code,
             /** The CSS to draw the form with. */
             'css' => $this->defaultStyle ? DefaultFormStyle::CSS : $this->style(),
+            /** The texts the form shows by itself, by name. */
+            'strings' => $this->texts(),
             /** The fields to draw, in order. */
             'fields' => array_map(fn (array $field): array => [
                 /** Technical name of the field: the key sent when submitting. */

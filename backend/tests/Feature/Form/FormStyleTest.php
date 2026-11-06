@@ -69,8 +69,8 @@ it('gives the default style to anyone logged in, to go back to it', function ():
 
 it('has a default style that covers what the form draws', function (): void {
     expect(DefaultFormStyle::CSS)
-        ->toContain('#formsender-form')->toContain('&.dark')->toContain('.field')->toContain('.error')
-        ->toContain('.toast')->toContain('button')->toContain('prefers-reduced-motion')
+        ->toContain('#formsender-form')->not->toContain('.dark')->toContain('.field')->toContain('.error')
+        ->toContain('.notice')->toContain('button')->toContain('prefers-reduced-motion')
         ->not->toContain('@import')->not->toContain('</style');
 
     // Every rule lives inside the one element with the specific id (the animations apart): nothing can reach another page.

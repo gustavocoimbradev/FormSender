@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\FormFieldType;
+use App\Support\DefaultFormStrings;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -135,6 +136,18 @@ class StoreFormRequest extends FormRequest
              * @example .formsender { --accent: #0a7cff; }
              */
             'css' => ['nullable', 'string', 'max:50000', 'not_regex:/@import/i', 'not_regex:/<\s*\/?\s*style/i'],
+            /**
+             * The texts the embedded form shows by itself, by name (see the default texts for the names and what each is for). Send only the ones to change; a text left empty (or null) goes back to the default words. Leave empty (null) for all the default texts.
+             *
+             * @example {"send": "Enviar", "sent": "Mensagem enviada!"}
+             */
+            'strings' => ['nullable', 'array:'.implode(',', array_keys(DefaultFormStrings::texts()))],
+            /**
+             * One text (up to 200 characters).
+             *
+             * @example Enviar
+             */
+            'strings.*' => ['nullable', 'string', 'max:200'],
         ];
 
         // A partial update (PATCH) validates only the attributes that were sent.
