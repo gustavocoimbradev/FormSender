@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\FormFieldType;
 use App\Models\Concerns\HasPublicCode;
+use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,12 +17,14 @@ use Illuminate\Validation\Rule;
  * @property list<array<string, mixed>> $fields
  * @property list<string> $destinations
  * @property list<string> $allowed_domains
+ * @property string|null $redirect_url
  */
 class Form extends Model
 {
+    /** @use HasFactory<FormFactory> */
     use HasFactory, HasPublicCode;
 
-    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'template_id'];
+    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'redirect_url', 'template_id'];
 
     protected $attributes = [
         'fields' => '[]',
@@ -123,6 +126,12 @@ class Form extends Model
             FormFieldType::Select => [Rule::in($options)],
             FormFieldType::Checkbox => ['boolean'],
             FormFieldType::Date => ['date'],
+            FormFieldType::File => [
+                'file',
+                'max:'.config('formsender.attachments.max_kilobytes'),
+                'extensions:'.implode(',', config('formsender.attachments.extensions')),
+                'mimes:'.implode(',', config('formsender.attachments.extensions')),
+            ],
         };
     }
 }

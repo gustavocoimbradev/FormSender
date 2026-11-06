@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Jobs\SendFormSubmission;
-use App\Models\Form;
 use App\Models\FormSubmission;
 use App\Models\Setting;
 use Illuminate\Support\Facades\Mail;
@@ -186,7 +185,7 @@ describe('allowed domains', function (): void {
             ->assertForbidden();
 
         Queue::assertNothingPushed();
-    expect(FormSubmission::count())->toBe(0);
+        expect(FormSubmission::count())->toBe(0);
     })->with([
         'other origin' => [['Origin' => 'https://evil.test']],
         'null origin' => [['Origin' => 'null']],

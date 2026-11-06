@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 use Dedoc\Scramble\Attributes\SchemaName;
+
 #[SchemaName('FieldType')]
 enum FormFieldType: string
 {
@@ -16,4 +17,5 @@ enum FormFieldType: string
     case Select = 'select';
     case Checkbox = 'checkbox';
     case Date = 'date';
+    case File = 'file';
 }

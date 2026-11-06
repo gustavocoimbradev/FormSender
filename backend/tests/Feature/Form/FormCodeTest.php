@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\Form;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 beforeEach(fn () => actingAsUser());
 
@@ -54,8 +56,8 @@ it('keeps the code when the form is updated', function (): void {
 it('has no bearer token anymore', function (): void {
     $form = Form::factory()->create();
 
-    expect(\Illuminate\Support\Facades\Schema::hasColumn('forms', 'token'))->toBeFalse()
-        ->and(\Illuminate\Support\Facades\Schema::hasColumn('forms', 'token_hash'))->toBeFalse();
+    expect(Schema::hasColumn('forms', 'token'))->toBeFalse()
+        ->and(Schema::hasColumn('forms', 'token_hash'))->toBeFalse();
 
     $this->postJson("/api/forms/{$form->code}/token")->assertNotFound();
 });
@@ -84,5 +86,5 @@ it('stores the code in a unique column', function (): void {
     expect(DB::table('forms')->where('id', $form->id)->value('code'))->toBe($form->code);
 
     expect(fn () => DB::table('forms')->insert(['name' => 'Dup', 'code' => $form->code, 'created_at' => now(), 'updated_at' => now()]))
-        ->toThrow(\Illuminate\Database\QueryException::class);
+        ->toThrow(QueryException::class);
 });

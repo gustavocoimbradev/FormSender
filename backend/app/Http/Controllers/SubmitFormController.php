@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use Dedoc\Scramble\Attributes\Endpoint;
-use Dedoc\Scramble\Attributes\Group;
 use App\Actions\Submission\ReceiveFormSubmissionAction;
 use App\Actions\Submission\RecordSpamSubmissionAction;
 use App\Models\Form;
 use App\Support\RequestHost;
+use Dedoc\Scramble\Attributes\Endpoint;
+use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -32,12 +33,17 @@ class SubmitFormController extends Controller
      * or fill it, bots do). When it arrives filled, the answer is the same `202`, but nothing is sent: the
      * message is only kept under Messages with the status `spam`. Leave it empty (or omit it) for real visitors.
      *
+     * Send the fields as JSON, as a regular form post (`application/x-www-form-urlencoded`) or, when the form has a
+     * `file` field, as `multipart/form-data`. A plain HTML page (no JavaScript) can post straight to this address:
+     * when the form has a redirect address and the request comes from a browser page, the visitor is sent there (`303`)
+     * instead of seeing the JSON answer. Scripts that ask for JSON always get the JSON answer.
+     *
      * Only the fields the form accepts are validated and kept. The submission is saved and queued, and
      * the answer is an instant `202`; the email delivery happens in the background. Limited to 20
      * requests per minute per form and IP.
      */
     #[Endpoint(operationId: 'submitForm')]
-    public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission, RecordSpamSubmissionAction $recordSpam): JsonResponse
+    public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission, RecordSpamSubmissionAction $recordSpam): JsonResponse|RedirectResponse
     {
         $meta = [
             'ip' => $request->ip(),
@@ -47,16 +53,26 @@ class SubmitFormController extends Controller
 
         // A bot gets the very same answer as a person: it must never learn it was caught.
         if ($request->filled(self::HONEYPOT)) {
-            return $this->received($recordSpam->execute($form, $request->all(), $meta)->id, 'pending');
+            $submission = $recordSpam->execute($form, $request->all(), $meta);
+
+            return $this->answer($request, $form, $submission->id, 'pending');
         }
 
         $submission = $receiveSubmission->execute($form, $request->validate($form->submissionRules()), $meta);
 
-        return $this->received($submission->id, $submission->status->value);
+        return $this->answer($request, $form, $submission->id, $submission->status->value);
     }
 
-    private function received(int $id, string $status): JsonResponse
+    /**
+     * A page that posts the form without JavaScript (the browser asks for HTML) goes on to the form's
+     * redirect address; everything else gets the JSON answer.
+     */
+    private function answer(Request $request, Form $form, int $id, string $status): JsonResponse|RedirectResponse
     {
+        if ($form->redirect_url !== null && str_contains((string) $request->header('Accept'), 'text/html')) {
+            return redirect()->away($form->redirect_url, 303);
+        }
+
         return response()->json([
             'message' => 'Your message was received and will be delivered shortly.',
             'data' => ['id' => $id, 'status' => $status],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\User;
+use Carbon\Carbon;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class UserResource extends JsonResource
 {
     /**
-     * @return array{id: int, name: string, email: string, role: string, is_owner: bool, created_at: string|null, updated_at: string|null}
+     * @return array{id: int, name: string, email: string, role: string, is_owner: bool, created_at: Carbon|null, updated_at: Carbon|null}
      */
     public function toArray(Request $request): array
     {

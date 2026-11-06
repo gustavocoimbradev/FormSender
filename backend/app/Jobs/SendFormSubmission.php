@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\Role;
 use App\Enums\SubmissionStatus;
 use App\Mail\FormSubmissionMail;
 use App\Models\FormSubmission;
+use App\Models\User;
+use App\Notifications\SubmissionDeliveryFailed;
 use App\Support\SmtpMailer;
+use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Bus\Queueable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
@@ -91,5 +95,7 @@ class SendFormSubmission implements ShouldQueue, ShouldQueueAfterCommit
         $submission->error = Str::limit($exception->getMessage(), 1000);
         $submission->processed_at = now();
         $submission->save();
+
+        Notification::send(User::where('role', Role::Admin)->get(), new SubmissionDeliveryFailed($submission));
     }
 }

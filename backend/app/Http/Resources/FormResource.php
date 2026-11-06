@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Form;
+use Carbon\Carbon;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FormResource extends JsonResource
 {
     /**
-     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, template: string|null, code: string, created_at: string|null, updated_at: string|null}
+     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, redirect_url: string|null, template: string|null, code: string, created_at: Carbon|null, updated_at: Carbon|null}
      */
     public function toArray(Request $request): array
     {
@@ -29,6 +30,8 @@ class FormResource extends JsonResource
             'destinations' => $this->destinations,
             /** Websites allowed to send the form. Empty means any website. */
             'allowed_domains' => $this->allowed_domains,
+            /** Where visitors of a plain HTML page land after sending the form. Empty means they get a short confirmation. */
+            'redirect_url' => $this->redirect_url,
             /** Code of the template used for the email, or null when the form uses the default template. */
             'template' => $this->template?->code,
             /** The form's unique code: it identifies the form in every address, here and on the websites that send it. */

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use Dedoc\Scramble\Attributes\Endpoint;
-use Dedoc\Scramble\Attributes\Group;
 use App\Actions\Setup\CreateInitialAdminAction;
-use App\Http\Requests\SetupRequest;
 use App\Enums\Role;
+use App\Http\Requests\SetupRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Dedoc\Scramble\Attributes\Endpoint;
+use Dedoc\Scramble\Attributes\Group;
 
 #[Group('Getting started', description: 'Create the first administrator account. This is done once, when FormSender is installed.', weight: 1)]
 class SetupController extends Controller

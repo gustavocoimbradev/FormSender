@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Jobs\SendPasswordResetCode;
 use App\Mail\PasswordResetCodeMail;
+use App\Models\Setting;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Mail;
@@ -32,7 +33,7 @@ it('keeps the code out of the queue payload by encrypting the job', function ():
 });
 
 it('fails when smtp is not configured', function (): void {
-    App\Models\Setting::where('key', 'smtp')->delete();
+    Setting::where('key', 'smtp')->delete();
 
     (new SendPasswordResetCode('jane@example.com', '123456'))->handle();
 })->throws(RuntimeException::class, 'SMTP is not configured.');

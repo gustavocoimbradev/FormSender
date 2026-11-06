@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Models\Form;
+use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Pest\Expectation;
 use Tests\TestCase;
 
 // Tests never touch the real Redis, whatever the environment says (inside Docker it points at Redis):
@@ -39,7 +44,7 @@ pest()->extend(TestCase::class)
 |
 */
 
-expect()->extend('toBeOne', function (): Pest\Expectation {
+expect()->extend('toBeOne', function (): Expectation {
     return $this->toBe(1);
 });
 
@@ -59,33 +64,33 @@ function something(): void
     // ..
 }
 
-function actingAsUser(): App\Models\User
+function actingAsUser(): User
 {
-    $user = App\Models\User::factory()->create();
-    Laravel\Sanctum\Sanctum::actingAs($user);
+    $user = User::factory()->create();
+    Sanctum::actingAs($user);
 
     return $user;
 }
 
-function actingAsAdmin(): App\Models\User
+function actingAsAdmin(): User
 {
-    $admin = App\Models\User::factory()->admin()->create();
-    Laravel\Sanctum\Sanctum::actingAs($admin);
+    $admin = User::factory()->admin()->create();
+    Sanctum::actingAs($admin);
 
     return $admin;
 }
 
-function actingAsOwner(?App\Models\User $owner = null): App\Models\User
+function actingAsOwner(?User $owner = null): User
 {
-    $owner ??= App\Models\User::factory()->owner()->create();
-    Laravel\Sanctum\Sanctum::actingAs($owner);
+    $owner ??= User::factory()->owner()->create();
+    Sanctum::actingAs($owner);
 
     return $owner;
 }
 
 function configureSmtp(): void
 {
-    App\Models\Setting::create(['key' => 'smtp', 'value' => [
+    Setting::create(['key' => 'smtp', 'value' => [
         'host' => 'smtp.example.com',
         'port' => 465,
         'username' => 'user',
@@ -96,9 +101,9 @@ function configureSmtp(): void
     ]]);
 }
 
-function contactForm(array $overrides = []): App\Models\Form
+function contactForm(array $overrides = []): Form
 {
-    return App\Models\Form::factory()->create([
+    return Form::factory()->create([
         'name' => 'Contact',
         'fields' => [
             ['name' => 'name', 'label' => 'Name', 'type' => 'text', 'required' => true],
@@ -119,4 +124,3 @@ function validSubmission(array $overrides = []): array
 {
     return ['name' => 'Jane', 'email' => 'jane@example.com', ...$overrides];
 }
-

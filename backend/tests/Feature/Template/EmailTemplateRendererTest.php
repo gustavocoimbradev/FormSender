@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Submission\StoreFormSubmissionAction;
+use App\Models\Form;
 use App\Models\FormSubmission;
 use App\Models\Template;
 use App\Support\EmailTemplateRenderer;
@@ -145,8 +147,8 @@ describe('default template', function (): void {
     });
 
     it('still reads well for a form that has no name, email or message', function (): void {
-        $form = App\Models\Form::factory()->create(['name' => 'Survey', 'fields' => [['name' => 'score', 'label' => 'Score', 'type' => 'number']]]);
-        $submission = app(App\Actions\Submission\StoreFormSubmissionAction::class)->execute($form, ['score' => 9]);
+        $form = Form::factory()->create(['name' => 'Survey', 'fields' => [['name' => 'score', 'label' => 'Score', 'type' => 'number']]]);
+        $submission = app(StoreFormSubmissionAction::class)->execute($form, ['score' => 9]);
 
         $html = app(EmailTemplateRenderer::class)->renderSubmission(Template::defaultTemplate(), $submission)['html'];
 

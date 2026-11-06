@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Form;
+use Illuminate\Support\Facades\Queue;
 
 function preflight($test, Form $form, string $origin)
 {
@@ -40,7 +41,7 @@ it('refuses the preflight for an origin that is not allowed', function (): void 
 });
 
 it('adds the cors header to the actual submission response of an allowed origin', function (): void {
-    \Illuminate\Support\Facades\Queue::fake();
+    Queue::fake();
     configureSmtp();
     $form = contactForm(['allowed_domains' => ['example.com']]);
 

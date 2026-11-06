@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateSettingsRequest;
+use App\Http\Resources\SettingsResource;
+use App\Models\Setting;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
-use App\Http\Requests\UpdateSettingsRequest;
-use App\Models\Setting;
-use App\Http\Resources\SettingsResource;
 
 #[Group('Settings', description: 'Email (SMTP) settings used to deliver the messages. Admin only.', weight: 8)]
 class SettingController extends Controller

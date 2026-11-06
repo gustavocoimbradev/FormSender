@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Models\Form;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Support\Facades\Queue;
 use Database\Seeders\ExampleFormSeeder;
+use Illuminate\Support\Facades\Queue;
 
 it('seeds an example Contact form with a required name and email and an optional message', function (): void {
     $this->seed(ExampleFormSeeder::class);

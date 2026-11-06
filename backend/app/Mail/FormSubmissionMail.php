@@ -9,6 +9,7 @@ use App\Models\Template;
 use App\Support\EmailTemplateRenderer;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
@@ -25,8 +26,11 @@ class FormSubmissionMail extends Mailable
 
     public function envelope(): Envelope
     {
+        $replyTo = $this->submission->replyToAddress();
+
         return new Envelope(
             from: new Address($this->fromAddress, $this->fromName),
+            replyTo: $replyTo === null ? [] : [new Address($replyTo)],
             subject: $this->rendered()['subject'],
         );
     }
@@ -37,13 +41,26 @@ class FormSubmissionMail extends Mailable
     }
 
     /**
+     * @return list<Attachment>
+     */
+    public function attachments(): array
+    {
+        return array_map(
+            fn (array $attachment): Attachment => Attachment::fromStorageDisk(config('formsender.attachments.disk'), $attachment['path'])
+                ->as($attachment['name'])
+                ->withMime($attachment['mime']),
+            $this->submission->attachments,
+        );
+    }
+
+    /**
      * The form's template, or the default one when it has none (or the form was deleted).
      *
      * @return array{subject: string, html: string}
      */
     private function rendered(): array
     {
-        $template = $this->submission->form?->template ?? Template::defaultTemplate();
+        $template = ($this->submission->form_id === null ? null : $this->submission->form->template) ?? Template::defaultTemplate();
 
         return $this->rendered ??= app(EmailTemplateRenderer::class)->renderSubmission($template, $this->submission);
     }

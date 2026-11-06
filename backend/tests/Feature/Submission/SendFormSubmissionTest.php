@@ -7,6 +7,9 @@ use App\Jobs\SendFormSubmission;
 use App\Mail\FormSubmissionMail;
 use App\Models\FormSubmission;
 use App\Models\Setting;
+use App\Models\Template;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Mail;
 
 function makeSubmission(?array $data = null): FormSubmission
@@ -83,7 +86,7 @@ it('sends from the configured smtp address and names the form in the subject', f
 
 it('delivers the email with the template chosen for the form', function (): void {
     Mail::fake();
-    $template = App\Models\Template::factory()->create(['subject' => 'Contato: {{field.name}}', 'html' => '<b>{{form_name}}</b> {{field.email}}']);
+    $template = Template::factory()->create(['subject' => 'Contato: {{field.name}}', 'html' => '<b>{{form_name}}</b> {{field.email}}']);
     $form = contactForm(['template_id' => $template->id]);
     $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'email' => 'jane@example.com']);
 
@@ -225,6 +228,29 @@ it('is configured to retry with backoff and to run after the transaction commits
 
     expect($job->tries)->toBe(3)
         ->and($job->backoff)->toBe([10, 60])
-        ->and($job)->toBeInstanceOf(Illuminate\Contracts\Queue\ShouldQueue::class)
-        ->and($job)->toBeInstanceOf(Illuminate\Contracts\Queue\ShouldQueueAfterCommit::class);
+        ->and($job)->toBeInstanceOf(ShouldQueue::class)
+        ->and($job)->toBeInstanceOf(ShouldQueueAfterCommit::class);
+});
+
+it('sets the reply-to to the email the visitor typed', function (): void {
+    Mail::fake();
+    $submission = makeSubmission(['name' => 'Jane', 'email' => 'jane@example.com']);
+
+    (new SendFormSubmission($submission))->handle();
+
+    Mail::assertSent(FormSubmissionMail::class, fn (FormSubmissionMail $mail): bool => $mail->hasReplyTo('jane@example.com'));
+});
+
+it('leaves the reply-to empty when the form has no email field', function (): void {
+    Mail::fake();
+    $form = contactForm(['fields' => [['name' => 'message', 'label' => 'Message', 'type' => 'textarea']]]);
+    $submission = app(StoreFormSubmissionAction::class)->execute($form, ['message' => 'Hi']);
+
+    (new SendFormSubmission($submission))->handle();
+
+    Mail::assertSent(FormSubmissionMail::class, fn (FormSubmissionMail $mail): bool => $mail->replyTo === []);
+});
+
+it('ignores a stored email value that is not a valid address', function (): void {
+    expect(makeSubmission(['name' => 'Jane', 'email' => "x@y.com\r\nBcc: a@b.com"])->replyToAddress())->toBeNull();
 });

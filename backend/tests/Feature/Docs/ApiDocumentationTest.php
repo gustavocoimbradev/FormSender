@@ -71,7 +71,6 @@ it('explains that the submit endpoint is controlled by the allowed sites, with n
     expect($operation['description'] ?? '')->toContain('allowed domains')->toContain('code')->not->toContain('Bearer');
 });
 
-
 it('has a summary for every operation', function (): void {
     foreach (openApi()['paths'] as $path => $operations) {
         foreach ($operations as $method => $operation) {

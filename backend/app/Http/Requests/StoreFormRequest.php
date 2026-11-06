@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Dedoc\Scramble\Attributes\SchemaName;
 use App\Enums\FormFieldType;
 use App\Models\Template;
+use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -88,7 +88,7 @@ class StoreFormRequest extends FormRequest
              */
             'fields.*.label' => ['required', 'string', 'max:255'],
             /**
-             * Kind of field: `text`, `email`, `phone`, `number`, `textarea`, `select`, `checkbox` or `date`.
+             * Kind of field: `text`, `email`, `phone`, `number`, `textarea`, `select`, `checkbox`, `date` or `file` (an attachment, up to 5 MB, sent as a file upload).
              *
              * @example email
              */
@@ -135,6 +135,12 @@ class StoreFormRequest extends FormRequest
              * @example company.com
              */
             'allowed_domains.*' => ['string', 'max:253', 'regex:'.self::DOMAIN, 'distinct'],
+            /**
+             * Where a visitor lands after sending the form from a plain HTML page (no JavaScript). Leave empty (null) to answer with a short confirmation instead. Must start with `http://` or `https://`.
+             *
+             * @example https://company.com/thanks
+             */
+            'redirect_url' => ['nullable', 'url:http,https', 'max:2048'],
             /**
              * Code of the template used for the email. Leave empty (null) to use the default template.
              *

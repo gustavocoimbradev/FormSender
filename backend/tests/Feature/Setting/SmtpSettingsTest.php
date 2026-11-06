@@ -5,6 +5,7 @@ declare(strict_types=1);
 beforeEach(fn () => actingAsAdmin());
 
 use App\Models\Setting;
+use Illuminate\Support\Facades\DB;
 
 function smtpPayload(array $overrides = []): array
 {
@@ -51,7 +52,7 @@ it('returns the saved smtp settings', function (): void {
 it('stores the smtp settings encrypted', function (): void {
     $this->putJson('/api/settings', smtpPayload())->assertOk();
 
-    $raw = \Illuminate\Support\Facades\DB::table('settings')->where('key', 'smtp')->value('value');
+    $raw = DB::table('settings')->where('key', 'smtp')->value('value');
 
     expect($raw)->not->toContain('secret-pass')->not->toContain('smtp.example.com');
     expect(Setting::where('key', 'smtp')->first()->value['password'])->toBe('secret-pass');

@@ -86,15 +86,11 @@ class EmailTemplateRenderer
 
             $value = $this->value($token, $submission);
 
-            if ($value === null) {
-                return $match[0];
-            }
-
             return $asHtml ? nl2br(e($value)) : $value;
         }, $text);
     }
 
-    private function value(string $token, FormSubmission $submission): ?string
+    private function value(string $token, FormSubmission $submission): string
     {
         if ($token === 'form_name') {
             return (string) $submission->form_name;

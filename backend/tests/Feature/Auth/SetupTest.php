@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\Role;
+use App\Models\Setting;
 use App\Models\User;
 
 function setupPayload(array $overrides = []): array
@@ -105,7 +106,6 @@ it('exposes nothing but the setup status', function (): void {
     expect($this->getJson('/api/setup')->getContent())->not->toContain('owner@example.com');
 });
 
-
 function smtpForSetup(array $overrides = []): array
 {
     return [
@@ -123,7 +123,7 @@ function smtpForSetup(array $overrides = []): array
 it('saves the smtp settings together with the initial admin', function (): void {
     $this->postJson('/api/setup', setupPayload(['smtp' => smtpForSetup()]))->assertCreated();
 
-    expect(App\Models\Setting::where('key', 'smtp')->sole()->value)->toBe(smtpForSetup());
+    expect(Setting::where('key', 'smtp')->sole()->value)->toBe(smtpForSetup());
 });
 
 it('lets the new admin read the smtp settings back', function (): void {
@@ -137,27 +137,27 @@ it('lets the new admin read the smtp settings back', function (): void {
 });
 
 it('replaces the smtp settings that already existed', function (): void {
-    App\Models\Setting::create(['key' => 'smtp', 'value' => ['host' => 'mailpit', 'port' => 1025]]);
+    Setting::create(['key' => 'smtp', 'value' => ['host' => 'mailpit', 'port' => 1025]]);
 
     $this->postJson('/api/setup', setupPayload(['smtp' => smtpForSetup()]))->assertCreated();
 
-    expect(App\Models\Setting::where('key', 'smtp')->count())->toBe(1)
-        ->and(App\Models\Setting::where('key', 'smtp')->sole()->value['host'])->toBe('smtp.company.com');
+    expect(Setting::where('key', 'smtp')->count())->toBe(1)
+        ->and(Setting::where('key', 'smtp')->sole()->value['host'])->toBe('smtp.company.com');
 });
 
 it('keeps the existing smtp settings when none are sent', function (): void {
-    App\Models\Setting::create(['key' => 'smtp', 'value' => ['host' => 'mailpit', 'port' => 1025]]);
+    Setting::create(['key' => 'smtp', 'value' => ['host' => 'mailpit', 'port' => 1025]]);
 
     $this->postJson('/api/setup', setupPayload())->assertCreated();
 
-    expect(App\Models\Setting::where('key', 'smtp')->sole()->value['host'])->toBe('mailpit');
+    expect(Setting::where('key', 'smtp')->sole()->value['host'])->toBe('mailpit');
 });
 
 it('accepts a server without login and without encryption', function (): void {
     $this->postJson('/api/setup', setupPayload(['smtp' => smtpForSetup(['username' => null, 'password' => null, 'encryption' => null, 'from_name' => null])]))
         ->assertCreated();
 
-    expect(App\Models\Setting::where('key', 'smtp')->sole()->value)
+    expect(Setting::where('key', 'smtp')->sole()->value)
         ->toMatchArray(['username' => null, 'password' => null, 'encryption' => null]);
 });
 
@@ -166,7 +166,7 @@ it('validates the smtp settings and creates nothing when they are wrong', functi
         ->assertUnprocessable()
         ->assertJsonValidationErrors($errorKey);
 
-    expect(User::count())->toBe(0)->and(App\Models\Setting::where('key', 'smtp')->exists())->toBeFalse();
+    expect(User::count())->toBe(0)->and(Setting::where('key', 'smtp')->exists())->toBeFalse();
 })->with([
     'missing host' => [fn () => smtpForSetup(['host' => null]), 'smtp.host'],
     'missing port' => [fn () => smtpForSetup(['port' => null]), 'smtp.port'],
