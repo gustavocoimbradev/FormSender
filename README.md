@@ -29,12 +29,6 @@ Your site gets a form, and every message lands in your team's inbox. No back end
 
 3. **Done.** The form draws itself with the fields you set, and edits made in the dashboard reach every site at once. Prefer an `<iframe>`, or a link? Every form also has its own public page.
 
-Straight from code it is one request too:
-
-```bash
-curl -X POST https://YOUR-DOMAIN/api/forms/FORM_CODE/submit -F name=Maria -F email=maria@company.com
-```
-
 ## Run it
 
 Needs Docker.
@@ -43,16 +37,6 @@ Needs Docker.
 make dev      # development: everything up with sample data, a fake inbox (Mailpit) and free ports picked for you
 make prod     # production: asks for your address the first time, then builds and runs it for good
 ```
-
-`make prod` asks **what address people will use**: a domain (`forms.mycompany.com`, https with the certificate handled for you) or an **IP address** (plain http). It creates `.env.prod`, builds, starts everything in the background and keeps it running, even after the server restarts. Open the address and create the first administrator, then set your SMTP in the dashboard. To update, `git pull` and `make prod` again.
-
-| Command | |
-|---|---|
-| `make prod` | Set up (first time), build and start or update |
-| `make prod-setup` | Change the address |
-| `make prod-logs` / `make prod-down` | Watch it / stop it (data stays) |
-| `make prod-backup` | Save the database to `backups/` |
-| `make down` / `make test` / `make reset` | Development: stop / run the tests / start over |
 
 Keep `APP_KEY` safe: the saved SMTP password is encrypted with it. Without a keyboard, `ADDRESS=forms.mycompany.com make prod`. Over an IP the site is plain http, so a form on an https website needs a domain.
 
