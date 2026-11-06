@@ -5,7 +5,7 @@ import { ApiError, deleteUser, listUsers, type ManagedUser } from "@/lib/api";
 import { formatDate } from "@/lib/format";
 import { useResource } from "@/lib/hooks";
 import { canDeleteUser, canEditUser, roleLabel } from "@/lib/permissions";
-import { ActionButton, PhoneLabel } from "../Button";
+import { ActionButton } from "../Button";
 import { CardUnreachable } from "../CardStates";
 import { ChevronIcon, PencilIcon, PlusIcon, TrashIcon, UsersIcon } from "../icons";
 import { useSession } from "../panel/PanelFrame";
@@ -14,14 +14,14 @@ import { Card } from "../ui/Card";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
 import { DataTable, type Column } from "../ui/DataTable";
 import { EmptyState } from "../ui/EmptyState";
-import { PageHeader } from "../ui/PageHeader";
 import { Pagination } from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
 import { UserModal } from "./UserModal";
 
 const ICON_BUTTON = "grid size-11 place-items-center rounded-control text-muted transition-colors duration-300 hover:bg-surface/[0.08] hover:text-text";
 
-export function UsersScreen() {
+/** The accounts: a list with its creation, edition and removal. It lives in the Users tab of the settings. */
+export function UsersPanel() {
   const { user: actor } = useSession();
   const toast = useToast();
   const [page, setPage] = useState(1);
@@ -82,14 +82,14 @@ export function UsersScreen() {
   ];
 
   const newUser = (
-    <ActionButton type="button" onClick={() => setEditing("new")} roundOnPhone>
-      <PlusIcon /> <PhoneLabel>New user</PhoneLabel>
+    <ActionButton type="button" onClick={() => setEditing("new")} className="max-sm:w-full">
+      <PlusIcon /> New user
     </ActionButton>
   );
 
   return (
     <>
-      <PageHeader title="Users">{newUser}</PageHeader>
+      <div className="mb-4 flex sm:justify-end">{newUser}</div>
 
       <Card className="animate-fade-up overflow-hidden">
         {error ? (

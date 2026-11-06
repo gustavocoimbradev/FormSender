@@ -1,127 +1,79 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
-import { ApiError, getSettings, saveSmtp, setAllowRegistration } from "@/lib/api";
+import { useEffect, useState } from "react";
+import { getSettings } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
-import { defaultSmtpDraft, draftFromSettings, isSmtpReady, settingsFromDraft, smtpErrorsFromApi, type SmtpDraft, type SmtpErrors } from "@/lib/smtp";
-import { ActionButton } from "../Button";
 import { CardUnreachable } from "../CardStates";
+import { PageHeader, usePhoneLayout } from "../ui/PageHeader";
+import { Pills } from "../ui/Pills";
 import { Bar, FieldsRow } from "../ui/Skeleton";
-import { SmtpFields } from "../SmtpFields";
-import { Card, CardHeader } from "../ui/Card";
-import { Switch } from "../ui/Switch";
-import { PageHeader } from "../ui/PageHeader";
-import { useToast } from "../ui/Toast";
+import { Card } from "../ui/Card";
+import { SmtpTab } from "./SmtpTab";
+import { StorageTab } from "./StorageTab";
+import { UsersTab } from "./UsersTab";
+
+type Tab = "smtp" | "users" | "storage";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "smtp", label: "SMTP" },
+  { id: "users", label: "Users" },
+  { id: "storage", label: "Storage" },
+];
+
+const isTab = (value: string): value is Tab => TABS.some((tab) => tab.id === value);
 
 export function SettingsScreen() {
-  const toast = useToast();
-  const { data: settings, loading, error, reload } = useResource(getSettings, []);
-  const data = settings?.smtp ?? null;
-  const [allowRegistration, setAllowRegistrationDraft] = useState(false);
-  const [savingRegistration, setSavingRegistration] = useState(false);
-  const [draft, setDraft] = useState<SmtpDraft>(defaultSmtpDraft);
-  const [errors, setErrors] = useState<SmtpErrors>({});
-  const [saving, setSaving] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const phone = usePhoneLayout();
+  const { data, loading, error, reload } = useResource(getSettings, []);
+  const [tab, setTab] = useState<Tab>("smtp");
 
-  // Starts from what is saved (or the default when nothing is).
+  // A link can open one tab straight away (/settings#users).
   useEffect(() => {
-    if (loading || error) return;
-    setDraft(data ? draftFromSettings(data) : defaultSmtpDraft());
-    setAllowRegistrationDraft(settings?.allow_registration ?? false);
-    setLoaded(true);
-  }, [data, settings, loading, error]);
+    const follow = () => {
+      const wanted = window.location.hash.slice(1);
+      if (isTab(wanted)) setTab(wanted);
+    };
 
-  async function changeRegistration(next: boolean) {
-    setAllowRegistrationDraft(next);
-    setSavingRegistration(true);
+    follow();
+    window.addEventListener("hashchange", follow);
+    return () => window.removeEventListener("hashchange", follow);
+  }, []);
 
-    try {
-      await setAllowRegistration(next);
-      toast(next ? "Anyone can create an account now." : "New accounts are closed.");
-    } catch {
-      setAllowRegistrationDraft(!next);
-      toast("Could not save. Please try again.", "error");
-    } finally {
-      setSavingRegistration(false);
-    }
-  }
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    if (!isSmtpReady(draft)) {
-      toast("Check the server, port and sender.", "error");
-      return;
-    }
-
-    setSaving(true);
-    setErrors({});
-    try {
-      const saved = await saveSmtp(settingsFromDraft(draft));
-      if (saved) setDraft(draftFromSettings(saved));
-      toast("Settings saved.");
-    } catch (failure) {
-      if (failure instanceof ApiError && failure.status === 422) {
-        setErrors(smtpErrorsFromApi(failure.fieldErrors));
-        toast("Check the highlighted fields.", "error");
-      } else {
-        toast("Could not save. Please try again.", "error");
-      }
-    } finally {
-      setSaving(false);
-    }
+  function choose(next: Tab) {
+    setTab(next);
+    window.history.replaceState(null, "", `#${next}`);
   }
 
   return (
     <>
       <PageHeader title="Settings" />
 
-      {loaded && !error && (
-        <Card className="mb-6 animate-fade-up">
-          <CardHeader title="Accounts" />
-          <div className="px-5 pb-6 sm:px-6">
-            <Switch id="allow-registration" label="Allow new accounts" checked={allowRegistration} onChange={(next) => void changeRegistration(next)} disabled={savingRegistration} />
-            <p className="mt-2 text-base text-muted">
-              {allowRegistration
-                ? "Anyone can create an account and make their own forms here. You see all of them; they see only theirs."
-                : "Only you can create accounts, under Users."}
-            </p>
+      <div className="mb-6">
+        <Pills label="Settings sections" value={tab} options={TABS} onChange={choose} single={phone} />
+      </div>
+
+      {error ? (
+        <Card className="p-8">
+          <CardUnreachable onRetry={reload} />
+        </Card>
+      ) : loading || !data ? (
+        <Card className="px-5 pb-6 pt-6 sm:px-6" >
+          <div role="status" aria-label="Loading">
+            <FieldsRow count={2} grid="sm:grid-cols-[1fr_9rem]" />
+            <div className="mb-4">
+              <Bar className="mb-2 h-5 w-20 rounded-full" />
+              <Bar className="h-14 rounded-control" />
+            </div>
+            <FieldsRow count={2} grid="sm:grid-cols-2" />
           </div>
         </Card>
-      )}
-
-      <Card className="animate-fade-up">
-        <CardHeader title="Email server" />
-
-        <div className="px-5 pb-6 sm:px-6">
-          {error ? (
-            <CardUnreachable onRetry={reload} />
-          ) : !loaded ? (
-            <div role="status" aria-label="Loading">
-              <FieldsRow count={2} grid="sm:grid-cols-[1fr_9rem]" />
-              <div className="mb-4">
-                <Bar className="mb-2 h-5 w-20 rounded-full" />
-                <Bar className="h-14 rounded-control" />
-              </div>
-              <FieldsRow count={2} grid="sm:grid-cols-2" />
-              <FieldsRow count={2} grid="sm:grid-cols-2" />
-              <div className="mt-2 flex justify-end">
-                <Bar className="h-14 w-full rounded-control sm:w-32" />
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={submit} noValidate>
-              <SmtpFields draft={draft} onChange={setDraft} errors={errors} disabled={saving} />
-
-              <div className="mt-2 flex justify-end">
-                <ActionButton type="submit" loading={saving} disabled={!isSmtpReady(draft)} className="h-14 w-full px-8 sm:w-auto">
-                  Save
-                </ActionButton>
-              </div>
-            </form>
-          )}
+      ) : (
+        <div key={tab}>
+          {tab === "smtp" && <SmtpTab smtp={data.smtp} />}
+          {tab === "users" && <UsersTab allowRegistration={data.allow_registration} />}
+          {tab === "storage" && <StorageTab retentionDays={data.retention_days} />}
         </div>
-      </Card>
+      )}
     </>
   );
 }

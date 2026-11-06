@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 import { apiPublicUrl, mailpitPublicUrl } from "@/lib/config";
 import { isAdmin, roleLabel } from "@/lib/permissions";
 import { AmbientBackground } from "../AmbientBackground";
-import { BookIcon, ChevronIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon, UsersIcon } from "../icons";
+import { BookIcon, ChevronIcon, ExternalIcon, FormsIcon, InboxIcon, LogoutIcon, ServerIcon } from "../icons";
 import { LogoMark } from "../Logo";
 import { PHONE_HEADER_SLOT, usePhoneLayout } from "../ui/PageHeader";
 import { Spinner } from "../Spinner";
@@ -17,7 +17,6 @@ type NavItem = { href: string; label: string; icon: ReactNode; adminOnly?: boole
 
 const NAV: NavItem[] = [
   { href: "/forms", label: "Forms", icon: <FormsIcon /> },
-  { href: "/users", label: "Users", icon: <UsersIcon />, adminOnly: true },
   { href: "/settings", label: "Settings", icon: <ServerIcon />, adminOnly: true },
 ];
 

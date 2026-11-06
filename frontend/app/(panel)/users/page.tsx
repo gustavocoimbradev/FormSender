@@ -1,13 +1,6 @@
-import type { Metadata } from "next";
-import { RequireAdmin } from "@/components/panel/RequireAdmin";
-import { UsersScreen } from "@/components/users/UsersScreen";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Users · FormSender" };
-
+// The accounts now live in the Users tab of the settings.
 export default function UsersPage() {
-  return (
-    <RequireAdmin>
-      <UsersScreen />
-    </RequireAdmin>
-  );
+  redirect("/settings#users");
 }

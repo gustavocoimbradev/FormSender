@@ -308,7 +308,7 @@ export const deleteUser = (id: number) => authed<void>(`/users/${id}`, { method:
 
 // ------------------------------------------------------------------ settings (admin)
 
-export type Settings = { smtp: SmtpSettings | null; allow_registration: boolean };
+export type Settings = { smtp: SmtpSettings | null; allow_registration: boolean; retention_days: number };
 
 export const getSettings = async () => (await authed<{ data: Settings }>("/settings")).data;
 
@@ -320,3 +320,7 @@ export const saveSmtp = async (smtp: SmtpSettings) =>
 /** Opens or closes the creation of accounts by anyone (the administrator can always create them). */
 export const setAllowRegistration = async (allow: boolean) =>
   (await authed<{ data: Settings }>("/settings", json("PUT", { allow_registration: allow }))).data.allow_registration;
+
+/** How many days messages are kept before they are deleted, with their files. 0 keeps them forever. */
+export const setRetentionDays = async (days: number) =>
+  (await authed<{ data: Settings }>("/settings", json("PUT", { retention_days: days }))).data.retention_days;
