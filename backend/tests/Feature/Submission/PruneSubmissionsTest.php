@@ -8,14 +8,6 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-function submissionFromDaysAgo(int $days): FormSubmission
-{
-    $submission = app(StoreFormSubmissionAction::class)->execute(contactForm(), validSubmission());
-    $submission->forceFill(['created_at' => now()->subDays($days)])->save();
-
-    return $submission;
-}
-
 it('removes submissions older than the retention period', function (): void {
     config(['formsender.submission_retention_days' => 30]);
     $old = submissionFromDaysAgo(31);

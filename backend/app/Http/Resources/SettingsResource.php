@@ -16,7 +16,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class SettingsResource extends JsonResource
 {
     /**
-     * @return array{smtp: array{host: string, port: int, username: string|null, password: string|null, encryption: string|null, from_address: string, from_name: string|null}|null, allow_registration: bool}
+     * @return array{smtp: array{host: string, port: int, username: string|null, password: string|null, encryption: string|null, from_address: string, from_name: string|null}|null, allow_registration: bool, retention_days: int}
      */
     public function toArray(Request $request): array
     {
@@ -27,6 +27,8 @@ class SettingsResource extends JsonResource
             'smtp' => $this->value,
             /** Whether anyone can create an account. When false, only the administrator creates accounts. */
             'allow_registration' => Setting::registrationOpen(),
+            /** How many days messages are kept before they are deleted, with their files. 0 keeps them forever. */
+            'retention_days' => Setting::retentionDays(),
         ];
     }
 }

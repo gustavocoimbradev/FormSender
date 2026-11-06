@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Submission\StoreFormSubmissionAction;
 use App\Models\Form;
 use App\Models\FormSubmission;
 use App\Models\Setting;
@@ -101,6 +102,14 @@ function submissionFor(Form $form, array $overrides = []): FormSubmission
         'status' => 'pending',
         ...$overrides,
     ]);
+}
+
+function submissionFromDaysAgo(int $days): FormSubmission
+{
+    $submission = app(StoreFormSubmissionAction::class)->execute(contactForm(), validSubmission());
+    $submission->forceFill(['created_at' => now()->subDays($days)])->save();
+
+    return $submission;
 }
 
 function configureSmtp(): void

@@ -62,7 +62,7 @@ class FormSubmission extends Model
      */
     public function prunable(): Builder
     {
-        $days = (int) config('formsender.submission_retention_days');
+        $days = Setting::retentionDays();
 
         return static::query()->where('created_at', '<', now()->subDays($days > 0 ? $days : 36500));
     }

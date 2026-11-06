@@ -34,6 +34,12 @@ class UpdateSettingsRequest extends FormRequest
              */
             'allow_registration' => ['sometimes', 'boolean'],
             /**
+             * How many days the messages are kept before they are deleted, together with their files (0 to 3650). 0 keeps them forever.
+             *
+             * @example 90
+             */
+            'retention_days' => ['sometimes', 'integer', 'between:0,3650'],
+            /**
              * Address of the email server.
              *
              * @example smtp.company.com
