@@ -5,13 +5,14 @@ declare(strict_types=1);
 use App\Actions\Submission\StoreFormSubmissionAction;
 use App\Models\Form;
 use App\Models\FormSubmission;
-use App\Models\Template;
+use App\Support\DefaultEmailTemplate;
 use App\Support\EmailTemplateRenderer;
 
 function renderWith(string $html, string $subject = 'Subject', ?FormSubmission $submission = null): array
 {
     return app(EmailTemplateRenderer::class)->renderSubmission(
-        new Template(['name' => 'T', 'subject' => $subject, 'html' => $html]),
+        $subject,
+        $html,
         $submission ?? makeSubmission(['name' => 'Jane', 'email' => 'jane@example.com']),
     );
 }
@@ -78,19 +79,25 @@ it('renders a sample, for the preview, with no submission', function (): void {
         ->and($rendered['html'])->toContain('<p>Contact form</p>')->toContain('Maria Souza')->toContain('maria@company.com');
 });
 
-it('has a default template that looks like the panel and uses the variables', function (): void {
-    $default = Template::defaultTemplate();
+it('renders the sample with the fields of the form being edited', function (): void {
+    $rendered = app(EmailTemplateRenderer::class)->renderSample('S', '{{fields}}', [
+        ['name' => 'company', 'label' => 'Company', 'type' => 'text'],
+        ['name' => 'topic', 'label' => 'Topic', 'type' => 'select', 'options' => ['Sales', 'Support']],
+        ['name' => 'brief', 'label' => 'Brief', 'type' => 'file'],
+        ['name' => 'newsletter', 'label' => 'Newsletter', 'type' => 'checkbox'],
+    ]);
 
-    expect($default->is_default)->toBeTrue()
-        ->and($default->name)->toBe('Default')
-        ->and($default->subject)->toContain('{{form_name}}')
-        ->and($default->html)->toContain('{{fields}}')->toContain('#07070d')->toContain('#8b6bff')
-        ->and(Template::defaultTemplate()->is($default))->toBeTrue()
-        ->and(Template::where('is_default', true)->count())->toBe(1);
+    expect($rendered['html'])->toContain('Company')->toContain('Sales')->toContain('document.pdf')->toContain('Yes')
+        ->not->toContain('Maria Souza');
 });
 
-it('has a default template made only of what email clients understand', function (): void {
-    $html = Template::defaultTemplate()->html;
+it('has a default email that looks like the panel and uses the variables', function (): void {
+    expect(DefaultEmailTemplate::SUBJECT)->toContain('{{form_name}}')
+        ->and(DefaultEmailTemplate::HTML)->toContain('{{fields}}')->toContain('#07070d')->toContain('#8b6bff');
+});
+
+it('has a default email made only of what email clients understand', function (): void {
+    $html = DefaultEmailTemplate::HTML;
 
     expect($html)->not->toContain('display:flex')->not->toContain('display: flex')
         ->not->toContain('display:grid')->not->toContain('<script')->not->toContain('position:')
@@ -124,10 +131,10 @@ it('renders no table at all when every answer was placed one by one', function (
     expect(renderWith('{{field.name}}{{field.email}}{{fields}}')['html'])->toBe('Janejane@example.com');
 });
 
-describe('default template', function (): void {
+describe('default email', function (): void {
     function renderDefault(array $data): array
     {
-        return app(EmailTemplateRenderer::class)->renderSubmission(Template::defaultTemplate(), makeSubmission($data));
+        return app(EmailTemplateRenderer::class)->renderSubmission(DefaultEmailTemplate::SUBJECT, DefaultEmailTemplate::HTML, makeSubmission($data));
     }
 
     it('highlights the sender, the message and a reply button, and lists any other answer', function (): void {
@@ -150,7 +157,7 @@ describe('default template', function (): void {
         $form = Form::factory()->create(['name' => 'Survey', 'fields' => [['name' => 'score', 'label' => 'Score', 'type' => 'number']]]);
         $submission = app(StoreFormSubmissionAction::class)->execute($form, ['score' => 9]);
 
-        $html = app(EmailTemplateRenderer::class)->renderSubmission(Template::defaultTemplate(), $submission)['html'];
+        $html = app(EmailTemplateRenderer::class)->renderSubmission(DefaultEmailTemplate::SUBJECT, DefaultEmailTemplate::HTML, $submission)['html'];
 
         expect($html)->toContain('Score')->toContain('9')->not->toContain('mailto:')->not->toContain('{{');
     });

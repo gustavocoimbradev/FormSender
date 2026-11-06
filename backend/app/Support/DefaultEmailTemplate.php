@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Support;
 
 /**
- * The email every new installation starts with: the look of the dashboard (dark surface,
+ * The email every form starts with: the look of the dashboard (dark surface,
  * violet accent) written the way email clients understand it: tables, inline styles,
  * web-safe fonts, solid colors.
  */
 final class DefaultEmailTemplate
 {
-    public const NAME = 'Default';
-
     public const SUBJECT = 'New message: {{form_name}}';
 
     public const HTML = <<<'HTML'

@@ -11,7 +11,6 @@ use App\Support\RequestHost;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -34,17 +33,14 @@ class SubmitFormController extends Controller
      * message is only kept under Messages with the status `spam`. Leave it empty (or omit it) for real visitors.
      *
      * Send the fields as JSON, as a regular form post (`application/x-www-form-urlencoded`) or, when the form has a
-     * `file` field, as `multipart/form-data`. What comes back depends on the form's answer type. With `json` (the
-     * default) it is a JSON answer that also carries the thank-you page address (`redirect_url`, when the form has one).
-     * With `redirect` the visitor is sent straight to the thank-you page (`303`), which is what a plain HTML page
-     * without JavaScript needs. A script that sends `Accept: application/json` always gets the JSON answer.
+     * `file` field, as `multipart/form-data`. The answer is always JSON.
      *
      * Only the fields the form accepts are validated and kept. The submission is saved and queued, and
      * the answer is an instant `202`; the email delivery happens in the background. Limited to 20
      * requests per minute per form and IP.
      */
     #[Endpoint(operationId: 'submitForm')]
-    public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission, RecordSpamSubmissionAction $recordSpam): JsonResponse|RedirectResponse
+    public function __invoke(Request $request, Form $form, ReceiveFormSubmissionAction $receiveSubmission, RecordSpamSubmissionAction $recordSpam): JsonResponse
     {
         $meta = [
             'ip' => $request->ip(),
@@ -56,26 +52,19 @@ class SubmitFormController extends Controller
         if ($request->filled(self::HONEYPOT)) {
             $submission = $recordSpam->execute($form, $request->all(), $meta);
 
-            return $this->answer($request, $form, $submission->id, 'pending');
+            return $this->received($submission->id, 'pending');
         }
 
         $submission = $receiveSubmission->execute($form, $request->validate($form->submissionRules()), $meta);
 
-        return $this->answer($request, $form, $submission->id, $submission->status->value);
+        return $this->received($submission->id, $submission->status->value);
     }
 
-    /**
-     * A form set to redirect sends everyone to the thank-you page, unless the caller asks for JSON.
-     */
-    private function answer(Request $request, Form $form, int $id, string $status): JsonResponse|RedirectResponse
+    private function received(int $id, string $status): JsonResponse
     {
-        if ($form->redirectsAfterSubmit() && ! $request->wantsJson()) {
-            return redirect()->away((string) $form->redirect_url, 303);
-        }
-
         return response()->json([
             'message' => 'Your message was received and will be delivered shortly.',
-            'data' => ['id' => $id, 'status' => $status, 'redirect_url' => $form->redirect_url],
+            'data' => ['id' => $id, 'status' => $status],
         ], 202);
     }
 }

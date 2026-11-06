@@ -39,7 +39,7 @@ it('documents every api route', function (string $path, string $method): void {
     ['/forms/{form}', 'put'],
     ['/forms/{form}', 'delete'],
     ['/forms/{form}/submit', 'post'],
-    ['/forms/{form}/test', 'post'],
+    ['/forms/{form}/public', 'get'],
     ['/forms/{form}/submissions', 'get'],
     ['/forms/{form}/submissions/{submission}', 'get'],
     ['/users', 'get'],
@@ -56,11 +56,11 @@ it('declares bearer authentication for protected routes only', function (): void
     expect($document['components']['securitySchemes'])->toHaveKey('http');
     expect($document['components']['securitySchemes']['http'])->toMatchArray(['type' => 'http', 'scheme' => 'bearer']);
 
-    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get'], ['/forms/{form}/test', 'post']] as [$path, $method]) {
+    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get'], ['/email/preview', 'post']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->not->toBe([], "{$method} {$path} must be protected");
     }
 
-    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post'], ['/forms/{form}/submit', 'post']] as [$path, $method]) {
+    foreach ([['/setup', 'get'], ['/setup', 'post'], ['/auth/login', 'post'], ['/auth/forgot-password', 'post'], ['/auth/reset-password', 'post'], ['/forms/{form}/submit', 'post'], ['/forms/{form}/public', 'get']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->toBe([], "{$method} {$path} must be public");
     }
 });
@@ -100,7 +100,7 @@ function resolveSchema(array $schema): array
 
 describe('friendly documentation', function (): void {
     it('groups operations under readable names', function (): void {
-        $allowed = ['Getting started', 'Authentication', 'Password reset', 'Forms', 'Templates', 'Submitting a form', 'Submissions', 'Users', 'Settings'];
+        $allowed = ['Getting started', 'Authentication', 'Password reset', 'Forms', 'Email', 'Submitting a form', 'Submissions', 'Users', 'Settings'];
 
         foreach (openApi()['paths'] as $path => $operations) {
             foreach ($operations as $method => $operation) {
@@ -113,7 +113,7 @@ describe('friendly documentation', function (): void {
     it('describes each group', function (): void {
         $tags = collect(openApi()['tags'] ?? [])->keyBy('name');
 
-        foreach (['Getting started', 'Authentication', 'Password reset', 'Forms', 'Templates', 'Submitting a form', 'Submissions', 'Users', 'Settings'] as $group) {
+        foreach (['Getting started', 'Authentication', 'Password reset', 'Forms', 'Email', 'Submitting a form', 'Submissions', 'Users', 'Settings'] as $group) {
             expect($tags[$group]['description'] ?? '')->not->toBe('', "group {$group} has no description");
         }
     });
@@ -129,7 +129,7 @@ describe('friendly documentation', function (): void {
         }
 
         expect($ids)->toBe(array_values(array_unique($ids)))
-            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'sendTestMessage', 'logIn', 'saveSettings', 'listSubmissions', 'listTemplates', 'previewTemplate');
+            ->and($ids)->toContain('getSetupStatus', 'createForm', 'listForms', 'submitForm', 'getPublicForm', 'logIn', 'saveSettings', 'listSubmissions', 'previewEmail', 'getDefaultEmail');
     });
 
     it('names schemas after business concepts', function (): void {

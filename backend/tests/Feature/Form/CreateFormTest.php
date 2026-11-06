@@ -25,3 +25,12 @@ it('rejects a name longer than 255 characters', function (): void {
         ->assertUnprocessable()
         ->assertJsonValidationErrors('name');
 });
+
+it('accepts a file field when creating a form', function (): void {
+    $this->postJson('/api/forms', [
+        'name' => 'Quote',
+        'fields' => [['name' => 'brief', 'label' => 'Brief', 'type' => 'file']],
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.fields.0.type', 'file');
+});

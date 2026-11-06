@@ -27,6 +27,18 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Panel address
+    |--------------------------------------------------------------------------
+    |
+    | Where the dashboard (and the public page of every form) is served. That
+    | address may always show and send a form, whatever its allowed sites say.
+    |
+    */
+
+    'panel_url' => env('PANEL_URL'),
+
     'attachments' => [
         'disk' => env('ATTACHMENTS_DISK', 'local'),
         'max_kilobytes' => (int) env('ATTACHMENT_MAX_KILOBYTES', 5120),

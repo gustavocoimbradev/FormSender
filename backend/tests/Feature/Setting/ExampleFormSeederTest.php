@@ -20,7 +20,7 @@ it('seeds an example Contact form with a required name and email and an optional
         ])
         ->and($form->destinations)->not->toBe([])
         ->and($form->allowed_domains)->toBe([])
-        ->and($form->template_id)->toBeNull();
+        ->and($form->email_html)->toBeNull();
 });
 
 it('seeds it only once, even if it is deleted afterwards', function (): void {

@@ -46,6 +46,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(20)->by((is_object($form) ? $form->getKey() : $form).'|'.$request->ip());
         });
 
+        // Drawing a form is cheap and happens on every page view, so it is limited far above a real person.
+        RateLimiter::for('form-public', function (Request $request): Limit {
+            $form = $request->route('form');
+
+            return Limit::perMinute(120)->by((is_object($form) ? $form->getKey() : $form).'|'.$request->ip());
+        });
+
         RateLimiter::for('password-reset', fn (Request $request): Limit => Limit::perMinute(5)
             ->by(strtolower((string) $request->input('email')).'|'.$request->ip()));
 

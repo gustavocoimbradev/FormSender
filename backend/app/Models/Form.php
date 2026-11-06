@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\FormFieldType;
-use App\Enums\FormResponseType;
 use App\Models\Concerns\HasPublicCode;
+use App\Support\DefaultEmailTemplate;
 use Database\Factories\FormFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\Rule;
 
@@ -18,21 +18,20 @@ use Illuminate\Validation\Rule;
  * @property list<array<string, mixed>> $fields
  * @property list<string> $destinations
  * @property list<string> $allowed_domains
- * @property string|null $redirect_url
- * @property FormResponseType $response_type
+ * @property string|null $email_subject
+ * @property string|null $email_html
  */
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
     use HasFactory, HasPublicCode;
 
-    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'response_type', 'redirect_url', 'template_id'];
+    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'email_subject', 'email_html'];
 
     protected $attributes = [
         'fields' => '[]',
         'destinations' => '[]',
         'allowed_domains' => '[]',
-        'response_type' => 'json',
     ];
 
     /**
@@ -44,16 +43,44 @@ class Form extends Model
             'fields' => 'array',
             'destinations' => 'array',
             'allowed_domains' => 'array',
-            'response_type' => FormResponseType::class,
         ];
     }
 
     /**
-     * @return BelongsTo<Template, $this>
+     * The subject and body of the email delivered for this form's messages: the ones written for the form,
+     * or the default email for whatever was left empty.
+     *
+     * @return array{subject: string, html: string}
      */
-    public function template(): BelongsTo
+    public function email(): array
     {
-        return $this->belongsTo(Template::class);
+        return [
+            'subject' => $this->email_subject ?? DefaultEmailTemplate::SUBJECT,
+            'html' => $this->email_html ?? DefaultEmailTemplate::HTML,
+        ];
+    }
+
+    public function usesDefaultEmail(): bool
+    {
+        return $this->email_subject === null && $this->email_html === null;
+    }
+
+    /**
+     * Text that is the default email is not stored: the form keeps following the default.
+     *
+     * @return Attribute<string|null, string|null>
+     */
+    protected function emailSubject(): Attribute
+    {
+        return Attribute::set(fn (?string $value): ?string => $value === null || $value === DefaultEmailTemplate::SUBJECT ? null : $value);
+    }
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function emailHtml(): Attribute
+    {
+        return Attribute::set(fn (?string $value): ?string => $value === null || $value === DefaultEmailTemplate::HTML ? null : $value);
     }
 
     /**
@@ -65,19 +92,16 @@ class Form extends Model
     }
 
     /**
-     * Whether a submission is answered with a redirect to the thank-you page instead of JSON.
-     */
-    public function redirectsAfterSubmit(): bool
-    {
-        return $this->response_type === FormResponseType::Redirect && $this->redirect_url !== null;
-    }
-
-    /**
      * An empty list means any domain may submit. Entries are hosts, optionally
      * starting with "*." to match subdomains only.
      */
     public function allowsHost(?string $host): bool
     {
+        // The panel's own public page can always show and send the form.
+        if ($host !== null && $host === $this->panelHost()) {
+            return true;
+        }
+
         if ($this->allowed_domains === []) {
             return true;
         }
@@ -101,6 +125,13 @@ class Form extends Model
         }
 
         return false;
+    }
+
+    private function panelHost(): ?string
+    {
+        $host = parse_url((string) config('formsender.panel_url'), PHP_URL_HOST);
+
+        return is_string($host) ? strtolower($host) : null;
     }
 
     /**

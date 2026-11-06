@@ -11,10 +11,10 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SubmissionCors
 {
-    private const PATTERN = '#^api/forms/([a-z0-9]+)/submit$#';
+    private const PATTERN = '#^api/forms/([a-z0-9]+)/(?:submit|public)$#';
 
     /**
-     * The submit endpoint is called from other people's websites, so CORS is
+     * The submit and public endpoints are called from other people's websites, so CORS is
      * decided per form: the origin must be in the form's allowed domains
      * (or the list must be empty). Every other route keeps the global CORS config.
      */
@@ -33,7 +33,7 @@ class SubmissionCors
         if ($request->isMethod('OPTIONS')) {
             return $allowed
                 ? response()->noContent(204, $this->headers($origin) + [
-                    'Access-Control-Allow-Methods' => 'POST, OPTIONS',
+                    'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
                     'Access-Control-Allow-Headers' => 'Content-Type, Authorization, Accept',
                     'Access-Control-Max-Age' => '600',
                 ])

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Models\FormSubmission;
-use App\Models\Template;
+use Illuminate\Support\Str;
 
 /**
  * Fills a template's variables with a submission. The same code serves the real email and the
@@ -27,38 +27,64 @@ class EmailTemplateRenderer
     /**
      * @return array{subject: string, html: string}
      */
-    public function renderSubmission(Template $template, FormSubmission $submission): array
+    public function renderSubmission(string $subject, string $html, FormSubmission $submission): array
     {
-        $subject = $this->fill($template->subject, $submission, asHtml: false);
+        $filledSubject = $this->fill($subject, $submission, asHtml: false);
 
         // Answers already placed one by one in the body are not repeated by {{fields}}.
-        preg_match_all(self::PLACED_FIELD, $template->html, $placed);
+        preg_match_all(self::PLACED_FIELD, $html, $placed);
 
         return [
-            'subject' => trim((string) preg_replace('/\s+/u', ' ', $subject)),
-            'html' => $this->fill($template->html, $submission, asHtml: true, placed: array_unique($placed[1])),
+            'subject' => trim((string) preg_replace('/\s+/u', ' ', $filledSubject)),
+            'html' => $this->fill($html, $submission, asHtml: true, placed: array_unique($placed[1])),
         ];
     }
 
     /**
+     * The email filled with example answers, for the preview. When the fields of the form being edited are
+     * given, the example answers are theirs; otherwise a small contact form is used.
+     *
+     * @param  list<array{name: string, label: string, type: string, options?: list<string>|null}>|null  $fields
      * @return array{subject: string, html: string}
      */
-    public function renderSample(string $subject, string $html): array
+    public function renderSample(string $subject, string $html, ?array $fields = null): array
     {
-        $sample = new FormSubmission([
-            'form_name' => 'Contact form',
-            'fields' => [
+        $fields = $fields === null || $fields === []
+            ? [
                 ['name' => 'name', 'label' => 'Name', 'type' => 'text'],
                 ['name' => 'email', 'label' => 'Email', 'type' => 'email'],
                 ['name' => 'message', 'label' => 'Message', 'type' => 'textarea'],
-            ],
-            'data' => ['name' => 'Maria Souza', 'email' => 'maria@company.com', 'message' => "Hi! I would like to know more about your plans.\nCould you get back to me today?"],
+            ]
+            : $fields;
+
+        $sample = new FormSubmission([
+            'form_name' => 'Contact form',
+            'fields' => $fields,
+            'data' => collect($fields)->mapWithKeys(fn (array $field): array => [$field['name'] => $this->exampleAnswer($field)])->all(),
             'origin' => 'yoursite.com',
             'ip' => '203.0.113.10',
         ]);
         $sample->created_at = now();
 
-        return $this->renderSubmission(new Template(['name' => 'Sample', 'subject' => $subject, 'html' => $html]), $sample);
+        return $this->renderSubmission($subject, $html, $sample);
+    }
+
+    /**
+     * @param  array{name: string, label: string, type: string, options?: list<string>|null}  $field
+     */
+    private function exampleAnswer(array $field): string|bool
+    {
+        return match ($field['type']) {
+            'email' => 'maria@company.com',
+            'phone' => '+1 555 0100',
+            'number' => '42',
+            'textarea' => "Hi! I would like to know more about your plans.\nCould you get back to me today?",
+            'select' => $field['options'][0] ?? 'Option',
+            'checkbox' => true,
+            'date' => now()->format('Y-m-d'),
+            'file' => 'document.pdf',
+            default => $field['name'] === 'name' ? 'Maria Souza' : Str::of($field['label'])->title()->toString().' example',
+        };
     }
 
     /**

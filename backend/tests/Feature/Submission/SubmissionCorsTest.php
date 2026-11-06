@@ -20,7 +20,7 @@ it('answers the preflight for an allowed origin', function (): void {
     preflight($this, $form, 'https://example.com')
         ->assertNoContent()
         ->assertHeader('Access-Control-Allow-Origin', 'https://example.com')
-        ->assertHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+        ->assertHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         ->assertHeader('Vary', 'Origin');
 });
 

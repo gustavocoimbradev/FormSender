@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Models\FormSubmission;
-use App\Models\Template;
+use App\Support\DefaultEmailTemplate;
 use App\Support\EmailTemplateRenderer;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -60,8 +60,8 @@ class FormSubmissionMail extends Mailable
      */
     private function rendered(): array
     {
-        $template = ($this->submission->form_id === null ? null : $this->submission->form->template) ?? Template::defaultTemplate();
+        $email = $this->submission->form?->email() ?? ['subject' => DefaultEmailTemplate::SUBJECT, 'html' => DefaultEmailTemplate::HTML];
 
-        return $this->rendered ??= app(EmailTemplateRenderer::class)->renderSubmission($template, $this->submission);
+        return $this->rendered ??= app(EmailTemplateRenderer::class)->renderSubmission($email['subject'], $email['html'], $this->submission);
     }
 }

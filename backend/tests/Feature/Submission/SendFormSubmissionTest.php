@@ -7,7 +7,6 @@ use App\Jobs\SendFormSubmission;
 use App\Mail\FormSubmissionMail;
 use App\Models\FormSubmission;
 use App\Models\Setting;
-use App\Models\Template;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\Mail;
@@ -84,10 +83,9 @@ it('sends from the configured smtp address and names the form in the subject', f
     Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasFrom('no-reply@example.com') && $mail->hasSubject('New message: Contact'));
 });
 
-it('delivers the email with the template chosen for the form', function (): void {
+it('delivers the email written for the form', function (): void {
     Mail::fake();
-    $template = Template::factory()->create(['subject' => 'Contato: {{field.name}}', 'html' => '<b>{{form_name}}</b> {{field.email}}']);
-    $form = contactForm(['template_id' => $template->id]);
+    $form = contactForm(['email_subject' => 'Contato: {{field.name}}', 'email_html' => '<b>{{form_name}}</b> {{field.email}}']);
     $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'email' => 'jane@example.com']);
 
     (new SendFormSubmission($submission))->handle();
@@ -95,7 +93,7 @@ it('delivers the email with the template chosen for the form', function (): void
     Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('Contato: Jane') && str_contains($mail->render(), '<b>Contact</b> jane@example.com'));
 });
 
-it('falls back to the default template when the form has none, or was deleted', function (): void {
+it('falls back to the default email when the form has none, or was deleted', function (): void {
     Mail::fake();
     $submission = makeSubmission();
 
@@ -253,4 +251,14 @@ it('leaves the reply-to empty when the form has no email field', function (): vo
 
 it('ignores a stored email value that is not a valid address', function (): void {
     expect(makeSubmission(['name' => 'Jane', 'email' => "x@y.com\r\nBcc: a@b.com"])->replyToAddress())->toBeNull();
+});
+
+it('keeps the default body when the form only changed the subject', function (): void {
+    Mail::fake();
+    $form = contactForm(['email_subject' => 'Hello {{field.name}}']);
+    $submission = app(StoreFormSubmissionAction::class)->execute($form, ['name' => 'Jane', 'email' => 'jane@example.com']);
+
+    (new SendFormSubmission($submission))->handle();
+
+    Mail::assertSent(FormSubmissionMail::class, fn ($mail) => $mail->hasSubject('Hello Jane') && str_contains($mail->render(), 'Form Sender'));
 });

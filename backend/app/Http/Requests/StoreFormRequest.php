@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\FormFieldType;
-use App\Enums\FormResponseType;
-use App\Models\Template;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -39,23 +37,6 @@ class StoreFormRequest extends FormRequest
                 $domains,
             ), SORT_REGULAR)),
         ]);
-    }
-
-    /**
-     * The panel talks about templates by code; the form stores the id.
-     *
-     * @return array<string, mixed>
-     */
-    public function validatedForForm(): array
-    {
-        $data = $this->validated();
-
-        if (array_key_exists('template', $data)) {
-            $data['template_id'] = $data['template'] === null ? null : Template::where('code', $data['template'])->value('id');
-            unset($data['template']);
-        }
-
-        return $data;
     }
 
     /**
@@ -137,23 +118,17 @@ class StoreFormRequest extends FormRequest
              */
             'allowed_domains.*' => ['string', 'max:253', 'regex:'.self::DOMAIN, 'distinct'],
             /**
-             * What the visitor gets after sending: `json` (a short JSON answer that also carries the thank-you page address) or `redirect` (sent straight to the thank-you page). Defaults to `json`.
+             * Subject of the email delivered for this form's messages. Leave empty (null) for the default subject. Variables such as `{{form_name}}` are filled in with each message.
              *
-             * @example redirect
+             * @example New message: {{form_name}}
              */
-            'response_type' => ['string', Rule::enum(FormResponseType::class)],
+            'email_subject' => ['nullable', 'string', 'max:200'],
             /**
-             * The thank-you page. Required when `response_type` is `redirect`; with `json` it is only handed back in the answer. Leave empty (null) for none. Must start with `http://` or `https://`.
+             * HTML body of that email, written for email clients. Leave empty (null) for the default email. Scripts are not allowed.
              *
-             * @example https://company.com/thanks
+             * @example <h1>{{form_name}}</h1>{{fields}}
              */
-            'redirect_url' => ['nullable', 'required_if:response_type,redirect', 'url:http,https', 'max:2048'],
-            /**
-             * Code of the template used for the email. Leave empty (null) to use the default template.
-             *
-             * @example 7k2mx9q4vb8d1ncz5wte
-             */
-            'template' => ['nullable', 'string', 'exists:templates,code'],
+            'email_html' => ['nullable', 'string', 'max:100000', 'not_regex:/<\s*script/i'],
         ];
 
         // A partial update (PATCH) validates only the attributes that were sent.
