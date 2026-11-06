@@ -61,10 +61,14 @@ flowchart LR
 | | |
 |---|---|
 | **Instant and reliable** | Emails never block a request, so your page never waits for a mail server. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
+| **File attachments** | Add a **file field** to a form: the upload is stored privately and arrives as an **email attachment**. Size and type are limited (5 MB by default; documents and images only), and the generated snippets already send it as `multipart/form-data`. |
+| **Works without JavaScript** | A plain HTML `<form>` can post straight to the form's address. Set a **thank-you page** and the visitor is redirected there (`303`); scripts that ask for JSON still get the JSON answer. |
+| **Reply to the visitor** | The first email a visitor types becomes the `Reply-To` of the message your team receives. |
 | **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
 | **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |
 | **No secrets in the browser** | No token to leak. A form is reached by a random public `code`; sending is controlled by its **allowed sites** (`Origin`/`Referer`, `*.company.com` wildcards, per-form CORS) and rate limiting. Numeric ids are never exposed. |
-| **Audit trail** | Every message is stored with a snapshot of the form, and it stays even if the form is deleted. |
+| **Audit trail and retention** | Every message is stored with a snapshot of the form, and it stays even if the form is deleted. A daily cleanup removes messages (and their files) older than `SUBMISSION_RETENTION_DAYS` (90 by default, `0` keeps everything). |
+| **Retry and alerts** | A message that failed can be retried from the dashboard (destinations that already got it are skipped). When a delivery fails for good, every admin gets an email. |
 | **Teams and roles** | `admin` and `user`. Users manage forms; admins also manage people and SMTP. Only the *owner* (first admin) can touch other admins. |
 | **SMTP at runtime** | Configured in the panel, stored encrypted, never in `.env`. Locally it points at Mailpit. |
 | **Self-documenting API** | OpenAPI docs generated from the code, written in plain language, and **enforced by tests**: an undocumented endpoint fails the build. |
@@ -122,7 +126,7 @@ Headless **Laravel 13** on **PHP 8.4**, **PostgreSQL 16**, **Redis**, **Sanctum*
 
 - **The Laravel way, no over-engineering.** Form Requests, API Resources, Policies, route-model binding, Eloquent. Controllers stay thin; an Action class exists only when a use case earns it (multi-step, transactional, side effects). No repositories or service layers "just in case".
 - **Strict and typed everywhere.** `declare(strict_types=1)` on every file, typed parameters, returns and properties.
-- **CI on every push.** The Pest suite runs against **SQLite and a real PostgreSQL 16**.
+- **CI on every push.** The Pest suite runs against **SQLite and a real PostgreSQL 16**, next to **Pint** (code style) and **Larastan** (static analysis).
 - **Hardened by default.** Security headers, restricted CORS, per-route throttling, login without account enumeration, password reset by a hashed emailed code, encrypted queue payloads for secrets.
 - **One renderer.** The same `EmailTemplateRenderer` produces the delivered email and the editor preview, and escapes every submitted value.
 
@@ -149,7 +153,7 @@ Full, friendly docs are served at the API root (`/`).
 | Setup and auth | `POST /setup`, `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`, password reset |
 | Forms | CRUD on `/forms/{code}`, `POST /forms/{code}/test` |
 | Submitting | `POST /forms/{code}/submit` (public: allowed sites, no token) |
-| Submissions | `GET /forms/{code}/submissions` (+ filter by status) |
+| Submissions | `GET /forms/{code}/submissions` (+ filter by status), `POST /forms/{code}/submissions/{id}/retry`, `GET /forms/{code}/submissions/{id}/attachments/{attachment}` |
 | Templates | CRUD on `/templates/{code}`, `POST /templates/preview` |
 | Users, Settings | CRUD on `/users`, `GET`/`PUT /settings` (admin) |
 
