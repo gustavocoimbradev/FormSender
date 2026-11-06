@@ -4,7 +4,7 @@ import { withPort, withUsername, type SmtpDraft, type SmtpErrors } from "@/lib/s
 import type { Security } from "@/lib/validation";
 import { Field } from "./Field";
 import { PasswordField } from "./PasswordField";
-import { Segmented } from "./Segmented";
+import { Select } from "./ui/Select";
 
 const SECURITY_OPTIONS: { value: Security; label: string }[] = [
   { value: "none", label: "None" },
@@ -53,7 +53,9 @@ export function SmtpFields({ draft, onChange, errors = {}, disabled, autoFocus }
         />
       </div>
 
-      <Segmented label="Security" value={draft.security} options={SECURITY_OPTIONS} onChange={(security) => patch({ security, securityChosen: true })} disabled={disabled} />
+      <div className="mb-4">
+        <Select id="smtp-security" label="Security" value={draft.security} options={SECURITY_OPTIONS} onChange={(security) => patch({ security, securityChosen: true })} disabled={disabled} />
+      </div>
 
       <div className="grid gap-x-4 sm:grid-cols-2">
         <Field
