@@ -34,9 +34,10 @@ class SubmitFormController extends Controller
      * message is only kept under Messages with the status `spam`. Leave it empty (or omit it) for real visitors.
      *
      * Send the fields as JSON, as a regular form post (`application/x-www-form-urlencoded`) or, when the form has a
-     * `file` field, as `multipart/form-data`. A plain HTML page (no JavaScript) can post straight to this address:
-     * when the form has a redirect address and the request comes from a browser page, the visitor is sent there (`303`)
-     * instead of seeing the JSON answer. Scripts that ask for JSON always get the JSON answer.
+     * `file` field, as `multipart/form-data`. What comes back depends on the form's answer type. With `json` (the
+     * default) it is a JSON answer that also carries the thank-you page address (`redirect_url`, when the form has one).
+     * With `redirect` the visitor is sent straight to the thank-you page (`303`), which is what a plain HTML page
+     * without JavaScript needs. A script that sends `Accept: application/json` always gets the JSON answer.
      *
      * Only the fields the form accepts are validated and kept. The submission is saved and queued, and
      * the answer is an instant `202`; the email delivery happens in the background. Limited to 20
@@ -64,18 +65,17 @@ class SubmitFormController extends Controller
     }
 
     /**
-     * A page that posts the form without JavaScript (the browser asks for HTML) goes on to the form's
-     * redirect address; everything else gets the JSON answer.
+     * A form set to redirect sends everyone to the thank-you page, unless the caller asks for JSON.
      */
     private function answer(Request $request, Form $form, int $id, string $status): JsonResponse|RedirectResponse
     {
-        if ($form->redirect_url !== null && str_contains((string) $request->header('Accept'), 'text/html')) {
-            return redirect()->away($form->redirect_url, 303);
+        if ($form->redirectsAfterSubmit() && ! $request->wantsJson()) {
+            return redirect()->away((string) $form->redirect_url, 303);
         }
 
         return response()->json([
             'message' => 'Your message was received and will be delivered shortly.',
-            'data' => ['id' => $id, 'status' => $status],
+            'data' => ['id' => $id, 'status' => $status, 'redirect_url' => $form->redirect_url],
         ], 202);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\FormFieldType;
+use App\Enums\FormResponseType;
 use App\Models\Template;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Foundation\Http\FormRequest;
@@ -136,11 +137,17 @@ class StoreFormRequest extends FormRequest
              */
             'allowed_domains.*' => ['string', 'max:253', 'regex:'.self::DOMAIN, 'distinct'],
             /**
-             * Where a visitor lands after sending the form from a plain HTML page (no JavaScript). Leave empty (null) to answer with a short confirmation instead. Must start with `http://` or `https://`.
+             * What the visitor gets after sending: `json` (a short JSON answer that also carries the thank-you page address) or `redirect` (sent straight to the thank-you page). Defaults to `json`.
+             *
+             * @example redirect
+             */
+            'response_type' => ['string', Rule::enum(FormResponseType::class)],
+            /**
+             * The thank-you page. Required when `response_type` is `redirect`; with `json` it is only handed back in the answer. Leave empty (null) for none. Must start with `http://` or `https://`.
              *
              * @example https://company.com/thanks
              */
-            'redirect_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'redirect_url' => ['nullable', 'required_if:response_type,redirect', 'url:http,https', 'max:2048'],
             /**
              * Code of the template used for the email. Leave empty (null) to use the default template.
              *

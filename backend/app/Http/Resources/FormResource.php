@@ -17,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class FormResource extends JsonResource
 {
     /**
-     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, redirect_url: string|null, template: string|null, code: string, created_at: Carbon|null, updated_at: Carbon|null}
+     * @return array{name: string, fields: list<array{name: string, label: string, type: string, required?: bool, options?: list<string>|null}>, destinations: list<string>, allowed_domains: list<string>, response_type: string, redirect_url: string|null, template: string|null, code: string, created_at: Carbon|null, updated_at: Carbon|null}
      */
     public function toArray(Request $request): array
     {
@@ -30,7 +30,9 @@ class FormResource extends JsonResource
             'destinations' => $this->destinations,
             /** Websites allowed to send the form. Empty means any website. */
             'allowed_domains' => $this->allowed_domains,
-            /** Where visitors of a plain HTML page land after sending the form. Empty means they get a short confirmation. */
+            /** What the visitor gets after sending: `json` or `redirect` (straight to the thank-you page). */
+            'response_type' => $this->response_type->value,
+            /** The thank-you page. Empty when there is none. */
             'redirect_url' => $this->redirect_url,
             /** Code of the template used for the email, or null when the form uses the default template. */
             'template' => $this->template?->code,

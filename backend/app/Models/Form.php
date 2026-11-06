@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\FormFieldType;
+use App\Enums\FormResponseType;
 use App\Models\Concerns\HasPublicCode;
 use Database\Factories\FormFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,18 +19,20 @@ use Illuminate\Validation\Rule;
  * @property list<string> $destinations
  * @property list<string> $allowed_domains
  * @property string|null $redirect_url
+ * @property FormResponseType $response_type
  */
 class Form extends Model
 {
     /** @use HasFactory<FormFactory> */
     use HasFactory, HasPublicCode;
 
-    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'redirect_url', 'template_id'];
+    protected $fillable = ['name', 'fields', 'destinations', 'allowed_domains', 'response_type', 'redirect_url', 'template_id'];
 
     protected $attributes = [
         'fields' => '[]',
         'destinations' => '[]',
         'allowed_domains' => '[]',
+        'response_type' => 'json',
     ];
 
     /**
@@ -41,6 +44,7 @@ class Form extends Model
             'fields' => 'array',
             'destinations' => 'array',
             'allowed_domains' => 'array',
+            'response_type' => FormResponseType::class,
         ];
     }
 
@@ -58,6 +62,14 @@ class Form extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(FormSubmission::class);
+    }
+
+    /**
+     * Whether a submission is answered with a redirect to the thank-you page instead of JSON.
+     */
+    public function redirectsAfterSubmit(): bool
+    {
+        return $this->response_type === FormResponseType::Redirect && $this->redirect_url !== null;
     }
 
     /**
