@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FormSender",
-  description: "The email API for your website forms. POST in, email out.",
+  description: "Send email from your website forms, with no back end to write.",
 };
 
 export const viewport: Viewport = {

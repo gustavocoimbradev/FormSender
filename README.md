@@ -2,7 +2,7 @@
 
 <p align="center">
   <b>The email API for your website forms.</b><br>
-  POST in, email out. Self-hosted, open source and up in one command. Point any form at a URL and every message lands in your team's inbox, in a template you design. No back end to write.
+  Send email from any website form without writing a back end. Self-hosted, open source and up in one command. Point a form at a URL and every message lands in your team's inbox, in a template you design.
 </p>
 
 <p align="center">
