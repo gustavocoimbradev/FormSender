@@ -1,0 +1,134 @@
+# Production. Run it with `make prod` (it reads .env.prod). Nothing here is published except ports 80 and 443.
+name: formsender-prod
+
+x-app: &app
+  image: formsender-app:prod
+  restart: unless-stopped
+  environment: &app-env
+    APP_NAME: FormSender
+    APP_ENV: production
+    APP_DEBUG: "false"
+    APP_KEY: "${APP_KEY:?APP_KEY is empty, run make prod to generate it}"
+    APP_URL: "${PUBLIC_URL:?PUBLIC_URL is empty, set your address in .env.prod}"
+    PANEL_URL: ${PUBLIC_URL}
+    CORS_ALLOWED_ORIGINS: ${PUBLIC_URL}
+    LOG_CHANNEL: stderr
+    DB_CONNECTION: pgsql
+    DB_HOST: postgres
+    DB_PORT: 5432
+    DB_DATABASE: formsender
+    DB_USERNAME: formsender
+    DB_PASSWORD: "${DB_PASSWORD:?DB_PASSWORD is empty, run make prod to generate it}"
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+    QUEUE_CONNECTION: redis
+    CACHE_STORE: redis
+    SESSION_DRIVER: redis
+    SUBMISSION_RETENTION_DAYS: ${SUBMISSION_RETENTION_DAYS:-0}
+    ATTACHMENT_MAX_KILOBYTES: ${ATTACHMENT_MAX_KILOBYTES:-5120}
+    API_RATE_LIMIT: ${API_RATE_LIMIT:-60}
+  volumes:
+    # Shared by the three: the files visitors attach are written by one and read by another.
+    - storage:/app/storage
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  # The front door: HTTPS, the API, the embed script, and the dashboard behind it.
+  web:
+    <<: *app
+    # The only service that builds the API image: the worker and the scheduler use it too.
+    build:
+      context: .
+      dockerfile: docker/prod/app.Dockerfile
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      <<: *app-env
+      PUBLIC_URL: ${PUBLIC_URL}
+      RUN_MIGRATIONS: "1"
+    volumes:
+      - storage:/app/storage
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1:8081/up') === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  queue:
+    <<: *app
+    pull_policy: never
+    # The image's own health check asks the web server's admin port, which is off; Docker restarts the process if it dies.
+    healthcheck:
+      disable: true
+    command: php artisan queue:work --sleep=1 --max-time=3600
+    depends_on:
+      web:
+        condition: service_healthy
+
+  scheduler:
+    <<: *app
+    pull_policy: never
+    # The image's own health check asks the web server's admin port, which is off; Docker restarts the process if it dies.
+    healthcheck:
+      disable: true
+    command: php artisan schedule:work
+    depends_on:
+      web:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/prod/frontend.Dockerfile
+    image: formsender-frontend:prod
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: formsender
+      POSTGRES_USER: formsender
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U formsender -d formsender"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  storage:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:

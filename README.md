@@ -120,6 +120,28 @@ Open the **Dashboard**, create the first admin (a two-step setup: administrator,
 | `make reset` | Back to a fresh install (asks first) |
 | `make urls` / `make status` | Every URL / container status |
 
+## Run it in production
+
+On a server with Docker (and a domain pointing at it, ports 80 and 443 open):
+
+```bash
+git clone https://github.com/gustavocoimbradev/form-sender && cd form-sender
+make prod     # first time: creates .env.prod with a new key and password, then asks for your address
+# open .env.prod, set PUBLIC_URL=https://forms.mycompany.com
+make prod     # builds and starts everything in the background
+```
+
+Open the address and create the first administrator. That is all: the HTTPS certificate is requested and renewed by itself, and Docker starts everything again if the server restarts. Run `make prod` again after a `git pull` to update (the database is migrated on start).
+
+| Command | |
+|---|---|
+| `make prod` | Build and start (or update) in the background |
+| `make prod-logs` | Watch what it is doing |
+| `make prod-backup` | Save the database to `backups/` (the files visitors attached live in the Docker volume `formsender-prod_storage`) |
+| `make prod-down` | Stop it; the data stays |
+
+How it is put together: one address for everything (`PUBLIC_URL`). The web container (FrankenPHP: PHP plus a web server) serves the API and the embed script and passes the rest to the dashboard; a worker sends the emails and a scheduler runs the daily cleanup; PostgreSQL and Redis keep their data in volumes and are not reachable from outside. There is no Mailpit: set your real SMTP in the dashboard. Keep `APP_KEY` safe (the saved SMTP password is encrypted with it). To try it on your own computer, use `PUBLIC_URL=http://localhost`.
+
 ## Under the hood
 
 ### Back-end: `/backend`

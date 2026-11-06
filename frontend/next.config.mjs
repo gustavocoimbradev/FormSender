@@ -6,6 +6,8 @@ const apiUrl = process.env.API_URL ?? "http://localhost:8000";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // The production image runs the small server `next build` leaves in .next/standalone.
+  output: "standalone",
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },

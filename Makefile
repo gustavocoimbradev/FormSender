@@ -1,4 +1,4 @@
-.PHONY: up start down urls logs test migrate seed reset status
+.PHONY: up start down urls logs test migrate seed reset status prod prod-logs prod-down prod-backup
 
 # Quiet by default. For the full logs: `make up logs` (or `make up LOGS=1`).
 UP_FLAGS :=
@@ -44,3 +44,22 @@ reset:
 
 status:
 	@docker compose ps
+
+# ---- Production: `make prod` builds and starts everything in the background and keeps it running (reads .env.prod).
+PROD := docker compose --env-file .env.prod -f docker-compose.prod.yml
+
+prod:
+	@./scripts/prod.sh
+
+prod-logs:
+	@$(PROD) logs -f --tail=100
+
+# Stops it; the data (database, files) stays. `make prod` starts it again.
+prod-down:
+	@$(PROD) down
+
+# Saves the database to backups/. Copy that folder somewhere safe.
+prod-backup:
+	@mkdir -p backups
+	@$(PROD) exec -T postgres pg_dump -U formsender formsender | gzip > backups/formsender-$$(date +%Y%m%d-%H%M%S).sql.gz
+	@echo "Saved in backups/. The files visitors attached are in the Docker volume formsender-prod_storage."

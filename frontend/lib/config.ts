@@ -6,8 +6,10 @@ export function mailpitPublicUrl(): string | null {
 
 /** Where the backend is reachable from the browser (the API docs live at its root). */
 export function apiPublicUrl(): string {
-  const port = process.env.NEXT_PUBLIC_API_PORT ?? "8000";
-  return `${window.location.protocol}//${window.location.hostname}:${port}`;
+  const port = process.env.NEXT_PUBLIC_API_PORT;
+
+  // Development: the API has a port of its own. In production everything lives at one address, so the API is where the panel is.
+  return port ? `${window.location.protocol}//${window.location.hostname}:${port}` : window.location.origin;
 }
 
 /** Where Form Sender itself lives: the public page of a form credits it. */

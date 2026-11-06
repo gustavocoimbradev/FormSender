@@ -1,0 +1,15 @@
+.git
+.github
+.logs
+.env
+.env.*
+backups
+docs
+frontend
+backend/vendor
+backend/.env
+backend/tests
+# Never in an image: logs, caches and, above all, the files visitors attached (the container makes its own folders).
+backend/storage
+backend/bootstrap/cache/*.php
+**/node_modules
