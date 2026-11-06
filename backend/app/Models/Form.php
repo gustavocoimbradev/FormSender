@@ -165,12 +165,13 @@ class Form extends Model
     }
 
     /**
-     * Whether each destination has to confirm that it wants the messages. The administrator is trusted, and so is a form
-     * left without an owner: with accounts open, this keeps the service from being used to send mail to strangers.
+     * Whether each destination has to confirm that it wants the messages. It applies to every owner, the administrator
+     * included: with accounts open, this keeps the service from being used to send mail to strangers. Only a form
+     * left without an owner (from before accounts) delivers to all of its destinations.
      */
     public function requiresConfirmation(): bool
     {
-        return $this->user !== null && ! $this->user->isAdmin();
+        return $this->user !== null;
     }
 
     /**

@@ -114,14 +114,14 @@ describe('a regular account', function (): void {
 });
 
 describe('the administrator', function (): void {
-    it('needs no confirmation: every destination is ready', function (): void {
-        actingAsAdmin();
+    it('confirms the destinations too, except its own address', function (): void {
+        $admin = actingAsAdmin();
 
-        $this->postJson('/api/forms', ['name' => 'Mine', 'destinations' => ['team@example.com']])
+        $this->postJson('/api/forms', ['name' => 'Mine', 'destinations' => [$admin->email, 'team@example.com']])
             ->assertCreated()
-            ->assertJsonPath('data.confirmed_destinations', ['team@example.com']);
+            ->assertJsonPath('data.confirmed_destinations', [$admin->email]);
 
-        Queue::assertNothingPushed();
+        expect(array_keys(confirmationTokens()))->toBe(['team@example.com']);
     });
 
     it('delivers a form without an owner to every destination', function (): void {

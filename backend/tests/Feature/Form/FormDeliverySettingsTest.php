@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use App\Models\Form;
+use Illuminate\Support\Facades\Queue;
 
-beforeEach(fn () => actingAsAdmin());
+beforeEach(function (): void {
+    Queue::fake();
+    actingAsAdmin();
+});
 
 function deliveryPayload(array $overrides = []): array
 {

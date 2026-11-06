@@ -70,6 +70,7 @@ it('documents every api route', function (string $path, string $method): void {
     ['/users', 'post'],
     ['/users/{user}', 'put'],
     ['/users/{user}', 'delete'],
+    ['/users/{user}/confirmation', 'post'],
     ['/settings', 'get'],
     ['/settings', 'put'],
     ['/quotas', 'get'],

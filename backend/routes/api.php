@@ -19,6 +19,7 @@ use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\SubmissionAttachmentController;
 use App\Http\Controllers\SubmitFormController;
+use App\Http\Controllers\UserConfirmationController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\EnsureAllowedDomain;
 use Illuminate\Support\Facades\Route;
@@ -54,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('strings/default', DefaultStringsController::class);
     Route::post('email/preview', EmailPreviewController::class);
 
+    Route::post('users/{user}/confirmation', UserConfirmationController::class);
     Route::apiResource('users', UserController::class);
 
     Route::middleware('can:manage-settings')->group(function () {

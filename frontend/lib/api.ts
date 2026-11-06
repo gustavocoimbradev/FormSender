@@ -101,7 +101,7 @@ export type Submission = {
   processed_at: string | null;
 };
 
-export type ManagedUser = User & { created_at: string | null; updated_at: string | null };
+export type ManagedUser = User & { email_confirmed: boolean; created_at: string | null; updated_at: string | null };
 
 export type UserInput = { name?: string; email?: string; password?: string };
 
@@ -303,6 +303,9 @@ export const createUser = async (input: Required<Pick<UserInput, "name" | "email
 
 export const updateUser = async (id: number, input: UserInput) =>
   (await authed<{ data: ManagedUser }>(`/users/${id}`, json("PATCH", input))).data;
+
+/** Sends the confirmation link again to an account whose email is still waiting. */
+export const resendUserConfirmation = (id: number) => authed<{ message: string }>(`/users/${id}/confirmation`, { method: "POST" });
 
 export const deleteUser = (id: number) => authed<void>(`/users/${id}`, { method: "DELETE" });
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { ApiError, createUser, updateUser, type ManagedUser, type User, type UserInput } from "@/lib/api";
+import { ApiError, createUser, resendUserConfirmation, updateUser, type ManagedUser, type User, type UserInput } from "@/lib/api";
 import { canDeleteUser } from "@/lib/permissions";
 import { isValidEmail, isValidPassword, normalizeEmail } from "@/lib/validation";
 import { ActionButton } from "../Button";
@@ -40,6 +40,7 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
+  const [resending, setResending] = useState(false);
 
   function validate(): Errors {
     const found: Errors = {};
@@ -48,6 +49,20 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
     if (!user && !isValidPassword(password)) found.password = "The password must be at least 8 characters.";
     if (user && password && !isValidPassword(password)) found.password = "The password must be at least 8 characters.";
     return found;
+  }
+
+  async function sendLinkAgain() {
+    if (!user) return;
+
+    setResending(true);
+    try {
+      await resendUserConfirmation(user.id);
+      toast("A new link is on its way.");
+    } catch {
+      toast("Could not send it. Please try again.", "error");
+    } finally {
+      setResending(false);
+    }
   }
 
   async function submit(event: FormEvent) {
@@ -69,7 +84,7 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
         toast("User updated.");
       } else {
         await createUser({ name: name.trim(), email: normalizeEmail(email), password });
-        toast("User created.");
+        toast("User created. We emailed a link to confirm the address.");
       }
 
       onSaved();
@@ -118,6 +133,15 @@ function UserForm({ actor, user, onClose, onSaved, onDelete }: Omit<UserModalPro
         disabled={saving}
         placeholder={user ? "Leave blank to keep it" : "At least 8 characters"}
       />
+
+      {user && !user.email_confirmed && (
+        <div className="mb-4 rounded-control border border-surface/10 p-4">
+          <p className="mb-3 text-base text-muted">This email was not confirmed yet, so the account cannot sign in. The link we sent works for 48 hours.</p>
+          <ActionButton type="button" variant="ghost" loading={resending} disabled={saving} onClick={() => void sendLinkAgain()}>
+            Send the link again
+          </ActionButton>
+        </div>
+      )}
 
       {errors.form && <p role="alert" className="mb-4 rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.form}</p>}
 

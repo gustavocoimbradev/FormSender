@@ -54,6 +54,7 @@ export function UsersPanel() {
         <span className="inline-flex flex-wrap items-center gap-2 font-medium">
           {item.name}
           {item.id === actor.id && <Badge tone="neutral">You</Badge>}
+          {!item.email_confirmed && <Badge tone="warning">Waiting for confirmation</Badge>}
         </span>
       ),
     },
@@ -113,6 +114,7 @@ export function UsersPanel() {
                     </p>
                     <p className="truncate text-base text-muted">{item.email}</p>
                   </div>
+                  {!item.email_confirmed && <Badge tone="warning">Waiting</Badge>}
                   {item.role === "admin" && <Badge tone="accent">Admin</Badge>}
                   {canEditUser(actor) && <ChevronIcon className="size-5 shrink-0 text-muted" />}
                 </div>

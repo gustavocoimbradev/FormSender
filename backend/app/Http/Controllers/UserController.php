@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Auth\RegisterAccountAction;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Resources\UserResource;
@@ -34,19 +35,16 @@ class UserController extends Controller
     /**
      * Create a user.
      *
-     * Admin only, and it works even while new accounts are not allowed. The account is ready to use at once (no
-     * email confirmation) and always a regular user: it sees and manages only its own forms.
+     * Admin only, and it works even while new accounts are not allowed. The account is always a regular user (it sees
+     * and manages only its own forms) and, like any other, it cannot log in until its email is confirmed with the link
+     * that is sent there.
      */
     #[Endpoint(operationId: 'createUser')]
-    public function store(StoreUserRequest $request): UserResource
+    public function store(StoreUserRequest $request, RegisterAccountAction $registerAccount): UserResource
     {
         Gate::authorize('create', User::class);
 
-        $user = new User($request->validated());
-        $user->email_verified_at = now();
-        $user->save();
-
-        return new UserResource($user);
+        return new UserResource($registerAccount->execute($request->validated()));
     }
 
     /**
