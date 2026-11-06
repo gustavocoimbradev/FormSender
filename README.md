@@ -126,21 +126,22 @@ On a server with Docker (and a domain pointing at it, ports 80 and 443 open):
 
 ```bash
 git clone https://github.com/gustavocoimbradev/form-sender && cd form-sender
-make prod     # first time: creates .env.prod with a new key and password, then asks for your address
-# open .env.prod, set PUBLIC_URL=https://forms.mycompany.com
-make prod     # builds and starts everything in the background
+make prod     # first time: asks for your address, sets everything up, builds and starts it in the background
 ```
 
-Open the address and create the first administrator. That is all: the HTTPS certificate is requested and renewed by itself, and Docker starts everything again if the server restarts. Run `make prod` again after a `git pull` to update (the database is migrated on start).
+The first time it creates `.env.prod` (with a new key and database password) and asks **what address people will use**: a domain such as `forms.mycompany.com` (https, with the certificate requested and renewed by itself) or an **IP address** such as `203.0.113.5` (plain http, no domain needed). Open that address and create the first administrator. Docker starts everything again if the server restarts. Run `make prod` again after a `git pull` to update (the database is migrated on start).
+
+Without a keyboard (scripts), skip the question: `ADDRESS=forms.mycompany.com make prod`. To change the address later, `make prod-setup` (or edit `PUBLIC_URL` in `.env.prod`).
 
 | Command | |
 |---|---|
-| `make prod` | Build and start (or update) in the background |
+| `make prod` | Set up (first time), build and start (or update) in the background |
+| `make prod-setup` | Ask for the address again, then start |
 | `make prod-logs` | Watch what it is doing |
 | `make prod-backup` | Save the database to `backups/` (the files visitors attached live in the Docker volume `formsender-prod_storage`) |
 | `make prod-down` | Stop it; the data stays |
 
-How it is put together: one address for everything (`PUBLIC_URL`). The web container (FrankenPHP: PHP plus a web server) serves the API and the embed script and passes the rest to the dashboard; a worker sends the emails and a scheduler runs the daily cleanup; PostgreSQL and Redis keep their data in volumes and are not reachable from outside. There is no Mailpit: set your real SMTP in the dashboard. Keep `APP_KEY` safe (the saved SMTP password is encrypted with it). To try it on your own computer, use `PUBLIC_URL=http://localhost`.
+How it is put together: one address for everything (`PUBLIC_URL`). The web container (FrankenPHP: PHP plus a web server) serves the API and the embed script and passes the rest to the dashboard; a worker sends the emails and a scheduler runs the daily cleanup; PostgreSQL and Redis keep their data in volumes and are not reachable from outside. There is no Mailpit: set your real SMTP in the dashboard. Keep `APP_KEY` safe (the saved SMTP password is encrypted with it). To try it on your own computer, use `localhost` as the address. Over an IP address the site is plain http, so a form on an **https** website cannot load its embed script from there: use a domain for that.
 
 ## Under the hood
 

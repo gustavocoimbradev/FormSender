@@ -1,4 +1,4 @@
-.PHONY: up start down urls logs test migrate seed reset status prod prod-logs prod-down prod-backup
+.PHONY: up start down urls logs test migrate seed reset status prod prod-setup prod-logs prod-down prod-backup
 
 # Quiet by default. For the full logs: `make up logs` (or `make up LOGS=1`).
 UP_FLAGS :=
@@ -50,6 +50,10 @@ PROD := docker compose --env-file .env.prod -f docker-compose.prod.yml
 
 prod:
 	@./scripts/prod.sh
+
+# Asks for the address again (a domain, or an IP address), then starts it.
+prod-setup:
+	@./scripts/prod.sh --setup
 
 prod-logs:
 	@$(PROD) logs -f --tail=100
