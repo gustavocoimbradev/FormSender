@@ -92,7 +92,7 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
         const fromServer: Errors = Object.fromEntries(Object.entries(error.fieldErrors).map(([name, messages]) => [name, fileFields.has(name) ? (messages[0] ?? "Invalid file.") : "Invalid value."]));
 
         if (Object.keys(fromServer).length > 0) setErrors(fromServer);
-        else setFormError("Add at least one destination in the Settings tab to receive messages.");
+        else setFormError("Add at least one destination in the Delivery tab to receive messages.");
       } else if (error instanceof ApiError && error.status === 503) {
         setFormError("Email sending is not set up yet. Ask an administrator to configure SMTP.");
       } else {
@@ -109,10 +109,10 @@ export function TestPanel({ form, onOpenMessages, onOpenConfig }: TestPanelProps
         <EmptyState
           icon={<FormsIcon />}
           title="This form has no fields yet"
-          text="Add fields in the Settings tab to test it."
+          text="Add fields in the Fields tab to test it."
           action={
             <ActionButton type="button" onClick={onOpenConfig}>
-              Go to Settings
+              Go to Fields
             </ActionButton>
           }
         />

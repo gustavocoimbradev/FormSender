@@ -21,10 +21,14 @@ import { IntegrationPanel } from "./IntegrationPanel";
 import { SubmissionsPanel } from "./SubmissionsPanel";
 import { TestPanel } from "./TestPanel";
 
-type Tab = "config" | "integration" | "messages" | "test";
+type Tab = "general" | "fields" | "delivery" | "integration" | "messages" | "test";
+
+const EDITOR_TABS: Tab[] = ["general", "fields", "delivery"];
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "config", label: "Settings" },
+  { id: "general", label: "General" },
+  { id: "fields", label: "Fields" },
+  { id: "delivery", label: "Delivery" },
   { id: "integration", label: "Integration" },
   { id: "messages", label: "Messages" },
   { id: "test", label: "Test form" },
@@ -40,20 +44,27 @@ export const BackLink = () => (
 function TabSkeleton({ tab }: { tab: Tab }) {
   return (
     <div role="status" aria-label="Loading" className="space-y-6">
-      {tab === "config" && (
-        <>
-          <FormCardSkeleton>
-            <FieldSkeleton />
-            <FieldSkeleton />
-          </FormCardSkeleton>
-          <FormCardSkeleton>
-            <Bar className="mb-5 h-6 w-3/4 rounded-full" />
-          </FormCardSkeleton>
-          <FormCardSkeleton>
-            <FieldSkeleton />
-            <FieldSkeleton />
-          </FormCardSkeleton>
-        </>
+      {tab === "general" && (
+        <FormCardSkeleton>
+          <FieldSkeleton />
+          <FieldSkeleton />
+        </FormCardSkeleton>
+      )}
+
+      {tab === "fields" && (
+        <FormCardSkeleton>
+          <Bar className="mb-3 h-[4.5rem] rounded-control" />
+          <Bar className="mb-3 h-[4.5rem] rounded-control" />
+          <Bar className="mb-5 h-11 rounded-control" />
+        </FormCardSkeleton>
+      )}
+
+      {tab === "delivery" && (
+        <FormCardSkeleton>
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <FieldSkeleton />
+        </FormCardSkeleton>
       )}
 
       {tab === "integration" && (
@@ -152,10 +163,11 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
         <Pills label="Form sections" value={tab} options={TABS} onChange={setTab} />
       </div>
 
-      <div key={tab}>
-        {tab === "config" && <FormEditor form={current} onSaved={setForm} onDelete={() => setConfirming(true)} />}
+      {/* The three editing tabs share one editor, so what was typed stays while moving between them. */}
+      <div key={EDITOR_TABS.includes(tab) ? "editor" : tab}>
+        {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
         {tab === "integration" && <IntegrationPanel form={current} />}
-        {tab === "test" && <TestPanel form={current} onOpenMessages={() => setTab("messages")} onOpenConfig={() => setTab("config")} />}
+        {tab === "test" && <TestPanel form={current} onOpenMessages={() => setTab("messages")} onOpenConfig={() => setTab("fields")} />}
         {tab === "messages" && <SubmissionsPanel form={current} />}
       </div>
 

@@ -4,12 +4,12 @@ import { FormDetailScreen } from "@/components/forms/FormDetailScreen";
 
 export const metadata: Metadata = { title: "Form · FormSender" };
 
-const TABS = ["config", "integration", "messages", "test"] as const;
+const TABS = ["general", "fields", "delivery", "integration", "messages", "test"] as const;
 
 export default function FormPage({ params, searchParams }: { params: { code: string }; searchParams: { tab?: string } }) {
   if (!/^[a-z0-9]{10,32}$/.test(params.code)) notFound();
 
-  const tab = TABS.find((candidate) => candidate === searchParams.tab) ?? "config";
+  const tab = TABS.find((candidate) => candidate === searchParams.tab) ?? "general";
 
   return <FormDetailScreen code={params.code} initialTab={tab} />;
 }

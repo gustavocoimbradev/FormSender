@@ -62,7 +62,7 @@ flowchart LR
 |---|---|
 | **Instant and reliable** | Emails never block a request, so your page never waits for a mail server. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
 | **File attachments** | Add a **file field** to a form: the upload is stored privately and arrives as an **email attachment**. Size and type are limited (5 MB by default; documents and images only), and the generated snippets already send it as `multipart/form-data`. |
-| **Works without JavaScript** | A plain HTML `<form>` can post straight to the form's address. Set a **thank-you page** and the visitor is redirected there (`303`); scripts that ask for JSON still get the JSON answer. |
+| **JSON or redirect, your choice** | Each form picks what the visitor gets after sending: a short **JSON answer** (which also carries the thank-you page address) or a **redirect** straight to the thank-you page (`303`), so a plain HTML `<form>` works without any JavaScript. A script that sends `Accept: application/json` always gets JSON. |
 | **Reply to the visitor** | The first email a visitor types becomes the `Reply-To` of the message your team receives. |
 | **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
 | **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |

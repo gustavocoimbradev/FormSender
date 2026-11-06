@@ -89,6 +89,9 @@ function htmlControl(field: FormField): string {
 export function htmlSnippet(form: Form, endpoint: string): string {
   const fields = fieldsOf(form);
 
+  // A form that redirects needs no script: the browser posts it and lands on the thank-you page.
+  if (form.response_type === "redirect" && form.redirect_url) return htmlPlainSnippet(form, endpoint);
+
   if (hasFiles(form)) return htmlMultipartSnippet(form, endpoint);
 
   const rows = fields.map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
@@ -113,7 +116,7 @@ ${rows}
     try {
       const response = await fetch("${endpoint}", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
 ${data}
         }),
@@ -128,6 +131,20 @@ ${data}
     }
   });
 </script>`;
+}
+
+/** No JavaScript: a regular form that posts to FormSender, which sends the visitor on to the thank-you page. */
+function htmlPlainSnippet(form: Form, endpoint: string): string {
+  const rows = fieldsOf(form).map((field) => `  <label>\n    ${escapeHtml(field.label)}\n    ${htmlControl(field)}\n  </label>`).join("\n");
+  const encoding = hasFiles(form) ? ' enctype="multipart/form-data"' : "";
+
+  return `<form action="${endpoint}" method="post"${encoding}>
+  <input type="text" name="${HONEYPOT}" ${HONEYPOT_ATTRS} style="${HONEYPOT_STYLE}">
+
+${rows}
+
+  <button type="submit">Send</button>
+</form>`;
 }
 
 /** The same page, for a form with files: the browser builds the multipart body from the form itself. */
@@ -182,7 +199,7 @@ await fetch("${endpoint}", {
 
   return `await fetch("${endpoint}", {
   method: "POST",
-  headers: { "Content-Type": "application/json" },
+  headers: { "Content-Type": "application/json", Accept: "application/json" },
   body: JSON.stringify(${indent(JSON.stringify(sample(form), null, 2), 2).trimStart()}),
 });`;
 }
@@ -272,7 +289,7 @@ export default function ContactForm() {
     try {
       const response = await fetch("${endpoint}", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
 ${payload}
         }),
@@ -373,7 +390,7 @@ async function submit() {
   try {
     const response = await fetch("${endpoint}", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
 ${payload}
       }),
@@ -470,7 +487,7 @@ ${plainRows}
     try {
       const response = await fetch("${endpoint}", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
 ${payload}
         }),
@@ -569,7 +586,8 @@ curl_setopt_array($curl, [
     CURLOPT_POST => true,
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json',${origin ? `\n        'Origin: ${origin}', // the site must be in "Allowed sites"` : ""}
+        'Content-Type: application/json',
+        'Accept: application/json',${origin ? `\n        'Origin: ${origin}', // the site must be in "Allowed sites"` : ""}
     ],
     CURLOPT_POSTFIELDS => json_encode($payload),
 ]);
@@ -598,7 +616,7 @@ use Illuminate\\Support\\Facades\\Http;
 use Illuminate\\Support\\Facades\\Route;
 
 Route::post('/contato', function (Request $request) {
-    $http = Http::${origin ? `withHeaders(['Origin' => '${origin}'])` : "withHeaders([])"};
+    $http = Http::acceptJson()${origin ? `->withHeaders(['Origin' => '${origin}'])` : ""};
 
 ${files}
 
@@ -625,7 +643,7 @@ use Illuminate\\Support\\Facades\\Http;
 use Illuminate\\Support\\Facades\\Route;
 
 Route::post('/contato', function (Request $request) {
-    $response = Http::${origin ? `withHeaders(['Origin' => '${origin}'])->` : ""}post('${endpoint}', [
+    $response = Http::acceptJson()->${origin ? `withHeaders(['Origin' => '${origin}'])->` : ""}post('${endpoint}', [
 ${payload}
     ]);
 
@@ -675,7 +693,8 @@ console.log(response.status); // 202`;
 const response = await fetch("${endpoint}", {
   method: "POST",
   headers: {
-    "Content-Type": "application/json",${origin ? `\n    Origin: "${origin}", // the site must be in "Allowed sites"` : ""}
+    "Content-Type": "application/json",
+    Accept: "application/json",${origin ? `\n    Origin: "${origin}", // the site must be in "Allowed sites"` : ""}
   },
   body: JSON.stringify(${indent(JSON.stringify(sample(form), null, 2), 2).trimStart()}),
 });
@@ -719,7 +738,8 @@ response = requests.post(
     "${endpoint}",
     json={
 ${items}
-    },${origin ? `\n    headers={"Origin": "${origin}"},  # the site must be in "Allowed sites"` : ""}
+    },
+    headers={"Accept": "application/json"${origin ? `, "Origin": "${origin}"` : ""}},${origin ? `  # the site must be in "Allowed sites"` : ""}
     timeout=10,
 )
 

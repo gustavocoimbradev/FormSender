@@ -1,6 +1,7 @@
 "use client";
 
 import { useSortable } from "@dnd-kit/sortable";
+import { useState } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import { Field } from "../Field";
 import { GripIcon, TrashIcon } from "../icons";
@@ -31,10 +32,15 @@ export function FieldRow({ field, errors, disabled, autoFocus, onChange, onRemov
     transition: prefersReducedMotion() ? null : { duration: 220, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
   });
 
+  // The entrance plays once. Left on, it would play again every time the browser moves the row after a reorder.
+  const [entered, setEntered] = useState(false);
+
   return (
     // The entrance animation lives on the inner element: it keeps a transform, which would fight the drag.
     <div ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} className={isDragging ? "relative z-10" : "relative"}>
-      <div className={`animate-pop rounded-control border p-3 transition-colors duration-300 sm:p-4 ${isDragging ? "border-accent/60 bg-surface/[0.1] shadow-[0_20px_50px_-20px_rgb(0_0_0/0.9)]" : "border-surface/10 bg-bg/40"}`}>
+      <div
+        onAnimationEnd={(event) => event.target === event.currentTarget && setEntered(true)}
+        className={`${entered ? "" : "animate-pop"} rounded-control border p-3 transition-colors duration-300 sm:p-4 ${isDragging ? "border-accent/60 bg-surface/[0.1] shadow-[0_20px_50px_-20px_rgb(0_0_0/0.9)]" : "border-surface/10 bg-bg/40"}`}>
         <div className="grid grid-cols-2 gap-x-3 gap-y-3 xl:grid-cols-[auto_minmax(0,3fr)_minmax(0,2fr)_auto_auto] xl:items-start">
           <div className="col-span-2 sm:col-span-1 xl:order-2">
             <Field

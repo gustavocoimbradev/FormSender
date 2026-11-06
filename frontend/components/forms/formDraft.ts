@@ -1,4 +1,4 @@
-import type { ApiError, Form, FormField, FormInput, FieldType } from "@/lib/api";
+import type { ApiError, Form, FormField, FormInput, FieldType, ResponseType } from "@/lib/api";
 import { slugify } from "@/lib/format";
 import { isValidEmail } from "@/lib/validation";
 
@@ -30,7 +30,9 @@ export type FormDraft = {
   fields: FieldDraft[];
   destinations: string[];
   domains: string[];
-  /** Where visitors of a plain HTML page land after sending; empty means a short confirmation. */
+  /** What the visitor gets after sending: a JSON answer or a redirect to the thank-you page. */
+  responseType: ResponseType;
+  /** The thank-you page; required when the answer is a redirect. */
   redirectUrl: string;
   /** Code of the chosen template; empty means the default one. */
   template: string;
@@ -46,11 +48,16 @@ export type DraftErrors = {
 };
 
 let counter = 0;
-export const newKey = () => `field-${++counter}`;
+
+/**
+ * Identifies a row while the form is being edited (it also identifies the row when dragging it). The random part keeps it
+ * unique even if this module is reloaded and the counter starts over: two rows with one key would move together.
+ */
+export const newKey = () => `field-${Math.random().toString(36).slice(2, 8)}${(++counter).toString(36)}`;
 
 export const emptyField = (): FieldDraft => ({ key: newKey(), name: "", label: "", type: "text", required: false, options: [], nameLocked: false });
 
-export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], redirectUrl: "", template: "" });
+export const emptyDraft = (): FormDraft => ({ name: "", fields: [], destinations: [], domains: [], responseType: "json", redirectUrl: "", template: "" });
 
 export function draftFromForm(form: Form): FormDraft {
   return {
@@ -66,6 +73,7 @@ export function draftFromForm(form: Form): FormDraft {
     })),
     destinations: form.destinations,
     domains: form.allowed_domains,
+    responseType: form.response_type,
     redirectUrl: form.redirect_url ?? "",
     template: form.template ?? "",
   };
@@ -83,6 +91,7 @@ export function inputFromDraft(draft: FormDraft): FormInput {
     })),
     destinations: draft.destinations,
     allowed_domains: draft.domains,
+    response_type: draft.responseType,
     redirect_url: draft.redirectUrl.trim() || null,
     template: draft.template || null,
   };
@@ -121,7 +130,7 @@ export function validateDraft(draft: FormDraft): DraftErrors {
 
   if (!draft.name.trim()) errors.name = "Give the form a name.";
 
-  const redirectError = validateRedirectUrl(draft.redirectUrl);
+  const redirectError = draft.responseType === "redirect" && !draft.redirectUrl.trim() ? "Enter the thank-you page address." : validateRedirectUrl(draft.redirectUrl);
   if (redirectError) errors.redirectUrl = redirectError;
 
   const seen = new Set<string>();
@@ -140,6 +149,15 @@ export function validateDraft(draft: FormDraft): DraftErrors {
   }
 
   return errors;
+}
+
+export type EditorSection = "general" | "fields" | "delivery";
+
+/** The tab that holds the first mistake, so the person is taken to it. */
+export function sectionWithErrors(errors: DraftErrors): EditorSection {
+  if (errors.name) return "general";
+  if (Object.keys(errors.fields).length > 0) return "fields";
+  return "delivery";
 }
 
 export const hasErrors = (errors: DraftErrors) => Boolean(errors.name || errors.destinations || errors.domains || errors.redirectUrl || Object.keys(errors.fields).length > 0);

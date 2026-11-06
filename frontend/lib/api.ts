@@ -33,12 +33,16 @@ export type FormField = {
   options?: string[] | null;
 };
 
+export type ResponseType = "json" | "redirect";
+
 export type Form = {
   name: string;
   fields: FormField[];
   destinations: string[];
   allowed_domains: string[];
-  /** Where visitors of a plain HTML page land after sending the form, or null for a short confirmation. */
+  /** What the visitor gets after sending: a JSON answer, or a redirect straight to the thank-you page. */
+  response_type: ResponseType;
+  /** The thank-you page (the JSON answer carries it too), or null when there is none. */
   redirect_url: string | null;
   /** Code of the email template, or null when the form uses the default one. */
   template: string | null;
@@ -48,7 +52,7 @@ export type Form = {
   updated_at: string | null;
 };
 
-export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains" | "redirect_url" | "template">;
+export type FormInput = Pick<Form, "name" | "fields" | "destinations" | "allowed_domains" | "response_type" | "redirect_url" | "template">;
 
 export type SubmissionStatus = "pending" | "processing" | "sent" | "partial" | "failed" | "spam";
 

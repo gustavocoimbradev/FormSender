@@ -12,6 +12,7 @@ import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
 import { ChipsInput } from "../ui/ChipsInput";
 import { Select } from "../ui/Select";
+import { Segmented } from "../Segmented";
 import { useToast } from "../ui/Toast";
 import { FieldRow } from "./FieldRow";
 import {
@@ -26,7 +27,9 @@ import {
   validateDomain,
   validateDraft,
   validateEmailChip,
+  sectionWithErrors,
   type DraftErrors,
+  type EditorSection,
   type FieldDraft,
   type FormDraft,
 } from "./formDraft";
@@ -35,11 +38,15 @@ type FormEditorProps = {
   /** Present when editing; absent when creating. */
   form?: Form;
   onSaved: (form: Form) => void;
-  /** When given, a delete button sits at the left of the save button. */
+  /** When given, a delete button sits at the left of the save button (on the General section). */
   onDelete?: () => void;
+  /** Which part of the form to show. Without it every part is shown, one after the other (used to create a form). */
+  section?: EditorSection;
+  /** Asks the screen to show another part, e.g. the one that has a mistake. */
+  onSectionChange?: (section: EditorSection) => void;
 };
 
-export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
+export function FormEditor({ form, onSaved, onDelete, section, onSectionChange }: FormEditorProps) {
   const toast = useToast();
   const [draft, setDraft] = useState<FormDraft>(() => (form ? draftFromForm(form) : emptyDraft()));
   const [errors, setErrors] = useState<DraftErrors>({ fields: {} });
@@ -53,6 +60,15 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
     { value: "", label: "Default" },
     ...(templates.data ?? []).filter((template) => !template.is_default).map((template) => ({ value: template.code, label: template.name })),
   ];
+
+  const shows = (part: EditorSection) => section === undefined || section === part;
+
+  /** Shows the mistakes and takes the person to the part of the form that has the first one. */
+  function showErrors(found: DraftErrors) {
+    setErrors(found);
+    toast("Check the highlighted fields.", "error");
+    if (section !== undefined) onSectionChange?.(sectionWithErrors(found));
+  }
 
   const patch = (changes: Partial<FormDraft>) => setDraft((current) => ({ ...current, ...changes }));
 
@@ -84,11 +100,11 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
 
   async function save() {
     const found = validateDraft(draft);
-    setErrors(found);
     if (hasErrors(found)) {
-      toast("Check the highlighted fields.", "error");
+      showErrors(found);
       return;
     }
+    setErrors(found);
 
     setSaving(true);
     try {
@@ -97,8 +113,7 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       onSaved(saved);
     } catch (error) {
       if (error instanceof ApiError && error.status === 422) {
-        setErrors(errorsFromApi(error, draft));
-        toast("Check the highlighted fields.", "error");
+        showErrors(errorsFromApi(error, draft));
       } else {
         toast("Could not save. Please try again.", "error");
       }
@@ -116,114 +131,132 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
       }}
       className="space-y-6"
     >
-      <Card className="animate-fade-up">
-        <CardHeader title="General" />
-        <div className="px-5 pb-2 sm:px-6">
-          <Field
-            id="form-name"
-            label="Form name"
-            value={draft.name}
-            onChange={(event) => patch({ name: event.target.value })}
-            error={errors.name}
-            disabled={saving}
-            placeholder="Website contact"
-            autoFocus={!form}
-            autoComplete="off"
-          />
-          <div className="mb-4">
-            <Select id="form-template" label="Email template" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
-          </div>
-        </div>
-      </Card>
-
-      <Card className="animate-fade-up">
-        <CardHeader title="Fields" />
-
-        <div className="space-y-3 px-5 pb-6 sm:px-6">
-          {draft.fields.length === 0 && <p className="text-base leading-relaxed text-muted">No fields yet. Add the fields the form accepts, such as name, email and message.</p>}
-
-          <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={reorder}>
-            <SortableContext items={draft.fields.map((field) => field.key)} strategy={verticalListSortingStrategy}>
-              {draft.fields.map((field) => (
-                <FieldRow
-                  key={field.key}
-                  field={field}
-                  errors={errors.fields[field.key] ?? {}}
-                  disabled={saving}
-                  autoFocus={field.key === lastAdded}
-                  onChange={(changes) => patchField(field.key, changes)}
-                  onRemove={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
-
-          <ActionButton
-            type="button"
-            variant="ghost"
-            className="w-full border-dashed"
-            disabled={saving}
-            onClick={() => {
-              const added = emptyField();
-              setLastAdded(added.key);
-              patch({ fields: [...draft.fields, added] });
-            }}
-          >
-            <PlusIcon /> Add field
-          </ActionButton>
-        </div>
-      </Card>
-
-      <Card className="animate-fade-up">
-        <CardHeader title="Delivery" />
-        <div className="px-5 pb-2 sm:px-6">
-          <ChipsInput
-            id="destinations"
-            label="Destinations"
-            values={draft.destinations}
-            onChange={(destinations) => patch({ destinations })}
-            validate={validateEmailChip}
-            normalize={(value) => value.trim().toLowerCase()}
-            placeholder="you@company.com"
-            error={errors.destinations}
-            max={20}
-            disabled={saving}
-          />
-          <ChipsInput
-            id="domains"
-            label="Allowed sites"
-            values={draft.domains}
-            onChange={(domains) => patch({ domains })}
-            validate={validateDomain}
-            normalize={normalizeDomain}
-            placeholder="company.com or *.company.com"
-            error={errors.domains}
-            disabled={saving}
-          />
-          {form && (
+      {shows("general") && (
+        <Card className="animate-fade-up">
+          <CardHeader title="General" />
+          <div className="px-5 pb-2 sm:px-6">
             <Field
-              id="redirect-url"
-              label="Thank-you page"
-              type="url"
-              inputMode="url"
-              value={draft.redirectUrl}
-              onChange={(event) => patch({ redirectUrl: event.target.value })}
-              error={errors.redirectUrl}
-              hint="Where visitors land after sending from a plain HTML page. Leave empty to skip."
+              id="form-name"
+              label="Form name"
+              value={draft.name}
+              onChange={(event) => patch({ name: event.target.value })}
+              error={errors.name}
               disabled={saving}
-              placeholder="https://company.com/thanks"
+              placeholder="Website contact"
+              autoFocus={!form}
               autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
             />
-          )}
-        </div>
-      </Card>
+            <div className="mb-4">
+              <Select id="form-template" label="Email template" value={draft.template} options={templateOptions} onChange={(template) => patch({ template })} disabled={saving} />
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {shows("fields") && (
+        <Card className="animate-fade-up">
+          <CardHeader title="Fields" />
+
+          <div className="space-y-3 px-5 pb-6 sm:px-6">
+            {draft.fields.length === 0 && <p className="text-base leading-relaxed text-muted">No fields yet. Add the fields the form accepts, such as name, email and message.</p>}
+
+            <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={reorder}>
+              <SortableContext items={draft.fields.map((field) => field.key)} strategy={verticalListSortingStrategy}>
+                {draft.fields.map((field) => (
+                  <FieldRow
+                    key={field.key}
+                    field={field}
+                    errors={errors.fields[field.key] ?? {}}
+                    disabled={saving}
+                    autoFocus={field.key === lastAdded}
+                    onChange={(changes) => patchField(field.key, changes)}
+                    onRemove={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
+
+            <ActionButton
+              type="button"
+              variant="ghost"
+              className="w-full border-dashed"
+              disabled={saving}
+              onClick={() => {
+                const added = emptyField();
+                setLastAdded(added.key);
+                patch({ fields: [...draft.fields, added] });
+              }}
+            >
+              <PlusIcon /> Add field
+            </ActionButton>
+          </div>
+        </Card>
+      )}
+
+      {shows("delivery") && (
+        <Card className="animate-fade-up">
+          <CardHeader title="Delivery" />
+          <div className="px-5 pb-2 sm:px-6">
+            <ChipsInput
+              id="destinations"
+              label="Destinations"
+              values={draft.destinations}
+              onChange={(destinations) => patch({ destinations })}
+              validate={validateEmailChip}
+              normalize={(value) => value.trim().toLowerCase()}
+              placeholder="you@company.com"
+              error={errors.destinations}
+              max={20}
+              disabled={saving}
+            />
+            <ChipsInput
+              id="domains"
+              label="Allowed sites"
+              values={draft.domains}
+              onChange={(domains) => patch({ domains })}
+              validate={validateDomain}
+              normalize={normalizeDomain}
+              placeholder="company.com or *.company.com"
+              error={errors.domains}
+              disabled={saving}
+            />
+            {form && (
+              <>
+                <Segmented
+                  label="After sending"
+                  value={draft.responseType}
+                  options={[
+                    { value: "json", label: "JSON answer" },
+                    { value: "redirect", label: "Redirect" },
+                  ]}
+                  onChange={(responseType) => patch({ responseType })}
+                  disabled={saving}
+                />
+                <Field
+                  id="redirect-url"
+                  label="Thank-you page"
+                  type="url"
+                  inputMode="url"
+                  value={draft.redirectUrl}
+                  onChange={(event) => patch({ redirectUrl: event.target.value })}
+                  error={errors.redirectUrl}
+                  hint={draft.responseType === "redirect" ? "Visitors are sent straight to this page after sending." : "Optional. The JSON answer carries this address."}
+                  disabled={saving}
+                  placeholder="https://company.com/thanks"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                />
+              </>
+            )}
+          </div>
+        </Card>
+      )}
 
       {errors.general && <p role="alert" className="rounded-control border border-danger/30 bg-danger/10 px-4 py-3 text-base text-danger">{errors.general}</p>}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-        {onDelete ? (
+        {onDelete && shows("general") ? (
           <ActionButton type="button" variant="danger" onClick={onDelete} disabled={saving} className="h-14 px-6">
             <TrashIcon /> Delete
           </ActionButton>
