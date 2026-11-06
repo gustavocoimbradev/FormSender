@@ -34,11 +34,11 @@ Your site gets a form, and every message lands in your team's inbox. No back end
 Needs Docker.
 
 ```bash
-make dev      # development: everything up with sample data, a fake inbox (Mailpit) and free ports picked for you
-make prod     # production: asks for your address the first time, then builds and runs it for good
+make up:dev   # development: everything up with sample data, a fake inbox (Mailpit) and free ports picked for you
+make up:prod  # production: asks for your address the first time, then builds and runs it for good
 ```
 
-Keep `APP_KEY` safe: the saved SMTP password is encrypted with it. Without a keyboard, `ADDRESS=forms.mycompany.com make prod`. Over an IP the site is plain http, so a form on an https website needs a domain.
+Keep `APP_KEY` safe: the saved SMTP password is encrypted with it. Without a keyboard, `ADDRESS=forms.mycompany.com make up:prod`. Over an IP the site is plain http, so a form on an https website needs a domain.
 
 ## What is in it
 
@@ -64,7 +64,7 @@ Keep `APP_KEY` safe: the saved SMTP password is encrypted with it. Without a key
 backend/     Laravel API
 frontend/    Next.js dashboard
 docker/      PHP image, production images and proxy
-scripts/     make dev and make prod
+scripts/     make up:dev and make up:prod
 ```
 
 ## License

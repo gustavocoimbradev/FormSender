@@ -12,7 +12,7 @@ class SmtpSettingsSeeder extends Seeder
     /**
      * Points the app at the local Mailpit (a fake SMTP server that catches every
      * email) until someone saves real SMTP settings through the API.
-     * Existing settings are never overwritten, so this is safe to run on every `make dev`.
+     * Existing settings are never overwritten, so this is safe to run on every `make up:dev`.
      */
     public function run(): void
     {

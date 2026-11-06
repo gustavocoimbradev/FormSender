@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Starts Form Sender in production (used by `make prod`): the first time it asks for the address and sets everything up,
+# Starts Form Sender in production (used by `make up:prod`): the first time it asks for the address and sets everything up,
 # then it builds and starts everything in the background and keeps it running (Docker brings it back after a restart
 # of the server). Safe to run again to update.
 #   scripts/prod.sh             set up if needed, then build and start
-#   scripts/prod.sh --setup     ask for the address again (make prod-setup), then build and start
+#   scripts/prod.sh --setup     ask for the address again (make setup:prod), then build and start
 #   scripts/prod.sh --no-start  only set up (create .env.prod and ask for the address)
 #   ADDRESS=forms.mycompany.com scripts/prod.sh    no questions: for scripts and automation
 set -uo pipefail
@@ -42,9 +42,9 @@ ENV_FILE=".env.prod"
 COMPOSE=(docker compose --env-file "$ENV_FILE" -f docker-compose.prod.yml)
 
 # ------------------------------------------------------------ prerequisites
-command -v docker >/dev/null 2>&1 || fail "Docker is not installed." "Install it from https://docs.docker.com/engine/install/ and run make prod again."
-docker info >/dev/null 2>&1 || fail "Docker is installed but not running." "Start it (for example: sudo systemctl start docker) and run make prod again."
-docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 was not found." "Update Docker, or install the compose plugin, and run make prod again."
+command -v docker >/dev/null 2>&1 || fail "Docker is not installed." "Install it from https://docs.docker.com/engine/install/ and run make up:prod again."
+docker info >/dev/null 2>&1 || fail "Docker is installed but not running." "Start it (for example: sudo systemctl start docker) and run make up:prod again."
+docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 was not found." "Update Docker, or install the compose plugin, and run make up:prod again."
 
 # ------------------------------------------------------------ the settings file (created once, with secrets)
 random() { openssl rand -base64 "$1" | tr -d '\n=+/' | cut -c1-"$2"; }
@@ -129,7 +129,7 @@ if [ -n "${ADDRESS:-}" ]; then
     chosen="$(normalize_address "$ADDRESS")" || fail "ADDRESS is not usable: $ADDRESS" "Use a domain (forms.mycompany.com) or an IP address (203.0.113.5)."
 elif [ "$ASK_AGAIN" = 1 ] || ! current_is_usable; then
     [ -t 0 ] || fail "I need to know the address, and there is no one to ask." \
-        "Run it like this: ADDRESS=forms.mycompany.com make prod" \
+        "Run it like this: ADDRESS=forms.mycompany.com make up:prod" \
         "or set PUBLIC_URL in $ENV_FILE."
 
     guess="$(hostname -I 2>/dev/null | awk '{print $1}')"
@@ -141,7 +141,7 @@ elif [ "$ASK_AGAIN" = 1 ] || ! current_is_usable; then
     attempts=0
     while [ -z "$chosen" ]; do
         attempts=$((attempts + 1))
-        [ "$attempts" -le 5 ] || fail "That is not working out." "Run make prod again when you know the address."
+        [ "$attempts" -le 5 ] || fail "That is not working out." "Run make up:prod again when you know the address."
         default=""
         current_is_usable && default="$PUBLIC_URL"
         if [ -n "$default" ]; then
@@ -172,7 +172,7 @@ case "$PUBLIC_URL" in
     http://*) warn "Over plain http. A form on an https site needs its embed script over https too: use a domain for that." ;;
 esac
 
-[ "$START" = 1 ] || { printf '\n  %sSet up. Run make prod to start it.%s\n' "$D" "$N"; exit 0; }
+[ "$START" = 1 ] || { printf '\n  %sSet up. Run make up:prod to start it.%s\n' "$D" "$N"; exit 0; }
 
 # ------------------------------------------------------------ the ports must be free
 port_busy() { ss -ltn 2>/dev/null | awk 'NR>1 {print $4}' | grep -Eq "[:.]$1\$"; }
@@ -184,7 +184,7 @@ elif ! docker ps --format '{{.Names}}' | grep -q '^formsender-prod-web-1$'; then
         if [ "$port" = 443 ] && [ "${PUBLIC_URL#https://}" = "$PUBLIC_URL" ]; then continue; fi
         port_busy "$port" && fail "Port $port is already used on this server." \
             "Something else (another web server, like nginx or apache) is listening on it." \
-            "Stop that, or free the port, and run make prod again."
+            "Stop that, or free the port, and run make up:prod again."
     done
 fi
 
@@ -193,11 +193,11 @@ printf '%sBuilding and starting (the first time takes a few minutes)...%s\n' "$D
 mkdir -p .logs
 if ! "${COMPOSE[@]}" up -d --build --wait --remove-orphans >.logs/prod.log 2>&1; then
     tail -n 25 .logs/prod.log | sed 's/^/  /'
-    fail "It did not start." "The full output is in .logs/prod.log." "See what a service says with: make prod-logs"
+    fail "It did not start." "The full output is in .logs/prod.log." "See what a service says with: make logs:prod"
 fi
 
 ok "Form Sender is running."
 printf '\n  %sAddress%s   %s\n\n' "$B" "$N" "$PUBLIC_URL"
 printf '  %sOpen it and create the first administrator.%s It starts again by itself if the server restarts.\n' "$D" "$N"
-printf '  %smake prod-logs%s to watch it, %smake prod-backup%s to save the database, %smake prod-down%s to stop it,\n' "$B" "$N" "$B" "$N" "$B" "$N"
-printf '  %smake prod-setup%s to change the address.\n' "$B" "$N"
+printf '  %smake logs:prod%s to watch it, %smake backup:prod%s to save the database, %smake down:prod%s to stop it,\n' "$B" "$N" "$B" "$N" "$B" "$N"
+printf '  %smake setup:prod%s to change the address.\n' "$B" "$N"

@@ -37,7 +37,7 @@ jobs:
           APP_DIR="${APP_DIR/#\~/$HOME}"
 
           if [ ! -f "$APP_DIR/.env.prod" ]; then
-            echo "::notice::The server is not set up yet ($APP_DIR/.env.prod is missing), so nothing was deployed. Clone the project there and run make prod once."
+            echo "::notice::The server is not set up yet ($APP_DIR/.env.prod is missing), so nothing was deployed. Clone the project there and run make up:prod once."
             exit 0
           fi
 

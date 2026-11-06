@@ -30,7 +30,7 @@ command -v docker >/dev/null 2>&1 || fail "Docker was not found." "Open Docker D
 docker info >/dev/null 2>&1 || fail "Docker is not running." "Open Docker Desktop, wait for it to start and try again."
 
 [ -n "$(docker compose ps -q app 2>/dev/null)" ] \
-    || fail "The project is not running." "Start it with make dev (or make start) and run make reset again."
+    || fail "The project is not running." "Start it with make up:dev (or make start:dev) and run make reset:dev again."
 
 printf '\n'
 brand_title
@@ -39,7 +39,7 @@ printf '%s!%s This erases %sall data%s: users, forms, received messages and sett
 printf '  The database goes back to its initial state and you will need to create the administrator again.\n\n'
 
 if [ "${YES:-}" != "1" ]; then
-    [ -t 0 ] || fail "No terminal to confirm." "Run with YES=1 to confirm without asking: make reset YES=1"
+    [ -t 0 ] || fail "No terminal to confirm." "Run with YES=1 to confirm without asking: make reset:dev YES=1"
 
     printf 'Type %syes%s to continue: ' "$B" "$N"
     read -r answer
@@ -51,7 +51,7 @@ if [ "${YES:-}" != "1" ]; then
 fi
 
 if ! output="$(docker compose exec -T app php artisan migrate:fresh --seed --force 2>&1)"; then
-    fail "Could not wipe the database." "$(printf '%s' "$output" | tail -3 | cut -c1-110)" "See the details with: make logs"
+    fail "Could not wipe the database." "$(printf '%s' "$output" | tail -3 | cut -c1-110)" "See the details with: make logs:dev"
 fi
 ok "Database wiped"
 

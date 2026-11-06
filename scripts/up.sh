@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Form Sender launcher (used by `make dev`).
+# Form Sender launcher (used by `make up:dev`).
 #   scripts/up.sh          quiet: short, friendly messages; Ctrl+C stops everything
 #   scripts/up.sh --logs   streams every log; Ctrl+C stops everything
 set -uo pipefail
@@ -72,7 +72,7 @@ preflight() {
                 "Open Docker Desktop > Settings > Resources > WSL integration, enable this distro" \
                 "and open a new terminal."
         fi
-        fail "Docker was not found." "Install it from https://docs.docker.com/get-docker/ and run make dev again."
+        fail "Docker was not found." "Install it from https://docs.docker.com/get-docker/ and run make up:dev again."
     }
 
     local info
@@ -85,7 +85,7 @@ preflight() {
             fail "No permission to use Docker." \
                 "Add your user to the docker group (sudo usermod -aG docker \$USER) and open a new terminal."
         fi
-        fail "Docker is not running." "Open Docker Desktop, wait for it to start and run make dev again."
+        fail "Docker is not running." "Open Docker Desktop, wait for it to start and run make up:dev again."
     fi
 
     docker compose version >/dev/null 2>&1 \
@@ -106,10 +106,10 @@ diagnose() {
     local details=()
 
     port="$(grep -oE 'Bind for [^ ]*:[0-9]+ failed' "$LOG_FILE" 2>/dev/null | grep -oE '[0-9]+ failed' | grep -oE '[0-9]+' | tail -1)"
-    [ -n "$port" ] && fail "Port $port was taken by another program." "Run make dev again: a free port will be picked."
+    [ -n "$port" ] && fail "Port $port was taken by another program." "Run make up:dev again: a free port will be picked."
 
     if grep -qiE 'pull access denied|no such host|TLS handshake|i/o timeout|Temporary failure in name resolution' "$LOG_FILE" 2>/dev/null; then
-        fail "Could not download the Docker images." "Check your internet connection and run make dev again."
+        fail "Could not download the Docker images." "Check your internet connection and run make up:dev again."
     fi
 
     bad="$(docker compose ps -a --format '{{.Service}} {{.State}} {{.Health}}' 2>/dev/null \
@@ -120,13 +120,13 @@ diagnose() {
         while IFS= read -r line; do details+=("  $line"); done < <(docker compose logs --no-color --tail 6 "$service" 2>/dev/null | cut -c1-110)
     done
 
-    fail "Something did not start as expected." "${details[@]}" "See everything with: make dev logs   (and to clean up: make down)"
+    fail "Something did not start as expected." "${details[@]}" "See everything with: make up:dev logs   (and to clean up: make down:dev)"
 }
 
 seed_database() {
     local output
     if ! output="$(docker compose exec -T app php artisan db:seed --force 2>&1)"; then
-        fail "Could not prepare the database." "$(echo "$output" | tail -2 | cut -c1-110)" "See everything with: make dev logs"
+        fail "Could not prepare the database." "$(echo "$output" | tail -2 | cut -c1-110)" "See everything with: make up:dev logs"
     fi
     ok "Database ready"
 }
@@ -140,7 +140,7 @@ check_panel() {
 
     [ "$code" = "200" ] || fail "The dashboard started, but it cannot reach the server." \
         "Response received on localhost:$port: ${code:-none}" \
-        "See the details with: make dev logs"
+        "See the details with: make up:dev logs"
     ok "Dashboard responding"
 }
 
@@ -205,7 +205,7 @@ stop_all() {
     trap - INT TERM HUP
     printf '\n'
     docker compose stop >"$LOG_DIR/stop.log" 2>&1 &
-    spin $! "Stopping the services" || warn "Not everything stopped. Run make down."
+    spin $! "Stopping the services" || warn "Not everything stopped. Run make down:dev."
     ok "Everything stopped. See you!"
     exit 0
 }
