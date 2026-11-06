@@ -69,7 +69,6 @@ export function FieldRow({ field, errors, disabled, autoFocus, onChange, onRemov
               title="The technical name sent with each message. It comes from the label and stays the same once the form is saved."
               value={field.name}
               placeholder="field_name"
-              className="cursor-default font-mono !text-muted"
               autoComplete="off"
               spellCheck={false}
             />
