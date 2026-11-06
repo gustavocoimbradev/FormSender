@@ -1,18 +1,20 @@
 "use client";
 
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { restrictToParentElement, restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { SortableContext, arrayMove, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { ApiError, createForm, listTemplates, updateForm, type Form } from "@/lib/api";
 import { useResource } from "@/lib/hooks";
 import { ActionButton } from "../Button";
 import { Field } from "../Field";
-import { ArrowDownIcon, ArrowUpIcon, PlusIcon, TrashIcon } from "../icons";
+import { PlusIcon, TrashIcon } from "../icons";
 import { Card, CardHeader } from "../ui/Card";
 import { ChipsInput } from "../ui/ChipsInput";
 import { Select } from "../ui/Select";
-import { Switch } from "../ui/Switch";
 import { useToast } from "../ui/Toast";
+import { FieldRow } from "./FieldRow";
 import {
-  FIELD_TYPES,
   draftFromForm,
   emptyDraft,
   emptyField,
@@ -37,8 +39,6 @@ type FormEditorProps = {
   onDelete?: () => void;
 };
 
-const ICON_BUTTON = "grid size-11 place-items-center rounded-control text-muted transition-colors duration-300 hover:bg-surface/[0.08] hover:text-text disabled:opacity-30";
-
 export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
   const toast = useToast();
   const [draft, setDraft] = useState<FormDraft>(() => (form ? draftFromForm(form) : emptyDraft()));
@@ -46,6 +46,8 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
   const [saving, setSaving] = useState(false);
   /** The field just added: it gets the focus once, when it appears. */
   const [lastAdded, setLastAdded] = useState<string>();
+  // A small distance before a drag starts keeps clicks on the row from moving it; the keyboard works on the grip too.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
   const templates = useResource(listTemplates, []);
   const templateOptions = [
     { value: "", label: "Default" },
@@ -67,13 +69,14 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
     }));
   }
 
-  function moveField(index: number, direction: -1 | 1) {
+  /** A field dropped somewhere new: the list follows. */
+  function reorder({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+
     setDraft((current) => {
-      const fields = [...current.fields];
-      const target = index + direction;
-      if (target < 0 || target >= fields.length) return current;
-      [fields[index], fields[target]] = [fields[target], fields[index]];
-      return { ...current, fields };
+      const from = current.fields.findIndex((field) => field.key === active.id);
+      const to = current.fields.findIndex((field) => field.key === over.id);
+      return from < 0 || to < 0 ? current : { ...current, fields: arrayMove(current.fields, from, to) };
     });
   }
 
@@ -137,78 +140,21 @@ export function FormEditor({ form, onSaved, onDelete }: FormEditorProps) {
         <div className="space-y-3 px-5 pb-6 sm:px-6">
           {draft.fields.length === 0 && <p className="text-base leading-relaxed text-muted">No fields yet. Add the fields the form accepts, such as name, email and message.</p>}
 
-          {draft.fields.map((field, index) => {
-            const row = errors.fields[field.key] ?? {};
-
-            return (
-              <div key={field.key} className="animate-pop rounded-control border border-surface/10 bg-bg/40 p-3 sm:p-4">
-                <div className="grid grid-cols-2 gap-x-3 gap-y-3 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)_minmax(0,2fr)_auto]">
-                  <Field
-                    compact
-                    id={`${field.key}-label`}
-                    label="Label"
-                    value={field.label}
-                    onChange={(event) => patchField(field.key, { label: event.target.value })}
-                    error={row.label}
-                    disabled={saving}
-                    placeholder="Your email"
-                    autoComplete="off"
-                    autoFocus={field.key === lastAdded}
-                  />
-                  <Field
-                    compact
-                    id={`${field.key}-name`}
-                    label="Field name"
-                    value={field.name}
-                    onChange={(event) => patchField(field.key, { name: event.target.value, nameTouched: true })}
-                    error={row.name}
-                    disabled={saving}
-                    placeholder="email"
-                    autoComplete="off"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                  />
-
-                  <div className="col-span-2 sm:col-span-1">
-                    <Select compact id={`${field.key}-type`} label="Type" value={field.type} options={FIELD_TYPES} onChange={(type) => patchField(field.key, { type })} disabled={saving} />
-                  </div>
-
-                  <div className="col-span-2 flex items-center justify-between gap-2 sm:col-span-1 sm:pt-7">
-                    <Switch id={`${field.key}-required`} label="Required" checked={field.required} onChange={(required) => patchField(field.key, { required })} disabled={saving} />
-
-                    <div className="flex">
-                      <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, -1)} disabled={saving || index === 0} aria-label="Move field up">
-                        <ArrowUpIcon />
-                      </button>
-                      <button type="button" className={ICON_BUTTON} onClick={() => moveField(index, 1)} disabled={saving || index === draft.fields.length - 1} aria-label="Move field down">
-                        <ArrowDownIcon />
-                      </button>
-                      <button type="button" className={`${ICON_BUTTON} hover:!text-danger`} onClick={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })} disabled={saving} aria-label="Remove field">
-                        <TrashIcon />
-                      </button>
-                    </div>
-                  </div>
-
-                  {field.type === "select" && (
-                    <div className="col-span-2 xl:col-span-4">
-                      <ChipsInput
-                        id={`${field.key}-options`}
-                        label="Options"
-                        values={field.options}
-                        onChange={(options) => patchField(field.key, { options })}
-                        error={row.options}
-                        placeholder="Type an option and press Enter"
-                        disabled={saving}
-                        max={100}
-                      />
-                    </div>
-                  )}
-
-                  {field.type === "file" && <p className="col-span-2 text-base text-muted xl:col-span-4">The visitor picks a file. It travels as an attachment on the email.</p>}
-                </div>
-              </div>
-            );
-          })}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToVerticalAxis, restrictToParentElement]} onDragEnd={reorder}>
+            <SortableContext items={draft.fields.map((field) => field.key)} strategy={verticalListSortingStrategy}>
+              {draft.fields.map((field) => (
+                <FieldRow
+                  key={field.key}
+                  field={field}
+                  errors={errors.fields[field.key] ?? {}}
+                  disabled={saving}
+                  autoFocus={field.key === lastAdded}
+                  onChange={(changes) => patchField(field.key, changes)}
+                  onRemove={() => patch({ fields: draft.fields.filter((current) => current.key !== field.key) })}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
 
           <ActionButton
             type="button"
