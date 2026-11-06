@@ -9,6 +9,7 @@ use App\Http\Requests\StoreFormRequest;
 use App\Http\Requests\UpdateFormRequest;
 use App\Http\Resources\FormResource;
 use App\Models\Form;
+use App\Support\AccountQuotas;
 use Dedoc\Scramble\Attributes\Endpoint;
 use Dedoc\Scramble\Attributes\Group;
 use Illuminate\Http\Request;
@@ -42,11 +43,17 @@ class FormController extends Controller
      *
      * Defines the accepted `fields`, the email `destinations` (up to 20) and the `allowed_domains`
      * (hosts such as `example.com` or `*.example.com`; empty means any domain). The form belongs to the person who creates it. Each destination of an account's form gets an email to confirm it wants the messages; until then it receives nothing. A unique public
-     * `code` is generated automatically. Domains are normalized: scheme, path, port and case are removed.
+     * `code` is generated automatically. When the administrator limits how many forms an account can have, going past it answers 403. Domains are normalized: scheme, path, port and case are removed.
      */
     #[Endpoint(operationId: 'createForm')]
     public function store(StoreFormRequest $request, SyncFormDestinationsAction $syncDestinations): FormResource
     {
+        abort_if(
+            AccountQuotas::formsReached($request->user()),
+            403,
+            'You reached the limit of '.AccountQuotas::maxForms().' forms. Delete one to create another.',
+        );
+
         $form = $request->user()->forms()->create($request->validated());
         $form->setRelation('user', $request->user());
 

@@ -232,7 +232,7 @@
             if (firstInvalid) { firstInvalid.focus(); notify(T.check_fields, true); announce("error", { status: status }); return; }
           }
 
-          notify(status === 429 ? T.too_many : status === 403 ? T.forbidden : status === 422 || status === 503 ? T.unavailable : T.failed, true);
+          notify(result.data.code === "daily_limit" ? T.daily_limit : status === 429 ? T.too_many : status === 403 ? T.forbidden : status === 422 || status === 503 ? T.unavailable : T.failed, true);
           announce("error", { status: status });
         })
         .catch(function () {

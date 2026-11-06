@@ -26,7 +26,7 @@ class FormSubmission extends Model
     use Prunable;
 
     protected $fillable = [
-        'form_id', 'form_name', 'fields', 'data', 'attachments', 'destinations', 'deliveries',
+        'user_id', 'form_id', 'form_name', 'fields', 'data', 'attachments', 'destinations', 'deliveries',
         'status', 'attempts', 'error', 'ip', 'origin', 'user_agent', 'processed_at',
     ];
 

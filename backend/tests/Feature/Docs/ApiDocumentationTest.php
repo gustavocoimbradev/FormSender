@@ -72,6 +72,7 @@ it('documents every api route', function (string $path, string $method): void {
     ['/users/{user}', 'delete'],
     ['/settings', 'get'],
     ['/settings', 'put'],
+    ['/quotas', 'get'],
 ]);
 
 it('declares bearer authentication for protected routes only', function (): void {
@@ -80,7 +81,7 @@ it('declares bearer authentication for protected routes only', function (): void
     expect($document['components']['securitySchemes'])->toHaveKey('http');
     expect($document['components']['securitySchemes']['http'])->toMatchArray(['type' => 'http', 'scheme' => 'bearer']);
 
-    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get'], ['/email/preview', 'post']] as [$path, $method]) {
+    foreach ([['/forms', 'get'], ['/settings', 'get'], ['/users', 'get'], ['/auth/me', 'get'], ['/quotas', 'get'], ['/email/preview', 'post']] as [$path, $method]) {
         expect($document['paths'][$path][$method]['security'] ?? null)->not->toBe([], "{$method} {$path} must be protected");
     }
 

@@ -13,6 +13,7 @@ use App\Http\Controllers\FormController;
 use App\Http\Controllers\FormSubmissionController;
 use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PublicFormController;
+use App\Http\Controllers\QuotaController;
 use App\Http\Controllers\RetrySubmissionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SetupController;
@@ -39,6 +40,7 @@ Route::post('auth/reset-password', [PasswordResetController::class, 'reset'])->m
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('auth/me', [AuthController::class, 'me']);
     Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::get('quotas', QuotaController::class);
 
     Route::apiResource('forms', FormController::class);
     Route::apiResource('forms.submissions', FormSubmissionController::class)->only(['index', 'show'])->scoped();

@@ -19,6 +19,16 @@ class Setting extends Model
     }
 
     /**
+     * A limit the administrator set for every account (`max_forms`, `max_daily_submissions`), or null when unlimited.
+     */
+    public static function quota(string $key): ?int
+    {
+        $value = static::where('key', 'quotas')->first()?->value[$key] ?? null;
+
+        return $value === null || $value === '' ? null : (int) $value;
+    }
+
+    /**
      * How many days messages are kept. What the administrator saved in the panel wins; until then it follows the
      * environment (`SUBMISSION_RETENTION_DAYS`). Zero keeps everything.
      */

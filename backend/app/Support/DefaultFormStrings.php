@@ -29,6 +29,7 @@ final class DefaultFormStrings
             'too_many' => 'Too many attempts. Please wait a minute and try again.',
             'forbidden' => 'This form cannot be sent from this site.',
             'unavailable' => 'This form cannot receive messages right now.',
+            'daily_limit' => 'This form reached its limit of messages for today. Please try again tomorrow.',
             'failed' => 'Could not send. Please try again.',
             'offline' => 'Could not send. Please check your connection and try again.',
         ];
@@ -55,6 +56,7 @@ final class DefaultFormStrings
             'too_many' => 'Too many attempts',
             'forbidden' => 'Sent from a site that is not allowed',
             'unavailable' => 'The form cannot receive messages',
+            'daily_limit' => 'The form reached its daily limit of messages',
             'failed' => 'Could not send',
             'offline' => 'No connection',
         ];

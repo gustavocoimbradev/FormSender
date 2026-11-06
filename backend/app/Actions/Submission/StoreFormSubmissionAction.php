@@ -35,6 +35,7 @@ class StoreFormSubmissionAction
 
         return DB::transaction(function () use ($form, $destinations, $values, $files, $meta): FormSubmission {
             $submission = FormSubmission::create([
+                'user_id' => $form->user_id,
                 'form_id' => $form->id,
                 'form_name' => $form->name,
                 'fields' => $form->fields,

@@ -8,6 +8,7 @@ use App\Jobs\SendFormSubmission;
 use App\Models\Form;
 use App\Models\FormSubmission;
 use App\Models\Setting;
+use App\Support\AccountQuotas;
 
 class ReceiveFormSubmissionAction
 {
@@ -25,6 +26,11 @@ class ReceiveFormSubmissionAction
         abort_if($form->destinations === [], 422, 'This form has no destinations configured.');
         abort_if($form->confirmedDestinations() === [], 422, 'This form has no confirmed destination yet.');
         abort_unless(Setting::where('key', 'smtp')->exists(), 503, 'Email delivery is not configured.');
+
+        abort_if(
+            AccountQuotas::dailyReached($form),
+            response()->json(['message' => 'This form reached its limit of messages for today. Try again tomorrow.', 'code' => 'daily_limit'], 429),
+        );
 
         $submission = $this->storeSubmission->execute($form, $data, $meta);
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Setting;
+use App\Support\AccountQuotas;
 use Dedoc\Scramble\Attributes\SchemaName;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,7 +17,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 class SettingsResource extends JsonResource
 {
     /**
-     * @return array{smtp: array{host: string, port: int, username: string|null, password: string|null, encryption: string|null, from_address: string, from_name: string|null}|null, allow_registration: bool, retention_days: int}
+     * @return array{smtp: array{host: string, port: int, username: string|null, password: string|null, encryption: string|null, from_address: string, from_name: string|null}|null, allow_registration: bool, retention_days: int, quotas: array{max_forms: int|null, max_daily_submissions: int|null}}
      */
     public function toArray(Request $request): array
     {
@@ -29,6 +30,8 @@ class SettingsResource extends JsonResource
             'allow_registration' => Setting::registrationOpen(),
             /** How many days messages are kept before they are deleted, with their files. 0 keeps them forever. */
             'retention_days' => Setting::retentionDays(),
+            /** The limits for every account, the administrator's included: how many forms and how many messages a day. Empty (null) means no limit. */
+            'quotas' => ['max_forms' => AccountQuotas::maxForms(), 'max_daily_submissions' => AccountQuotas::maxDailySubmissions()],
         ];
     }
 }

@@ -23,6 +23,7 @@ it('requires authentication on every protected route', function (string $method,
     ['PUT', '/api/settings'],
     ['GET', '/api/users'],
     ['GET', '/api/auth/me'],
+    ['GET', '/api/quotas'],
     ['POST', '/api/auth/logout'],
 ]);
 
