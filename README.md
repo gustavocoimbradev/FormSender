@@ -1,8 +1,8 @@
 <h1 align="center">➤ Form Sender</h1>
 
 <p align="center">
-  <b>Your own form backend, up in one command.</b><br>
-  Self-hosted and open source. Create a form, paste one snippet into any website, and every message lands in your team's inbox, in a template you design.
+  <b>The email API for your website forms.</b><br>
+  POST in, email out. Self-hosted, open source and up in one command. Point any form at a URL and every message lands in your team's inbox, in a template you design. No back end to write.
 </p>
 
 <p align="center">
@@ -17,13 +17,35 @@
 
 <p align="center"><img src="docs/screenshots/templates.png" alt="Email template editor with live preview" width="900"></p>
 
-## What it does
+## What it is
 
-You have a contact page, a landing page, a signup sheet. You should not have to write, secure and maintain form handling for each one. Run Form Sender once, and every site you own can use it.
+An email-sending API for forms. Your website sends a `POST`, Form Sender validates it, stores it, answers `202` right away and delivers the email in the background.
+
+```bash
+curl -X POST http://localhost:8000/api/forms/YOUR_FORM_CODE/submit \
+  -H 'Origin: https://your-site.com' \
+  -H 'Content-Type: application/json' \
+  -d '{"name": "Maria", "email": "maria@company.com", "message": "Hello!"}'
+# 202 Accepted. The email is already on its way.
+```
+
+You should not have to write, secure and maintain email sending for every contact page, landing page or signup sheet. Run Form Sender once and every site you own can use it.
 
 1. **Create a form** in the dashboard: its fields, who receives the messages, which sites may send it.
 2. **Copy the snippet** (HTML, JavaScript, React, PHP, Python... the panel generates it for your stack).
-3. **Done.** Each submission is validated, saved, and emailed to your team, with the answer arriving instantly (`202`) because the email goes out in the background.
+3. **Done.** Each submission is validated, saved, and emailed to your team.
+
+## What you can use it for
+
+Anything that starts as a `POST` and should end as an email:
+
+- Contact forms and quote requests
+- Waitlists and newsletter signups
+- Lead capture on landing pages
+- Support and feedback widgets
+- Notifications from your own apps (new signup, new order, an error worth a look)
+
+## How the email API works
 
 ```mermaid
 flowchart LR
@@ -39,7 +61,7 @@ flowchart LR
 
 | | |
 |---|---|
-| **Instant and reliable** | Emails never block a request. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
+| **Instant and reliable** | Emails never block a request, so your page never waits for a mail server. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
 | **Email templates** | Each form picks its own email. Write it in a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and watch a **live preview** on desktop and phone widths. The default template already matches the dashboard's look. |
 | **Spam protection** | A built-in **honeypot** on every form: the generated snippets already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |
 | **No secrets in the browser** | No token to leak. A form is reached by a random public `code`; sending is controlled by its **allowed sites** (`Origin`/`Referer`, `*.company.com` wildcards, per-form CORS) and rate limiting. Numeric ids are never exposed. |
@@ -132,13 +154,6 @@ Full, friendly docs are served at the API root (`/`).
 | Templates | CRUD on `/templates/{code}`, `POST /templates/preview` |
 | Users, Settings | CRUD on `/users`, `GET`/`PUT /settings` (admin) |
 
-```bash
-# What a website sends. No token, no extra code on the site.
-curl -X POST http://localhost:8000/api/forms/YOUR_FORM_CODE/submit \
-  -H 'Origin: https://your-site.com' \
-  -H 'Content-Type: application/json' \
-  -d '{"name": "Maria", "email": "maria@company.com", "message": "Hello!"}'
-```
 
 ## License
 

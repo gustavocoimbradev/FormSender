@@ -56,7 +56,7 @@ return [
          * Description rendered on the home page of the API documentation (`/`).
          */
         'description' => <<<'MD'
-REST API of FormSender: create forms, receive their submissions from any website and have them delivered by email.
+Email API for website forms. Any site sends a form to a public address and the message is delivered by email, in a template you design. This API also lets you create and manage those forms.
 
 ## Authentication
 
