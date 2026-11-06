@@ -17,11 +17,11 @@ import { Pills } from "../ui/Pills";
 import { useToast } from "../ui/Toast";
 import { FormsIcon } from "../icons";
 import { FormEditor } from "./FormEditor";
-import { IntegrationPanel } from "./IntegrationPanel";
+import { EmbedPanel } from "./EmbedPanel";
 import { SubmissionsPanel } from "./SubmissionsPanel";
 import { TestPanel } from "./TestPanel";
 
-type Tab = "general" | "fields" | "delivery" | "integration" | "messages" | "test";
+type Tab = "general" | "fields" | "delivery" | "embed" | "messages" | "test";
 
 const EDITOR_TABS: Tab[] = ["general", "fields", "delivery"];
 
@@ -29,7 +29,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "general", label: "General" },
   { id: "fields", label: "Fields" },
   { id: "delivery", label: "Delivery" },
-  { id: "integration", label: "Integration" },
+  { id: "embed", label: "Embed" },
   { id: "messages", label: "Messages" },
   { id: "test", label: "Test form" },
 ];
@@ -67,7 +67,7 @@ function TabSkeleton({ tab }: { tab: Tab }) {
         </FormCardSkeleton>
       )}
 
-      {tab === "integration" && (
+      {tab === "embed" && (
         <FormCardSkeleton>
           <Bar className="mb-5 h-[3.125rem] rounded-control" />
           <Bar className="mb-2 h-6 w-40 rounded-full" />
@@ -166,7 +166,7 @@ export function FormDetailScreen({ code, initialTab }: { code: string; initialTa
       {/* The three editing tabs share one editor, so what was typed stays while moving between them. */}
       <div key={EDITOR_TABS.includes(tab) ? "editor" : tab}>
         {EDITOR_TABS.includes(tab) && <FormEditor form={current} section={tab as "general" | "fields" | "delivery"} onSectionChange={setTab} onSaved={setForm} onDelete={() => setConfirming(true)} />}
-        {tab === "integration" && <IntegrationPanel form={current} />}
+        {tab === "embed" && <EmbedPanel form={current} onOpenDelivery={() => setTab("delivery")} />}
         {tab === "test" && <TestPanel form={current} onOpenMessages={() => setTab("messages")} onOpenConfig={() => setTab("fields")} />}
         {tab === "messages" && <SubmissionsPanel form={current} />}
       </div>

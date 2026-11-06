@@ -11,7 +11,7 @@ export function NewFormScreen() {
   return (
     <>
       <PageHeader title="New form" back={<BackLink />} />
-      <FormEditor onSaved={(form) => router.push(`/forms/${form.code}?tab=integration`)} />
+      <FormEditor onSaved={(form) => router.push(`/forms/${form.code}?tab=embed`)} />
     </>
   );
 }
