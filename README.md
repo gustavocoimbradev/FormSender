@@ -63,6 +63,7 @@ flowchart LR
 | **Instant and reliable** | Emails never block a request, so your page never waits for a mail server. Redis queue, retries with backoff, and a delivery status **per destination** (`pending`, `sent`, `partial`, `failed`). |
 | **File attachments** | Add a **file field** to a form: the upload is stored privately and arrives as an **email attachment**. Size and type are limited (5 MB by default; documents and images only), and the generated snippets already send it as `multipart/form-data`. |
 | **One line to embed, always up to date** | A `<script>` tag draws the form with the fields you configured, so editing the form changes every site that uses it. Sending never leaves the page: a small notice at the bottom confirms it (or points at what to fix). No JavaScript allowed? Use the iframe. Every form also has a **public page** of its own, fully responsive, with a clean version when it is framed. |
+| **Your own look** | Each form's **Design** tab shows the form next to the CSS that draws it, already filled in with the current style so you can edit it, with a live preview (light and dark) and a **Restore default style** button. The style only ever applies to the form, never to the page around it. |
 | **Reply to the visitor** | The first email a visitor types becomes the `Reply-To` of the message your team receives. |
 | **An email per form** | Each form has its own email, written in the form's **Email** tab: a **code editor made for email** (autocomplete on `{{`, a linter that warns about CSS email clients ignore) and a **live preview** on desktop and phone widths, filled with the form's own fields. Until you write one, the default email (it matches the dashboard's look) is used, and **Reset to default** brings it back. |
 | **Spam protection** | A built-in **honeypot** on every form: the embed script and the public page already include a hidden `_gotcha` field. Bots fill it, the API still answers `202` as if nothing happened, and the message is kept under Messages as **Spam**, never emailed. |
@@ -154,7 +155,7 @@ Full, friendly docs are served at the API root (`/`).
 | Forms | CRUD on `/forms/{code}` |
 | Submitting | `POST /forms/{code}/submit` and `GET /forms/{code}/public` (the fields to draw), both public: allowed sites, no token |
 | Submissions | `GET /forms/{code}/submissions` (+ filter by status), `POST /forms/{code}/submissions/{id}/retry`, `GET /forms/{code}/submissions/{id}/attachments/{attachment}` |
-| Email | `GET /email/default`, `POST /email/preview` |
+| Email and style | `GET /email/default`, `POST /email/preview`, `GET /style/default` |
 | Users, Settings | CRUD on `/users`, `GET`/`PUT /settings` (admin) |
 
 
