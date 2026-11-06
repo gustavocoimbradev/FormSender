@@ -8,6 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# Room for the attachments sent through file fields (see config/formsender.php).
+COPY uploads.ini /usr/local/etc/php/conf.d/uploads.ini
+
 WORKDIR /var/www/backend
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

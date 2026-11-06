@@ -54,6 +54,15 @@ services:
       mailpit:
         condition: service_healthy
 
+  scheduler:
+    <<: *backend
+    command: php artisan schedule:work
+    depends_on:
+      app:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
   frontend:
     image: node:22
     working_dir: /app
