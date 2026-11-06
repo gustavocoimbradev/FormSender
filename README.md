@@ -11,7 +11,6 @@
   <img src="https://img.shields.io/badge/PHP-8.4-777bb4?logo=php&logoColor=white" alt="PHP 8.4">
   <img src="https://img.shields.io/badge/Next.js-14-000?logo=nextdotjs" alt="Next.js 14">
   <img src="https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql&logoColor=white" alt="PostgreSQL 16">
-  <img src="https://img.shields.io/badge/tests-328%20passing-3ddc97" alt="328 tests">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8b6bff" alt="MIT license"></a>
 </p>
 
@@ -123,7 +122,7 @@ Headless **Laravel 13** on **PHP 8.4**, **PostgreSQL 16**, **Redis**, **Sanctum*
 
 - **The Laravel way, no over-engineering.** Form Requests, API Resources, Policies, route-model binding, Eloquent. Controllers stay thin; an Action class exists only when a use case earns it (multi-step, transactional, side effects). No repositories or service layers "just in case".
 - **Strict and typed everywhere.** `declare(strict_types=1)` on every file, typed parameters, returns and properties.
-- **Test-driven.** 328 Pest tests written before the code. CI runs them on every push against **SQLite and a real PostgreSQL 16**.
+- **CI on every push.** The Pest suite runs against **SQLite and a real PostgreSQL 16**.
 - **Hardened by default.** Security headers, restricted CORS, per-route throttling, login without account enumeration, password reset by a hashed emailed code, encrypted queue payloads for secrets.
 - **One renderer.** The same `EmailTemplateRenderer` produces the delivered email and the editor preview, and escapes every submitted value.
 
