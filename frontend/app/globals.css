@@ -85,9 +85,11 @@
    * With a mouse the page scrolls inside its own box, always showing the vertical scrollbar (a quiet strip when
    * nothing scrolls), so pages never jump sideways. The box is what scrolls, not the page, so the scrollbar is drawn
    * over the background (the glows on the page itself) and not in a plain strip beside it. On touch screens the page
-   * scrolls as usual: scrollbars float over the content and nothing is reserved.
+   * scrolls as usual: scrollbars float over the content and nothing is reserved. The same on a narrow window, even with
+   * a mouse: below 1024px the layout is the phone one, whose fixed header and bar span the whole width, and a reserved
+   * strip would push the content off their center.
    */
-  @media (hover: hover) and (pointer: fine) {
+  @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
     html,
     body {
       height: 100%;
